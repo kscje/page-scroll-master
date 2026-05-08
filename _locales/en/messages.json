@@ -1,0 +1,30 @@
+{
+  "extensionName": {
+    "message": "Page Scroll Master",
+    "description": "插件名称"
+  },
+  "extensionDescription": {
+    "message": "One-click scroll to top or bottom of page with smooth animation",
+    "description": "插件描述"
+  },
+  "commandScrollToTop": {
+    "message": "Scroll to the top of the page",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "Scroll to the bottom of the page",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "Scroll to Top",
+    "description": "Popup button label"
+  },
+  "popupScrollBottom": {
+    "message": "Scroll to Bottom",
+    "description": "Popup button label"
+  },
+  "popupSettings": {
+    "message": "Settings",
+    "description": "Popup settings button label"
+  }
+}

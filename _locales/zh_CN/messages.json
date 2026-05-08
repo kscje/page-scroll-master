@@ -1,0 +1,30 @@
+{
+  "extensionName": {
+    "message": "页面滚动助手",
+    "description": "插件名称"
+  },
+  "extensionDescription": {
+    "message": "一键滚动到页面顶部或底部，支持平滑动画效果",
+    "description": "插件描述"
+  },
+  "commandScrollToTop": {
+    "message": "滚动到页面顶部",
+    "description": "快捷键命令描述"
+  },
+  "commandScrollToBottom": {
+    "message": "滚动到页面底部",
+    "description": "快捷键命令描述"
+  },
+  "popupScrollTop": {
+    "message": "滚动到顶部",
+    "description": "弹窗按钮标签"
+  },
+  "popupScrollBottom": {
+    "message": "滚动到底部",
+    "description": "弹窗按钮标签"
+  },
+  "popupSettings": {
+    "message": "设置",
+    "description": "弹窗设置按钮标签"
+  }
+}

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Page Scroll Master - 设置</title>
+  <style>
+    body {
+      padding: 20px;
+      padding-top: 80px; /* 为固定的header-row留出空间 */
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 0 auto;
+      /* 为固定定位的预览按钮留出空间 */
+      min-height: 100vh;
+      position: relative;
+    }
+    h1 {
+      color: #333;
+    }
+    .setting-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .speed-value {
+      font-size: 14px;
+      color: #666;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4A9EDD;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #3a8bc9;
+    }
+    button:active {
+      background-color: #2a7bb9;
+    }
+    
+    /* 保存按钮样式 */
+    #saveButton {
+      margin-top: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      padding: 8px 16px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    #saveButton:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
+    }
+    .size-input-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .size-input-container input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .size-input-container select {
+      width: 80px;
+      flex: none;
+    }
+    .color-input-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .color-input-container input[type="color"] {
+      width: 50px;
+      height: 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .color-input-container input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    /* 顶部固定栏样式 */
+    .header-row {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 10001;
+      max-width: 500px;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+    
+    .header-row h1 {
+      margin: 0;
+    }
+    
+    .language-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .language-icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+    
+    .language-selector select {
+      margin-bottom: 0;
+      width: auto;
+      min-width: 100px;
+      padding: 6px 10px;
+    }
+    
+    /* 颜色说明文字样式 */
+    .color-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      font-style: italic;
+    }
+    
+    /* 预览说明样式 */
+    .preview-info {
+      background-color: #e8f4fd;
+      border-left: 4px solid #4A9EDD;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .preview-info p {
+      margin: 0;
+      font-size: 13px;
+      color: #555;
+    }
+    
+    /* 实际预览按钮样式 - 固定在设置页面上 */
+    .preview-scroll-button {
+      position: fixed;
+      border-radius: 50%;
+      border: none;
+      background-color: #4A9EDD;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      /* 移除top和bottom的过渡效果，确保垂直对齐方式切换时即刻变动 */
+      transition: 
+        left 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        right 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      pointer-events: auto;
+      padding: 0;
+      margin: 0;
+      line-height: 1;
+      text-align: center;
+      vertical-align: middle;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      box-sizing: border-box;
+      overflow: hidden;
+      z-index: 10000;
+      /* 性能优化 */
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      perspective: 1000;
+      -webkit-perspective: 1000;
+      /* 避免动画期间的文本选择 */
+      -webkit-touch-callout: none;
+    }
+    
+    .preview-scroll-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .preview-scroll-button:active {
+      transform: scale(0.95);
+    }
+    
+    .preview-scroll-button svg {
+      width: 60%;
+      height: 60%;
+      stroke: white;
+      stroke-width: 3;
+      display: block;
+      fill: none;
+      /* 防止SVG在动画中抖动 */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      /* 确保SVG属性与实际页面一致 */
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    
+    /* 隐藏状态 */
+    .preview-scroll-button.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.8);
+    }
+    
+    /* 针对Firefox的优化 */
+    @-moz-document url-prefix() {
+      .preview-scroll-button {
+        transition: 
+          left 0.15s ease-out,
+          right 0.15s ease-out,
+          width 0.15s ease-out,
+          height 0.15s ease-out,
+          transform 0.2s ease-out,
+          box-shadow 0.2s ease,
+          background-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+    }
+    
+    /* 针对Safari的优化 */
+    @supports (-webkit-touch-callout: none) {
+      .preview-scroll-button {
+        /* Safari特定的硬件加速 */
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-row">
+    <h1 data-i18n="settings.title">Page Scroll Master</h1>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="language-selector">
+        <span class="language-icon">🌐</span>
+        <select id="languageSelector">
+          <option value="auto">自动</option>
+          <option value="zh-CN">中文</option>
+          <option value="en-US">English</option>
+        </select>
+      </div>
+      <button id="saveButton" data-i18n="settings.saveButton">保存</button>
+    </div>
+  </div>
+  
+  <div class="setting-group">
+    <label for="scrollSpeed" data-i18n="settings.scrollSpeed">滚动速度</label>
+    <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="1000">
+    <div class="speed-value" id="speedValue">1000ms</div>
+  </div>
+  
+  <div class="setting-group">
+    <label data-i18n="settings.buttonPosition">按钮位置</label>
+    
+    <label for="horizontalPosition" data-i18n="settings.horizontalPosition">水平位置</label>
+    <select id="horizontalPosition">
+      <option value="right" data-i18n="settings.position.right">右侧边缘</option>
+      <option value="left" data-i18n="settings.position.left">左侧边缘</option>
+    </select>
+    
+    <label for="verticalAlignment" data-i18n="settings.verticalAlignment">垂直对齐方式</label>
+    <select id="verticalAlignment">
+      <option value="center" data-i18n="settings.alignment.center">居中显示</option>
+      <option value="top" data-i18n="settings.alignment.top">顶部对齐</option>
+      <option value="bottom" data-i18n="settings.alignment.bottom">底部对齐</option>
+    </select>
+  </div>
+  
+  <div class="setting-group">
+    <label data-i18n="settings.buttonStyle">按钮样式</label>
+    
+    <label data-i18n="settings.buttonSize">按钮尺寸(px)</label>
+    <div style="margin-bottom: 10px;">
+      <input type="number" id="buttonSize" min="10" max="120" value="48" placeholder="输入尺寸" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+      <div id="sizeError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
+    </div>
+    
+    <label data-i18n="settings.topButtonColor">顶部按钮颜色</label>
+    <div class="color-input-container">
+      <input type="color" id="topButtonColor" value="#4A9EDD">
+      <input type="text" id="topButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+    </div>
+    
+    <label data-i18n="settings.bottomButtonColor">底部按钮颜色</label>
+    <div class="color-input-container">
+      <input type="color" id="bottomButtonColor" value="#4A9EDD">
+      <input type="text" id="bottomButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+    </div>
+
+    
+    <label data-i18n="settings.opacity">透明度</label>
+    <input type="range" id="opacity" min="0" max="100" step="1" value="100">
+    <div class="speed-value" id="opacityValue">100%</div>
+  </div>
+  
+  <div class="setting-group">
+    <label data-i18n="settings.shortcutSettings">快捷键设置</label>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="enableHoverHide" checked>
+      <label for="enableHoverHide" data-i18n="settings.enableHoverHide">启用鼠标悬停+快捷键隐藏按钮</label>
+    </div>
+    
+    <div id="hoverHideSettings" style="margin-top: 10px; padding-left: 28px;">
+      <label data-i18n="settings.hoverHideKey">快捷键组合</label>
+      <select id="hoverHideKey">
+        <option value="Alt" data-platform-name="alt">Alt</option>
+        <option value="Ctrl" selected data-platform-name="ctrl">Ctrl</option>
+        <option value="Shift" data-platform-name="shift">Shift</option>
+      </select>
+      <p style="font-size: 12px; color: #666; margin-top: 5px;" data-i18n="settings.hoverHideHint">提示：当鼠标悬停在按钮上并按住所选快捷键时，按钮将平滑隐藏</p>
+    </div>
+  </div>
+  
+
+  
+  <div class="setting-group" style="background-color: #e3f2fd; border-left: 4px solid #2196F3;">
+    <h3 data-i18n="settings.about">关于插件</h3>
+    <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
+    <a href="mailto:kscj.e@live.com" style="color: #2196F3; text-decoration: none;">kscj.e@live.com</a>
+  </div>
+  
+  <!-- 实际预览按钮 - 直接显示在设置页面上 -->
+  <button id="previewTopButton" class="preview-scroll-button" title="滚动到顶部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
+  <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
+  </button>
+  
+  <script src="options.js"></script>
+</body>
+</html>

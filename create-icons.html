@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Page Scroll Master - 图标生成工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .canvas-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .icon-preview {
+      text-align: center;
+    }
+    .icon-preview canvas {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+    .icon-preview p {
+      margin: 5px 0;
+      font-size: 12px;
+      color: #666;
+    }
+    .controls {
+      margin: 20px 0;
+    }
+    .control-group {
+      margin: 15px 0;
+    }
+    label {
+      display: inline-block;
+      width: 120px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="color"], input[type="text"], select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 200px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4A9EDD;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button:hover {
+      background-color: #3a8bc9;
+    }
+    .download-all {
+      background-color: #4CAF50;
+    }
+    .download-all:hover {
+      background-color: #45a049;
+    }
+    .instructions {
+      background-color: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #1976D2;
+    }
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Page Scroll Master 图标生成工具</h1>
+  
+  <div class="container">
+    <h2>图标预览</h2>
+    <div class="canvas-container">
+      <div class="icon-preview">
+        <canvas id="canvas16" width="16" height="16"></canvas>
+        <p>16x16px</p>
+        <p>工具栏图标</p>
+        <button data-download-size="16">下载</button>
+      </div>
+      <div class="icon-preview">
+        <canvas id="canvas32" width="32" height="32"></canvas>
+        <p>32x32px</p>
+        <p>Retina显示</p>
+        <button data-download-size="32">下载</button>
+      </div>
+      <div class="icon-preview">
+        <canvas id="canvas48" width="48" height="48"></canvas>
+        <p>48x48px</p>
+        <p>扩展管理页</p>
+        <button data-download-size="48">下载</button>
+      </div>
+      <div class="icon-preview">
+        <canvas id="canvas128" width="128" height="128"></canvas>
+        <p>128x128px</p>
+        <p>应用商店</p>
+        <button data-download-size="128">下载</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>自定义设置</h2>
+    <div class="controls">
+      <div class="control-group">
+        <label>背景颜色:</label>
+        <input type="color" id="bgColor" value="#4A9EDD">
+      </div>
+      <div class="control-group">
+        <label>图标颜色:</label>
+        <input type="color" id="iconColor" value="#FFFFFF">
+      </div>
+      <div class="control-group">
+        <label>图标样式:</label>
+        <select id="iconStyle">
+          <option value="arrow">上下箭头</option>
+          <option value="scroll">滚动条</option>
+          <option value="circle">圆形</option>
+          <option value="square">方形</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label></label>
+        <button id="updateIconsButton">更新预览</button>
+        <button class="download-all" id="downloadAllButton">下载全部</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h3>📋 使用说明</h3>
+    <ol>
+      <li>选择您喜欢的颜色和图标样式</li>
+      <li>点击"更新预览"查看效果</li>
+      <li>点击"下载全部"保存所有尺寸的图标</li>
+      <li>将下载的图标文件放入项目的 <code>icons/</code> 目录</li>
+      <li>确保文件名分别为：icon16.png, icon32.png, icon48.png, icon128.png</li>
+      <li>重新加载扩展即可看到新图标</li>
+    </ol>
+  </div>
+
+  <script src="create-icons.js"></script>
+</body>
+</html>

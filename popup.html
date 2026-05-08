@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Page Scroll Master</title>
+  <style>
+    body {
+      width: 200px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+    .button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .top-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .bottom-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .settings-button {
+      background-color: #f1f1f1;
+      color: #333;
+      font-size: 12px;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="button top-button" id="scrollTop" data-i18n="popupScrollTop">Scroll to Top</button>
+    <button class="button bottom-button" id="scrollBottom" data-i18n="popupScrollBottom">Scroll to Bottom</button>
+    <button class="button settings-button" id="openSettings" data-i18n="popupSettings">Settings</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
