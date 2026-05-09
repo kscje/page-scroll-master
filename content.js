@@ -1,5 +1,7 @@
 // 默认设置
 let scrollSpeed = 1000; // 默认滚动速度为1000ms
+let isExtensionEnabled = true; // 当前网站插件启用状态
+const currentHostname = window.location.hostname; // 当前页面域名
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
@@ -65,8 +67,22 @@ function loadSettings() {
     if (result.buttonSettings) {
       buttonSettings = { ...buttonSettings, ...result.buttonSettings };
     }
-    initializeButton();
+    loadExtensionEnabledState();
   });
+}
+
+function loadExtensionEnabledState() {
+  chrome.storage.local.get(['enableStates'], function (result) {
+    var states = normalizeEnableStates(result.enableStates);
+    isExtensionEnabled = states[currentHostname] !== false;
+    if (isExtensionEnabled) {
+      initializeButton();
+    }
+  });
+}
+
+function normalizeEnableStates(states) {
+  return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
 }
 
 // 平滑滚动到顶部
@@ -179,6 +195,22 @@ function createScrollButton() {
   
   // 应用显示/隐藏设置
   updateButtonVisibility();
+}
+
+// 移除滚动按钮
+function removeButton() {
+  const host = document.getElementById(HOST_ID);
+  if (!host) return;
+
+  const root = host.shadowRoot;
+  if (root) {
+    const state = hoverHideStateMap.get(root.getElementById(CONTAINER_ID));
+    if (state && state.cleanup) {
+      state.cleanup();
+    }
+  }
+
+  host.remove();
 }
 
 // 添加按钮样式
@@ -613,8 +645,10 @@ function initializeButton() {
 // 监听来自popup的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'scrollToTop') {
+    if (!isExtensionEnabled) return;
     scrollToTop();
   } else if (message.action === 'scrollToBottom') {
+    if (!isExtensionEnabled) return;
     scrollToBottom();
   } else if (message.action === 'updateSpeed') {
     scrollSpeed = message.speed;
@@ -636,6 +670,21 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateButtonPosition();
     updateButtonVisibility();
     updateButtonStyle();
+  }
+  if (namespace === 'local' && changes.enableStates) {
+    var newStates = normalizeEnableStates(changes.enableStates.newValue);
+    var newEnabled = newStates[currentHostname] !== false;
+
+    if (newEnabled !== isExtensionEnabled) {
+      isExtensionEnabled = newEnabled;
+      if (isExtensionEnabled) {
+        if (!document.getElementById(HOST_ID)) {
+          initializeButton();
+        }
+      } else {
+        removeButton();
+      }
+    }
   }
 });
 

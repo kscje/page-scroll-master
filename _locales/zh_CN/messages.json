@@ -17,14 +17,18 @@
   },
   "popupScrollTop": {
     "message": "滚动到顶部",
-    "description": "弹窗按钮标签"
+    "description": "浮动按钮提示"
   },
   "popupScrollBottom": {
     "message": "滚动到底部",
-    "description": "弹窗按钮标签"
+    "description": "浮动按钮提示"
   },
   "popupSettings": {
     "message": "设置",
     "description": "弹窗设置按钮标签"
+  },
+  "popupEnableToggle": {
+    "message": "在该网站启用",
+    "description": "弹窗启用开关标签"
   }
 }

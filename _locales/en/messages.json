@@ -17,14 +17,18 @@
   },
   "popupScrollTop": {
     "message": "Scroll to Top",
-    "description": "Popup button label"
+    "description": "Floating button tooltip"
   },
   "popupScrollBottom": {
     "message": "Scroll to Bottom",
-    "description": "Popup button label"
+    "description": "Floating button tooltip"
   },
   "popupSettings": {
     "message": "Settings",
     "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "Enable on this site",
+    "description": "Popup enable toggle label"
   }
 }

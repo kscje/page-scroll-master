@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-05-09
+
+### Added
+- ✅ 工具栏弹窗新增当前网站启用/停用开关
+- ✅ 新增按域名保存站点启用状态的本地存储逻辑
+- ✅ 新增弹窗开关状态持久化测试
+- ✅ 新增生产构建脚本，使用白名单生成 Chrome Web Store ZIP 包
+
+### Changed
+- ✅ 工具栏弹窗聚焦站点开关与设置入口
+- ✅ 商店发布包改由 `build.js` 统一复制、压缩和校验内容
+- ✅ 扩展清单补充作者、主页、最低 Chrome 版本与 `activeTab` 权限
+
 ## [1.3.0] - 2026-04-07
 
 ### Added
@@ -60,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
-[1.3.0]: https://github.com/yourusername/page-scroll-master/releases/tag/v1.3.0
-[1.2.0]: https://github.com/yourusername/page-scroll-master/releases/tag/v1.2.0
-[1.0.0]: https://github.com/yourusername/page-scroll-master/releases/tag/v1.0.0
-[0.1.0]: https://github.com/yourusername/page-scroll-master/releases/tag/v0.1.0
+[1.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.0
+[1.3.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.3.0
+[1.2.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.2.0
+[1.0.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.0.0
+[0.1.0]: https://github.com/kscje/page-scroll-master/releases/tag/v0.1.0

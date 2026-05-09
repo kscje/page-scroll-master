@@ -22,7 +22,7 @@
 {
   "manifest_version": 3,
   "name": "Page Scroll Master",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "一键滚动到页面顶部及底部的浏览器插件",
   "icons": {
     "16": "icons/icon16.png",
@@ -38,7 +38,7 @@
     "default_title": "Page Scroll Master",
     "default_popup": "popup.html"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -435,6 +435,6 @@ cd /Users/gemingming/AI_Program/Page Scroll Master
 
 ---
 
-**发布时间**：2026-04-07  
-**版本**：1.3.0  
+**发布时间**：2026-05-09
+**版本**：1.4.0
 **状态**：准备就绪
