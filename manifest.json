@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "kscje",
   "homepage_url": "https://github.com/kscje/page-scroll-master",
   "minimum_chrome_version": "90",
   "permissions": ["storage", "activeTab"],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   
   "icons": {
     "16": "icons/icon16.png",
@@ -49,5 +53,8 @@
       "description": "__MSG_commandScrollToBottom__"
     }
   },
-  "options_page": "options.html"
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  }
 }

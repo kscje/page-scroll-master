@@ -37,10 +37,10 @@ function cleanBuildDir() {
 }
 
 function validateManifest() {
-  const required = ['manifest_version', 'name', 'version', 'description'];
+  const requiredFields = ['manifest_version', 'name', 'version', 'description'];
   const errors = [];
 
-  for (const key of required) {
+  for (const key of requiredFields) {
     if (!MANIFEST[key]) {
       errors.push(`Missing required field: ${key}`);
     }
@@ -61,6 +61,10 @@ function validateManifest() {
 
   if (MANIFEST.description && MANIFEST.description.length > 132) {
     errors.push('description exceeds 132 character limit');
+  }
+
+  if (!MANIFEST.options_page && !MANIFEST.options_ui) {
+    errors.push('Missing options_page or options_ui field');
   }
 
   if (MANIFEST.permissions) {
@@ -105,25 +109,60 @@ function minifyHTML(filePath) {
 
   content = content.replace(/<!--[\s\S]*?-->/g, '');
 
-  content = content.replace(/\s+/g, ' ');
-  content = content.replace(/>\s+</g, '><');
+  content = content.replace(/<!DOCTYPE[^>]*>/gi, '');
 
-  content = content.replace(/\s*([{};:,>])\s*/g, '$1');
+  const preservedBlocks = [];
+  const blockPlaceholder = '___PRESERVED_BLOCK_';
 
   content = content.replace(
-    /<(style|script)\b[^>]*>([\s\S]*?)<\/\1>/g,
-    (match, tag, body) => {
-      const trimmed = body.replace(/^\s+|\s+$/g, '');
-      return `<${tag}>${trimmed}</${tag}>`;
+    /<(style|script)\b([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (match, tag, attrs, body) => {
+      const index = preservedBlocks.length;
+      let minifiedBody = body;
+
+      if (tag.toLowerCase() === 'style') {
+        minifiedBody = minifyCSSContent(body);
+      } else if (tag.toLowerCase() === 'script') {
+        minifiedBody = minifyScriptContent(body);
+      }
+
+      preservedBlocks.push(`<${tag}${attrs}>${minifiedBody}</${tag}>`);
+      return `${blockPlaceholder}${index}___`;
     }
   );
+
+  content = content.replace(/>\s+</g, '><');
+  content = content.replace(/\s{2,}/g, ' ');
+  content = content.replace(/^\s+|\s+$/gm, '');
 
   content = content.replace(/\n/g, '');
   content = content.replace(/\r/g, '');
 
+  preservedBlocks.forEach((block, index) => {
+    content = content.replace(`${blockPlaceholder}${index}___`, block);
+  });
+
   content = '<!DOCTYPE html>\n' + content.trim() + '\n';
 
   fs.writeFileSync(filePath, content, 'utf-8');
+}
+
+function minifyCSSContent(css) {
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  css = css.replace(/\s+/g, ' ');
+  css = css.replace(/\s*([{};:,>])\s*/g, '$1');
+  css = css.replace(/;\}/g, '}');
+  css = css.replace(/^\s+|\s+$/g, '');
+  return css;
+}
+
+function minifyScriptContent(js) {
+  js = js.replace(/\/\/.*$/gm, '');
+  js = js.replace(/\/\*[\s\S]*?\*\//g, '');
+  js = js.replace(/^\s*[\r\n]/gm, '');
+  js = js.replace(/[ \t]+/g, ' ');
+  js = js.replace(/^\s+|\s+$/g, '');
+  return js;
 }
 
 function minifyJS(filePath) {
@@ -158,12 +197,59 @@ function resolveLocalTerser() {
 function basicMinifyJS(filePath) {
   let content = fs.readFileSync(filePath, 'utf-8');
 
-  content = content.replace(/\/\/.*$/gm, '');
-  content = content.replace(/\/\*[\s\S]*?\*\//g, '');
+  content = removeCommentsSafely(content);
+
   content = content.replace(/^\s*[\r\n]/gm, '');
   content = content.replace(/[ \t]+/g, ' ');
 
   fs.writeFileSync(filePath, content, 'utf-8');
+}
+
+function removeCommentsSafely(code) {
+  let result = '';
+  let i = 0;
+  const len = code.length;
+
+  while (i < len) {
+    if (code[i] === '/' && code[i + 1] === '/') {
+      while (i < len && code[i] !== '\n') i++;
+      continue;
+    }
+    if (code[i] === '/' && code[i + 1] === '*') {
+      i += 2;
+      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+    if (code[i] === '"' || code[i] === "'" || code[i] === '`') {
+      const quote = code[i];
+      result += quote;
+      i++;
+      while (i < len) {
+        if (code[i] === '\\') {
+          result += code[i] + code[i + 1];
+          i += 2;
+        } else if (code[i] === quote) {
+          result += quote;
+          i++;
+          break;
+        } else {
+          result += code[i];
+          i++;
+        }
+      }
+      continue;
+    }
+    if (code[i] === '/') {
+      if (i + 1 < len && (code[i + 1] === '/' || code[i + 1] === '*')) {
+        continue;
+      }
+    }
+    result += code[i];
+    i++;
+  }
+
+  return result;
 }
 
 function createPackage() {
@@ -205,10 +291,113 @@ function listPackageContents(zipPath) {
   console.log(output);
 }
 
+function verifyBuildOutput() {
+  console.log('\n[Verification] Checking build output...');
+  let ok = true;
+
+  const htmlFiles = INCLUDED_FILES.filter(f => f.endsWith('.html'));
+  for (const file of htmlFiles) {
+    const destPath = path.join(BUILD_DIR, file);
+    if (!fs.existsSync(destPath)) {
+      console.error(`  ✗ Missing: ${file}`);
+      ok = false;
+      continue;
+    }
+    const content = fs.readFileSync(destPath, 'utf-8');
+    if (!content.includes('<!DOCTYPE html>')) {
+      console.error(`  ✗ ${file}: missing DOCTYPE`);
+      ok = false;
+    }
+    if (file === 'options.html') {
+      const hasPreviewTop = content.includes('previewTopButton');
+      const hasPreviewBottom = content.includes('previewBottomButton');
+      const hasScript = content.includes('options.js');
+      if (!hasPreviewTop) {
+        console.error(`  ✗ options.html: missing previewTopButton element`);
+        ok = false;
+      }
+      if (!hasPreviewBottom) {
+        console.error(`  ✗ options.html: missing previewBottomButton element`);
+        ok = false;
+      }
+      if (!hasScript) {
+        console.error(`  ✗ options.html: missing options.js script reference`);
+        ok = false;
+      }
+    }
+    console.log(`  ✓ ${file} verified`);
+  }
+
+  const jsFiles = INCLUDED_FILES.filter(f => f.endsWith('.js'));
+  for (const file of jsFiles) {
+    const destPath = path.join(BUILD_DIR, file);
+    if (!fs.existsSync(destPath)) {
+      console.error(`  ✗ Missing: ${file}`);
+      ok = false;
+      continue;
+    }
+    const content = fs.readFileSync(destPath, 'utf-8');
+    if (file === 'options.js') {
+      if (!content.includes('updatePreviewButtons')) {
+        console.error(`  ✗ options.js: missing updatePreviewButtons function (may have been mangled/removed)`);
+        ok = false;
+      }
+      if (!content.includes('getElementById')) {
+        console.error(`  ✗ options.js: missing getElementById calls (may have been corrupted)`);
+        ok = false;
+      }
+    }
+    if (file === 'content.js') {
+      if (!content.includes('createScrollButton')) {
+        console.error(`  ✗ content.js: missing createScrollButton function`);
+        ok = false;
+      }
+    }
+    console.log(`  ✓ ${file} verified`);
+  }
+
+  if (!ok) {
+    console.error('\n  ✗ Build verification FAILED');
+    process.exit(1);
+  }
+  console.log('  ✓ All build output files verified successfully');
+}
+
+function runRegressionTests() {
+  console.log('\n[Regression] Running packaged settings tests...');
+
+  execFileSync(process.execPath, ['--check', path.join(BUILD_DIR, 'options.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, ['--check', path.join(BUILD_DIR, 'content.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-toggle-state.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-options-page.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-options-page.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      OPTIONS_SOURCE: path.join(BUILD_DIR, 'options.js'),
+    },
+    stdio: 'inherit',
+  });
+
+  console.log('  ✓ Regression tests passed');
+}
+
 function main() {
   console.log('═══ Page Scroll Master — Production Build ═══\n');
 
-  console.log('[1/5] Validating manifest.json...');
+  console.log('[1/7] Validating manifest.json...');
   const errors = validateManifest();
   if (errors.length > 0) {
     console.error('  ✗ Manifest validation failed:');
@@ -217,13 +406,13 @@ function main() {
   }
   console.log('  ✓ Manifest validation passed');
 
-  console.log('\n[2/5] Preparing build directory...');
+  console.log('\n[2/7] Preparing build directory...');
   cleanBuildDir();
   console.log(`  ✓ Build directory: ${BUILD_DIR}`);
 
-  console.log('\n[3/5] Copying files...');
+  console.log('\n[3/7] Copying files...');
   for (const file of INCLUDED_FILES) {
-    const dest = copyFile(file);
+    copyFile(file);
     console.log(`  ✓ ${file}`);
   }
   for (const dir of INCLUDED_DIRS) {
@@ -231,7 +420,7 @@ function main() {
     console.log(`  ✓ ${dir}/`);
   }
 
-  console.log('\n[4/5] Minifying files...');
+  console.log('\n[4/7] Minifying files...');
   for (const file of INCLUDED_FILES) {
     const ext = path.extname(file);
     const destPath = path.join(BUILD_DIR, file);
@@ -243,8 +432,13 @@ function main() {
     }
   }
 
-  console.log('\n[5/5] Creating ZIP package...');
+  verifyBuildOutput();
+  runRegressionTests();
+
+  console.log('\n[6/7] Creating ZIP package...');
   const result = createPackage();
+
+  console.log('\n[7/7] Verifying ZIP contents...');
   listPackageContents(result.zipPath);
 
   console.log('\n═══ Build Complete ═══');

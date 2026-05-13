@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-05-12
+
+### Fixed
+- ✅ 修复设置页预览按钮样式异常问题（opacity 控制失效、滚动速度控制失效）
+- ✅ 修复构建脚本对 HTML 中内联样式和脚本的破坏性压缩问题
+- ✅ 修复 JavaScript 注释移除时误删字符串内容的问题
+- ✅ 添加内容安全策略（CSP）声明，符合 Chrome Web Store 审核要求
+- ✅ 升级 `options_page` 为 MV3 推荐的 `options_ui` 格式
+
+### Changed
+- ✅ 重构 `build.js` 的 HTML 压缩逻辑：先提取 style/script 块再压缩
+- ✅ 使用状态机方式安全移除 JavaScript 注释（避免匹配字符串内的 `//`）
+- ✅ 新增构建后验证步骤，确保关键功能完整性
+
 ## [1.4.0] - 2026-05-09
 
 ### Added
@@ -73,6 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[1.4.1]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.1
 [1.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.0
 [1.3.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.3.0
 [1.2.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.2.0
