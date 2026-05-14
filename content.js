@@ -2,6 +2,7 @@
 let scrollSpeed = 1000; // 默认滚动速度为1000ms
 let isExtensionEnabled = true; // 当前网站插件启用状态
 const currentHostname = window.location.hostname; // 当前页面域名
+let currentScrollContainer = null; // 当前页面的滚动容器
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
@@ -20,6 +21,31 @@ let buttonSettings = {
   enableHoverHide: true, // 启用鼠标悬停+快捷键隐藏按钮
   hoverHideKey: 'Ctrl' // 快捷键组合
 };
+
+// 自动检测页面的滚动容器
+function findScrollContainer() {
+  if (document.scrollingElement && document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight) {
+    return document.scrollingElement;
+  }
+
+  const candidates = document.querySelectorAll('div, section, main, article, aside');
+  let bestCandidate = document.documentElement;
+  let bestArea = 0;
+
+  for (const el of candidates) {
+    if (el.scrollHeight <= el.clientHeight) continue;
+    const overflowY = window.getComputedStyle(el).overflowY;
+    if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+    const rect = el.getBoundingClientRect();
+    const area = rect.width * rect.height;
+    if (area > bestArea && rect.height >= window.innerHeight * 0.4) {
+      bestArea = area;
+      bestCandidate = el;
+    }
+  }
+
+  return bestCandidate;
+}
 
 function getScrollRoot() {
   const host = document.getElementById(HOST_ID);
@@ -45,17 +71,8 @@ function getButtonElements() {
 }
 
 function getScrollTargetBottom() {
-  const body = document.body;
-  const documentElement = document.documentElement;
-  const scrollHeight = Math.max(
-    body ? body.scrollHeight : 0,
-    body ? body.offsetHeight : 0,
-    documentElement ? documentElement.clientHeight : 0,
-    documentElement ? documentElement.scrollHeight : 0,
-    documentElement ? documentElement.offsetHeight : 0
-  );
-
-  return Math.max(0, scrollHeight - window.innerHeight);
+  const container = currentScrollContainer || document.documentElement;
+  return Math.max(0, container.scrollHeight - container.clientHeight);
 }
 
 // 从存储中加载用户设置
@@ -87,7 +104,8 @@ function normalizeEnableStates(states) {
 
 // 平滑滚动到顶部
 function scrollToTop() {
-  const start = window.pageYOffset;
+  const container = currentScrollContainer || document.documentElement;
+  const start = container.scrollTop;
   const startTime = performance.now();
   
   function scroll(currentTime) {
@@ -95,7 +113,7 @@ function scrollToTop() {
     const progress = Math.min(elapsed / scrollSpeed, 1);
     const easeProgress = easeInOutCubic(progress);
     
-    window.scrollTo(0, start * (1 - easeProgress));
+    container.scrollTop = start * (1 - easeProgress);
     
     if (progress < 1) {
       requestAnimationFrame(scroll);
@@ -107,7 +125,8 @@ function scrollToTop() {
 
 // 平滑滚动到底部
 function scrollToBottom() {
-  const start = window.pageYOffset;
+  const container = currentScrollContainer || document.documentElement;
+  const start = container.scrollTop;
   const end = getScrollTargetBottom();
   const startTime = performance.now();
   
@@ -116,7 +135,7 @@ function scrollToBottom() {
     const progress = Math.min(elapsed / scrollSpeed, 1);
     const easeProgress = easeInOutCubic(progress);
     
-    window.scrollTo(0, start + (end - start) * easeProgress);
+    container.scrollTop = start + (end - start) * easeProgress;
     
     if (progress < 1) {
       requestAnimationFrame(scroll);
@@ -638,6 +657,7 @@ function adjustColorBrightness(color, percent) {
 
 // 初始化按钮
 function initializeButton() {
+  currentScrollContainer = findScrollContainer();
   createScrollButton();
   updateButtonStyle();
 }

@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.1] - 2026-05-12
+## [1.5.0] - 2026-05-14
+
+### Added
+- ✅ 新增滚动容器自动检测机制（`findScrollContainer`），支持自定义滚动容器页面
+- ✅ 滚动逻辑全面适配自定义容器：`scrollToTop`、`scrollToBottom`、`getScrollTargetBottom` 改用容器 `scrollTop`/`scrollHeight` 替代 `window.scrollTo`/`window.pageYOffset`
+- ✅ 扩展兼容飞书 Wiki、钉钉文档、Notion、语雀等使用自定义滚动容器的 SPA 页面
+
+### Changed
+- ✅ 容器检测策略：优先 `document.scrollingElement` → 遍历候选元素（`div, section, main, article, aside`）找 overflow:auto/scroll 最大容器 → 兜底 `document.documentElement`
+- ✅ `initializeButton` 初始化时自动执行容器检测
+
+## [1.4.2] - 2026-05-13
 
 ### Fixed
 - ✅ 修复设置页预览按钮样式异常问题（opacity 控制失效、滚动速度控制失效）
@@ -87,6 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[1.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.5.0
+[1.4.2]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.2
 [1.4.1]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.1
 [1.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.0
 [1.3.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.3.0
