@@ -13,7 +13,12 @@ const translations = {
     'settings.alignment.top': '顶部对齐',
     'settings.alignment.bottom': '底部对齐',
     'settings.buttonStyle': '按钮样式',
+    'settings.buttonShape': '按钮形状',
+    'settings.buttonShape.round': '圆形',
+    'settings.buttonShape.square': '正方形',
     'settings.buttonSize': '按钮尺寸(px)',
+    'settings.buttonSpacing': '按钮间距(px)',
+    'settings.spacingError': '按钮间距必须在0px至800px之间',
     'settings.topButtonColor': '顶部按钮颜色',
     'settings.bottomButtonColor': '底部按钮颜色',
     'settings.opacity': '透明度',
@@ -48,7 +53,12 @@ const translations = {
     'settings.alignment.top': 'Top',
     'settings.alignment.bottom': 'Bottom',
     'settings.buttonStyle': 'Button Style',
+    'settings.buttonShape': 'Button Shape',
+    'settings.buttonShape.round': 'Round',
+    'settings.buttonShape.square': 'Square',
     'settings.buttonSize': 'Button Size(px)',
+    'settings.buttonSpacing': 'Button Spacing(px)',
+    'settings.spacingError': 'Button spacing must be between 0px and 800px',
     'settings.topButtonColor': 'Top Button Color',
     'settings.bottomButtonColor': 'Bottom Button Color',
     'settings.opacity': 'Opacity',
@@ -171,6 +181,8 @@ function updatePreviewButtons() {
   
   // 获取当前设置
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
+  const buttonShape = document.getElementById('buttonShape').value;
+  const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
   const topButtonColor = document.getElementById('topButtonColor').value;
   const bottomButtonColor = document.getElementById('bottomButtonColor').value;
   const opacity = parseInt(document.getElementById('opacity').value) / 100;
@@ -180,11 +192,21 @@ function updatePreviewButtons() {
   // 验证并调整按钮尺寸（允许10-120px范围）
   let displaySize = buttonSize;
   if (isNaN(displaySize)) {
-    displaySize = 48; // 默认值
+    displaySize = 40; // 默认值
   } else if (displaySize < 10) {
     displaySize = 10;
   } else if (displaySize > 120) {
     displaySize = 120;
+  }
+  
+  // 验证并调整按钮间距
+  let displaySpacing = buttonSpacing;
+  if (isNaN(displaySpacing)) {
+    displaySpacing = 8;
+  } else if (displaySpacing < 0) {
+    displaySpacing = 0;
+  } else if (displaySpacing > 800) {
+    displaySpacing = 800;
   }
   
   // 计算按钮位置 - 使用fixed定位直接显示在设置页面上
@@ -204,7 +226,7 @@ function updatePreviewButtons() {
   const size = displaySize + 'px';
   
   // 计算按钮组的总高度（两个按钮 + 间距）
-  const totalGroupHeight = (displaySize * 2) + BUTTON_GAP;
+  const totalGroupHeight = (displaySize * 2) + displaySpacing;
   
   // 顶部按钮位置计算
   let topButtonTop, topButtonBottom;
@@ -220,7 +242,7 @@ function updatePreviewButtons() {
   } else {
     // bottom
     topButtonTop = 'auto';
-    topButtonBottom = `calc(${EDGE_OFFSET}px + ${displaySize + BUTTON_GAP}px)`;
+    topButtonBottom = `calc(${EDGE_OFFSET}px + ${displaySize + displaySpacing}px)`;
   }
   
   // 底部按钮位置计算
@@ -228,10 +250,10 @@ function updatePreviewButtons() {
   if (verticalAlignment === 'center') {
     // 居中模式：底部按钮在顶部按钮下方固定间距
     const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
-    bottomButtonTop = `calc(${groupTopOffset} + ${displaySize + BUTTON_GAP}px)`;
+    bottomButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
-    bottomButtonTop = `calc(${EDGE_OFFSET}px + ${displaySize + BUTTON_GAP}px)`;
+    bottomButtonTop = `calc(${EDGE_OFFSET}px + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else {
     // bottom
@@ -244,6 +266,7 @@ function updatePreviewButtons() {
     // 设置顶部按钮样式 - 使用fixed定位
     topButton.style.width = size;
     topButton.style.height = size;
+    topButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
     topButton.style.backgroundColor = topButtonColor;
     topButton.style.opacity = opacity;
     topButton.style.left = leftPos;
@@ -257,6 +280,7 @@ function updatePreviewButtons() {
     // 设置底部按钮样式 - 使用fixed定位
     bottomButton.style.width = size;
     bottomButton.style.height = size;
+    bottomButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
     bottomButton.style.backgroundColor = bottomButtonColor;
     bottomButton.style.opacity = opacity;
     bottomButton.style.left = leftPos;
@@ -333,7 +357,7 @@ function setupPreviewButtonInteractions() {
   // 获取滚动速度设置
   function getScrollSpeed() {
     const speedInput = document.getElementById('scrollSpeed');
-    return speedInput ? parseInt(speedInput.value) : 1000;
+    return speedInput ? parseInt(speedInput.value) : 100;
   }
   
   // 平滑滚动到顶部
@@ -377,7 +401,9 @@ function loadSettings() {
       const buttonSettings = result.buttonSettings;
       document.getElementById('horizontalPosition').value = buttonSettings.horizontalPosition || 'right';
       document.getElementById('verticalAlignment').value = buttonSettings.verticalAlignment || 'center';
-      document.getElementById('buttonSize').value = buttonSettings.buttonSize || 48;
+      document.getElementById('buttonSize').value = buttonSettings.buttonSize || 40;
+      document.getElementById('buttonShape').value = buttonSettings.buttonShape || 'round';
+      document.getElementById('buttonSpacing').value = buttonSettings.buttonSpacing || 8;
       // 使用用户保存的颜色或默认颜色 #4A9EDD
       const defaultColor = '#4A9EDD';
       const topColor = buttonSettings.topButtonColor || defaultColor;
@@ -412,9 +438,15 @@ function loadSettings() {
 function saveSettings() {
   const scrollSpeed = parseInt(document.getElementById('scrollSpeed').value);
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
+  const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
   
   // 验证按钮尺寸 - 由于实时输入限制，这里可以简化验证
   if (isNaN(buttonSize) || buttonSize < 10 || buttonSize > 120) {
+    return;
+  }
+  
+  // 验证按钮间距
+  if (isNaN(buttonSpacing) || buttonSpacing < 0 || buttonSpacing > 800) {
     return;
   }
   
@@ -430,6 +462,8 @@ function saveSettings() {
     verticalAlignment: document.getElementById('verticalAlignment').value,
     buttonSize: buttonSize,
     buttonSizeUnit: 'px', // 固定为px单位
+    buttonShape: document.getElementById('buttonShape').value,
+    buttonSpacing: buttonSpacing,
     topButtonColor: validateHexColor(document.getElementById('topButtonColor').value),
     bottomButtonColor: validateHexColor(document.getElementById('bottomButtonColor').value),
     opacity: parseInt(document.getElementById('opacity').value),
@@ -570,6 +604,56 @@ function init() {
     sizeError.style.display = 'none';
   });
   
+  // 监听按钮间距变化
+  const buttonSpacingInput = document.getElementById('buttonSpacing');
+  const spacingError = document.getElementById('spacingError');
+  
+  buttonSpacingInput.addEventListener('input', (e) => {
+    const value = e.target.value;
+    if (value === '') {
+      spacingError.style.display = 'none';
+      updatePreviewButtons();
+      return;
+    }
+    
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) {
+      spacingError.style.display = 'none';
+    } else if (numValue < 0 || numValue > 800) {
+      getCurrentLanguage().then(lang => {
+        const errorText = translations[lang] && translations[lang]['settings.spacingError'] || 'Button spacing must be between 0px and 800px';
+        spacingError.textContent = errorText;
+        spacingError.style.display = 'block';
+      });
+    } else {
+      spacingError.style.display = 'none';
+    }
+    updatePreviewButtons();
+  });
+  
+  buttonSpacingInput.addEventListener('blur', (e) => {
+    const value = e.target.value;
+    if (value === '') {
+      spacingError.style.display = 'none';
+      return;
+    }
+    
+    const numValue = parseInt(value);
+    if (numValue < 0 || numValue > 800) {
+      getCurrentLanguage().then(lang => {
+        const errorText = translations[lang] && translations[lang]['settings.spacingError'] || 'Button spacing must be between 0px and 800px';
+        spacingError.textContent = errorText;
+        spacingError.style.display = 'block';
+      });
+    } else {
+      spacingError.style.display = 'none';
+    }
+  });
+  
+  buttonSpacingInput.addEventListener('focus', () => {
+    spacingError.style.display = 'none';
+  });
+  
   // 监听透明度变化
   document.getElementById('opacity').addEventListener('input', (e) => {
     document.getElementById('opacityValue').textContent = e.target.value + '%';
@@ -583,6 +667,11 @@ function init() {
   
   // 监听垂直对齐方式变化
   document.getElementById('verticalAlignment').addEventListener('change', () => {
+    updatePreviewButtons();
+  });
+  
+  // 监听按钮形状变化
+  document.getElementById('buttonShape').addEventListener('change', () => {
     updatePreviewButtons();
   });
   

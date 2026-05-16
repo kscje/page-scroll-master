@@ -90,6 +90,14 @@ function createOptionsPage(initialSyncData = {}) {
     verticalAlignment: createElement('verticalAlignment', { value: 'center' }),
     buttonSize: createElement('buttonSize', { value: '48' }),
     sizeError: createElement('sizeError'),
+    buttonShape: createElement('buttonShape', {
+      value: 'round',
+      children: [
+        createOption('round', 'Round'),
+        createOption('square', 'Square')
+      ]
+    }),
+    buttonSpacing: createElement('buttonSpacing', { value: '8' }),
     topButtonColor: createElement('topButtonColor', { value: '#4A9EDD' }),
     topButtonColorHex: createElement('topButtonColorHex', { value: '#4A9EDD' }),
     bottomButtonColor: createElement('bottomButtonColor', { value: '#4A9EDD' }),
@@ -248,6 +256,7 @@ assert(page.elements.previewBottomButton.style.backgroundColor === '#445566', 'p
 assert(page.elements.previewTopButton.style.opacity === 0.35, 'preview opacity is applied');
 assert(page.elements.previewTopButton.style.left === '10px', 'preview horizontal position is applied');
 assert(page.elements.previewBottomButton.style.bottom === '10px', 'preview vertical position is applied');
+assert(page.elements.buttonShape.value === 'round', 'button shape defaults to round when not in storage');
 
 console.log('\nTest 2: Live opacity and speed inputs update the page');
 page.elements.opacity.value = '42';
@@ -270,6 +279,23 @@ console.log('\nTest 4: Preview controls survive packaged output execution');
 assert(typeof page.elements.previewTopButton.listeners.click?.[0] === 'function', 'preview top click listener is registered');
 assert(typeof page.elements.previewBottomButton.listeners.click?.[0] === 'function', 'preview bottom click listener is registered');
 assert(page.appendedHeadElements.some((element) => element.id === 'preview-button-styles'), 'dynamic preview hover styles are injected');
+
+console.log('\nTest 5: Button shape change updates preview button border-radius');
+let page2 = createOptionsPage({
+  buttonSettings: {
+    buttonSize: 48,
+    buttonShape: 'round',
+    buttonSpacing: 8,
+    topButtonColor: '#4A9EDD',
+    bottomButtonColor: '#4A9EDD',
+    opacity: 100
+  }
+});
+assert(page2.elements.previewTopButton.style.borderRadius === '50%', 'preview buttons use round border-radius when shape is round');
+page2.elements.buttonShape.value = 'square';
+page2.elements.buttonShape.dispatch('change');
+assert(page2.elements.previewTopButton.style.borderRadius === '4px', 'preview buttons use square border-radius after shape change');
+assert(page2.elements.previewBottomButton.style.borderRadius === '4px', 'preview bottom button border-radius updates to square');
 
 console.log('\n=== Test summary ===');
 console.log(`Passed: ${passCount}`);

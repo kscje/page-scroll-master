@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-05-16
+
+### Added
+- ✅ 新增按钮形状选项：支持圆形（Round）和正方形（Square）两种形状，可在设置页中切换
+- ✅ 新增按钮间距选项（0-800px）：可自定义上下两个按钮之间的间距，包含输入实时验证
+- ✅ 新增 `buttonSpacing`、`buttonShape` 设置项至存储和同步逻辑
+
+### Fixed
+- ✅ 修复悬停隐藏功能中鼠标离开时即便快捷键仍按下也会错误显示按钮的问题
+- ✅ 添加 `isHidden` 状态追踪，确保隐藏条件满足时不会误显示按钮
+- ✅ 隐藏状态下按钮添加 `pointer-events: none` 防止点击穿透
+- ✅ 修复快捷键重复触发导致的隐藏状态混乱
+- ✅ `disconnect` 清理逻辑中补充 `isHidden` 状态重置
+
+### Changed
+- ✅ 默认滚动速度从 1000ms 调整为 100ms，即开即用体验更顺畅
+- ✅ 默认按钮尺寸从 48px 调整为 40px，视觉更紧凑
+- ✅ 设置页预览功能同步适配按钮形状和间距变化
+
 ## [1.5.0] - 2026-05-14
 
 ### Added
@@ -98,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[1.6.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.6.0
 [1.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.5.0
 [1.4.2]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.2
 [1.4.1]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.1

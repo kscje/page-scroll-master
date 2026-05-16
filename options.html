@@ -302,8 +302,8 @@
   
   <div class="setting-group">
     <label for="scrollSpeed" data-i18n="settings.scrollSpeed">滚动速度</label>
-    <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="1000">
-    <div class="speed-value" id="speedValue">1000ms</div>
+    <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="100">
+    <div class="speed-value" id="speedValue">100ms</div>
   </div>
   
   <div class="setting-group">
@@ -326,10 +326,24 @@
   <div class="setting-group">
     <label data-i18n="settings.buttonStyle">按钮样式</label>
     
+    <label data-i18n="settings.buttonShape">按钮形状</label>
+    <div style="margin-bottom: 10px;">
+      <select id="buttonShape" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; background: white;">
+        <option value="round" data-i18n="settings.buttonShape.round">圆形</option>
+        <option value="square" data-i18n="settings.buttonShape.square">正方形</option>
+      </select>
+    </div>
+    
     <label data-i18n="settings.buttonSize">按钮尺寸(px)</label>
     <div style="margin-bottom: 10px;">
       <input type="number" id="buttonSize" min="10" max="120" value="48" placeholder="输入尺寸" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
       <div id="sizeError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
+    </div>
+    
+    <label data-i18n="settings.buttonSpacing">按钮间距(px)</label>
+    <div style="margin-bottom: 10px;">
+      <input type="number" id="buttonSpacing" min="0" max="800" value="8" placeholder="输入间距" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+      <div id="spacingError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
     </div>
     
     <label data-i18n="settings.topButtonColor">顶部按钮颜色</label>

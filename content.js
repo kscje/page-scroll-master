@@ -1,5 +1,5 @@
 // 默认设置
-let scrollSpeed = 1000; // 默认滚动速度为1000ms
+let scrollSpeed = 100; // 默认滚动速度为100ms
 let isExtensionEnabled = true; // 当前网站插件启用状态
 const currentHostname = window.location.hostname; // 当前页面域名
 let currentScrollContainer = null; // 当前页面的滚动容器
@@ -13,13 +13,15 @@ let buttonSettings = {
   horizontalPosition: 'right',
   verticalAlignment: 'center',
   showButton: true, // 始终显示按钮
-  buttonSize: 48,
+  buttonSize: 40,
   buttonSizeUnit: 'px', // 固定为px单位
+  buttonSpacing: 8, // 按钮间距，默认8px
   topButtonColor: DEFAULT_BUTTON_COLOR, // 默认顶部按钮颜色
   bottomButtonColor: DEFAULT_BUTTON_COLOR, // 默认底部按钮颜色
   opacity: 100,
   enableHoverHide: true, // 启用鼠标悬停+快捷键隐藏按钮
-  hoverHideKey: 'Ctrl' // 快捷键组合
+  hoverHideKey: 'Ctrl', // 快捷键组合
+  buttonShape: 'round' // 按钮形状：round-圆形，square-正方形
 };
 
 // 自动检测页面的滚动容器
@@ -251,8 +253,8 @@ function addButtonStyles(root) {
     }
     
     .psm-scroll-button {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: none;
       background-color: ${DEFAULT_BUTTON_COLOR};
@@ -309,6 +311,10 @@ function addButtonStyles(root) {
       transform: scale(0.8);
     }
     
+    .psm-container.psm-hidden .psm-scroll-button {
+      pointer-events: none;
+    }
+    
     .psm-container.psm-fullscreen-hidden {
       opacity: 0 !important;
       pointer-events: none !important;
@@ -336,6 +342,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     state = {
       isHovering: false,
       isKeyPressed: false,
+      isHidden: false,
       lastHideTime: 0,
       hideTimeout: null,
       initialized: false
@@ -360,7 +367,9 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
   function handleMouseLeave(e) {
     e.stopPropagation();
     state.isHovering = false;
-    showButtons();
+    if (!state.isKeyPressed) {
+      showButtons();
+    }
   }
   
   // 键盘事件 - 优化处理逻辑，使用repeat属性防止重复触发
@@ -434,10 +443,18 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     if (!buttonContainer.classList.contains('psm-hidden')) {
       buttonContainer.classList.add('psm-hidden');
     }
+    state.isHidden = true;
   }
   
   // 显示按钮
   function showButtons() {
+    // 如果隐藏条件仍然满足，不执行显示操作
+    if (buttonSettings.enableHoverHide && 
+        state.isHovering && 
+        state.isKeyPressed) {
+      return;
+    }
+    
     // 清除隐藏定时器
     if (state.hideTimeout) {
       cancelAnimationFrame(state.hideTimeout);
@@ -448,6 +465,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     if (buttonContainer.classList.contains('psm-hidden')) {
       buttonContainer.classList.remove('psm-hidden');
     }
+    state.isHidden = false;
   }
   
   // 添加事件监听器 - 使用绑定后的函数引用，便于移除
@@ -517,6 +535,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     // 重置状态
     state.isHovering = false;
     state.isKeyPressed = false;
+    state.isHidden = false;
     state.initialized = false;
     
     // 显示按钮
@@ -532,6 +551,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     if (document.hidden) {
       state.isKeyPressed = false;
       state.isHovering = false;
+      state.isHidden = false;
       showButtons();
     }
   });
@@ -602,6 +622,12 @@ function updateButtonStyle() {
   bottomButton.style.width = size;
   bottomButton.style.height = size;
   
+  // 更新按钮形状
+  const shape = buttonSettings.buttonShape || 'round';
+  const borderRadius = shape === 'square' ? '4px' : '50%';
+  topButton.style.borderRadius = borderRadius;
+  bottomButton.style.borderRadius = borderRadius;
+  
   // 更新SVG图标大小（根据按钮尺寸自动调整）
   const iconSize = Math.max(40, Math.min(70, parseInt(buttonSettings.buttonSize) * 0.6)) + '%';
   const topIcon = topButton.querySelector('.scroll-icon');
@@ -620,6 +646,12 @@ function updateButtonStyle() {
   const bottomColor = validateColor(buttonSettings.bottomButtonColor);
   topButton.style.backgroundColor = topColor;
   bottomButton.style.backgroundColor = bottomColor;
+  
+  // 动态应用间距到容器
+  const buttonContainer = getButtonContainer();
+  if (buttonContainer) {
+    buttonContainer.style.gap = buttonSettings.buttonSpacing + 'px';
+  }
   
   // 更新透明度
   const opacity = buttonSettings.opacity / 100;
