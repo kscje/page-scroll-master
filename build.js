@@ -261,6 +261,9 @@ function createPackage() {
     fs.unlinkSync(zipPath);
   }
 
+  console.log(`\nCleaning .DS_Store files from build directory...`);
+  execSync(`find "${BUILD_DIR}" -name '.DS_Store' -delete`, { stdio: 'pipe' });
+
   console.log(`\nCreating package: ${zipName}`);
   execSync(`cd "${BUILD_DIR}" && zip -r "${zipPath}" .`, {
     stdio: 'pipe',
