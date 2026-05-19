@@ -321,6 +321,12 @@
       <option value="top" data-i18n="settings.alignment.top">顶部对齐</option>
       <option value="bottom" data-i18n="settings.alignment.bottom">底部对齐</option>
     </select>
+    
+    <label for="edgeDistance" data-i18n="settings.edgeDistance">边缘距离(px)</label>
+    <div style="margin-bottom: 10px;">
+      <input type="number" id="edgeDistance" min="0" max="200" value="12" placeholder="输入边缘距离" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+      <div id="edgeDistanceError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
+    </div>
   </div>
   
   <div class="setting-group">

@@ -98,6 +98,8 @@ function createOptionsPage(initialSyncData = {}) {
       ]
     }),
     buttonSpacing: createElement('buttonSpacing', { value: '8' }),
+    edgeDistance: createElement('edgeDistance', { value: '12' }),
+    edgeDistanceError: createElement('edgeDistanceError'),
     topButtonColor: createElement('topButtonColor', { value: '#4A9EDD' }),
     topButtonColorHex: createElement('topButtonColorHex', { value: '#4A9EDD' }),
     bottomButtonColor: createElement('bottomButtonColor', { value: '#4A9EDD' }),
@@ -240,6 +242,7 @@ let page = createOptionsPage({
     horizontalPosition: 'left',
     verticalAlignment: 'bottom',
     buttonSize: 64,
+    edgeDistance: 24,
     topButtonColor: '#112233',
     bottomButtonColor: '#445566',
     opacity: 35,
@@ -254,8 +257,8 @@ assert(page.elements.speedValue.textContent === '750ms', 'scroll speed label is 
 assert(page.elements.previewTopButton.style.width === '64px', 'preview top button size is applied');
 assert(page.elements.previewBottomButton.style.backgroundColor === '#445566', 'preview bottom button color is applied');
 assert(page.elements.previewTopButton.style.opacity === 0.35, 'preview opacity is applied');
-assert(page.elements.previewTopButton.style.left === '10px', 'preview horizontal position is applied');
-assert(page.elements.previewBottomButton.style.bottom === '10px', 'preview vertical position is applied');
+assert(page.elements.previewTopButton.style.left === '24px', 'preview horizontal edge distance is applied');
+assert(page.elements.previewBottomButton.style.bottom === '24px', 'preview vertical edge distance is applied');
 assert(page.elements.buttonShape.value === 'round', 'button shape defaults to round when not in storage');
 
 console.log('\nTest 2: Live opacity and speed inputs update the page');
@@ -272,6 +275,7 @@ console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.saveButton.dispatch('click');
 assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
+assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateSpeed' && entry.message.speed === 250), 'save sends updateSpeed message');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateButtonSettings' && entry.message.settings.opacity === 42), 'save sends updateButtonSettings message');
 

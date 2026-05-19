@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "页面滚动助手",
+    "message": "一键顶部/底部滚动",
     "description": "插件名称"
   },
   "extensionDescription": {
@@ -30,5 +30,13 @@
   "popupEnableToggle": {
     "message": "在该网站启用",
     "description": "弹窗启用开关标签"
+  },
+  "settingsEdgeDistance": {
+    "message": "边缘距离(px)",
+    "description": "设置页边缘距离标签"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "边缘距离必须在0px至200px之间",
+    "description": "边缘距离输入错误提示"
   }
 }

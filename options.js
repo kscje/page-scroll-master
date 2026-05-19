@@ -19,6 +19,8 @@ const translations = {
     'settings.buttonSize': '按钮尺寸(px)',
     'settings.buttonSpacing': '按钮间距(px)',
     'settings.spacingError': '按钮间距必须在0px至800px之间',
+    'settings.edgeDistance': '边缘距离(px)',
+    'settings.edgeDistanceError': '边缘距离必须在0px至200px之间',
     'settings.topButtonColor': '顶部按钮颜色',
     'settings.bottomButtonColor': '底部按钮颜色',
     'settings.opacity': '透明度',
@@ -59,6 +61,8 @@ const translations = {
     'settings.buttonSize': 'Button Size(px)',
     'settings.buttonSpacing': 'Button Spacing(px)',
     'settings.spacingError': 'Button spacing must be between 0px and 800px',
+    'settings.edgeDistance': 'Distance from Edge(px)',
+    'settings.edgeDistanceError': 'Distance from edge must be between 0px and 200px',
     'settings.topButtonColor': 'Top Button Color',
     'settings.bottomButtonColor': 'Bottom Button Color',
     'settings.opacity': 'Opacity',
@@ -171,7 +175,6 @@ function applyTranslation(lang) {
 
 // 统一的间距规范（像素）
 const BUTTON_GAP = 8; // 按钮之间的标准间距
-const EDGE_OFFSET = 10; // 距离边缘的标准偏移
 
 // 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
 function updatePreviewButtons() {
@@ -183,6 +186,7 @@ function updatePreviewButtons() {
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
   const buttonShape = document.getElementById('buttonShape').value;
   const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
+  const edgeDistance = parseInt(document.getElementById('edgeDistance').value);
   const topButtonColor = document.getElementById('topButtonColor').value;
   const bottomButtonColor = document.getElementById('bottomButtonColor').value;
   const opacity = parseInt(document.getElementById('opacity').value) / 100;
@@ -209,17 +213,27 @@ function updatePreviewButtons() {
     displaySpacing = 800;
   }
   
+  // 验证并调整边缘距离
+  let displayEdgeDistance = edgeDistance;
+  if (isNaN(displayEdgeDistance)) {
+    displayEdgeDistance = 20;
+  } else if (displayEdgeDistance < 0) {
+    displayEdgeDistance = 0;
+  } else if (displayEdgeDistance > 200) {
+    displayEdgeDistance = 200;
+  }
+
   // 计算按钮位置 - 使用fixed定位直接显示在设置页面上
   let leftPos, rightPos;
   
   // 水平位置
   if (horizontalPosition === 'left') {
-    leftPos = EDGE_OFFSET + 'px';
+    leftPos = displayEdgeDistance + 'px';
     rightPos = 'auto';
   } else {
     // right (默认)
     leftPos = 'auto';
-    rightPos = EDGE_OFFSET + 'px';
+    rightPos = displayEdgeDistance + 'px';
   }
   
   // 强制设置按钮尺寸
@@ -237,12 +251,12 @@ function updatePreviewButtons() {
     topButtonTop = groupTopOffset;
     topButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
-    topButtonTop = EDGE_OFFSET + 'px';
+    topButtonTop = displayEdgeDistance + 'px';
     topButtonBottom = 'auto';
   } else {
     // bottom
     topButtonTop = 'auto';
-    topButtonBottom = `calc(${EDGE_OFFSET}px + ${displaySize + displaySpacing}px)`;
+    topButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
   }
   
   // 底部按钮位置计算
@@ -253,12 +267,12 @@ function updatePreviewButtons() {
     bottomButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
-    bottomButtonTop = `calc(${EDGE_OFFSET}px + ${displaySize + displaySpacing}px)`;
+    bottomButtonTop = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else {
     // bottom
     bottomButtonTop = 'auto';
-    bottomButtonBottom = EDGE_OFFSET + 'px';
+    bottomButtonBottom = displayEdgeDistance + 'px';
   }
   
   // 使用 requestAnimationFrame 确保流畅更新，避免弹跳
@@ -404,6 +418,7 @@ function loadSettings() {
       document.getElementById('buttonSize').value = buttonSettings.buttonSize || 40;
       document.getElementById('buttonShape').value = buttonSettings.buttonShape || 'round';
       document.getElementById('buttonSpacing').value = buttonSettings.buttonSpacing || 8;
+      document.getElementById('edgeDistance').value = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 12;
       // 使用用户保存的颜色或默认颜色 #4A9EDD
       const defaultColor = '#4A9EDD';
       const topColor = buttonSettings.topButtonColor || defaultColor;
@@ -439,6 +454,7 @@ function saveSettings() {
   const scrollSpeed = parseInt(document.getElementById('scrollSpeed').value);
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
   const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
+  const edgeDistance = parseInt(document.getElementById('edgeDistance').value);
   
   // 验证按钮尺寸 - 由于实时输入限制，这里可以简化验证
   if (isNaN(buttonSize) || buttonSize < 10 || buttonSize > 120) {
@@ -447,6 +463,11 @@ function saveSettings() {
   
   // 验证按钮间距
   if (isNaN(buttonSpacing) || buttonSpacing < 0 || buttonSpacing > 800) {
+    return;
+  }
+  
+  // 验证边缘距离
+  if (isNaN(edgeDistance) || edgeDistance < 0 || edgeDistance > 200) {
     return;
   }
   
@@ -464,6 +485,7 @@ function saveSettings() {
     buttonSizeUnit: 'px', // 固定为px单位
     buttonShape: document.getElementById('buttonShape').value,
     buttonSpacing: buttonSpacing,
+    edgeDistance: edgeDistance,
     topButtonColor: validateHexColor(document.getElementById('topButtonColor').value),
     bottomButtonColor: validateHexColor(document.getElementById('bottomButtonColor').value),
     opacity: parseInt(document.getElementById('opacity').value),
@@ -652,6 +674,56 @@ function init() {
   
   buttonSpacingInput.addEventListener('focus', () => {
     spacingError.style.display = 'none';
+  });
+  
+  // 监听边缘距离变化
+  const edgeDistanceInput = document.getElementById('edgeDistance');
+  const edgeDistanceError = document.getElementById('edgeDistanceError');
+  
+  edgeDistanceInput.addEventListener('input', (e) => {
+    const value = e.target.value;
+    if (value === '') {
+      edgeDistanceError.style.display = 'none';
+      updatePreviewButtons();
+      return;
+    }
+    
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) {
+      edgeDistanceError.style.display = 'none';
+    } else if (numValue < 0 || numValue > 200) {
+      getCurrentLanguage().then(lang => {
+        const errorText = translations[lang] && translations[lang]['settings.edgeDistanceError'] || 'Distance from edge must be between 0px and 200px';
+        edgeDistanceError.textContent = errorText;
+        edgeDistanceError.style.display = 'block';
+      });
+    } else {
+      edgeDistanceError.style.display = 'none';
+    }
+    updatePreviewButtons();
+  });
+  
+  edgeDistanceInput.addEventListener('blur', (e) => {
+    const value = e.target.value;
+    if (value === '') {
+      edgeDistanceError.style.display = 'none';
+      return;
+    }
+    
+    const numValue = parseInt(value);
+    if (numValue < 0 || numValue > 200) {
+      getCurrentLanguage().then(lang => {
+        const errorText = translations[lang] && translations[lang]['settings.edgeDistanceError'] || 'Distance from edge must be between 0px and 200px';
+        edgeDistanceError.textContent = errorText;
+        edgeDistanceError.style.display = 'block';
+      });
+    } else {
+      edgeDistanceError.style.display = 'none';
+    }
+  });
+  
+  edgeDistanceInput.addEventListener('focus', () => {
+    edgeDistanceError.style.display = 'none';
   });
   
   // 监听透明度变化

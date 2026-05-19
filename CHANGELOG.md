@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-05-19
+
+### Changed
+- ✅ 更新 Chrome Web Store 发布显示名：英文为 `One Click Top & Bottom – Fast Page Scroll`
+- ✅ 更新中文发布显示名：`一键顶部/底部滚动`
+- ✅ 同步发布检查清单、商店发布指南和商店截图素材中的插件名称
+
 ## [1.6.0] - 2026-05-16
 
 ### Added
@@ -117,6 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[1.7.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.7.0
 [1.6.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.6.0
 [1.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.5.0
 [1.4.2]: https://github.com/kscje/page-scroll-master/releases/tag/v1.4.2

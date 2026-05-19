@@ -8,12 +8,57 @@ var allStates = {};
 var _ignoreChange = false;
 var _pendingLocalChange = false;
 
-function applyI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(function (el) {
-    var message = chrome.i18n.getMessage(el.dataset.i18n);
-    if (message) {
-      el.textContent = message;
+// 弹窗页面翻译数据（与设置页面保持一致）
+var popupTranslations = {
+  'zh-CN': {
+    'popupSettings': '设置',
+    'popupEnableToggle': '在该网站启用'
+  },
+  'en-US': {
+    'popupSettings': 'Settings',
+    'popupEnableToggle': 'Enable on this site'
+  }
+};
+
+// 获取当前语言设置
+function getCurrentLanguage(callback) {
+  function resolveFromBrowser() {
+    var browserLang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'en-US';
+    callback(browserLang.indexOf('zh') === 0 ? 'zh-CN' : 'en-US');
+  }
+
+  if (!chrome.storage || !chrome.storage.sync || !chrome.storage.sync.get) {
+    resolveFromBrowser();
+    return;
+  }
+
+  chrome.storage.sync.get('language', function (result) {
+    if (chrome.runtime.lastError) {
+      resolveFromBrowser();
+      return;
     }
+    if (result.language && result.language !== 'auto') {
+      callback(result.language);
+    } else {
+      resolveFromBrowser();
+    }
+  });
+}
+
+function applyI18n() {
+  getCurrentLanguage(function (lang) {
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.dataset.i18n;
+      var message;
+      if (popupTranslations[lang] && popupTranslations[lang][key]) {
+        message = popupTranslations[lang][key];
+      } else {
+        message = chrome.i18n.getMessage(key);
+      }
+      if (message) {
+        el.textContent = message;
+      }
+    });
   });
 }
 
@@ -48,10 +93,13 @@ function isHostEnabled(states, hostname) {
 }
 
 function updateUI(enabled, canToggle) {
-  var label = chrome.i18n.getMessage('popupEnableToggle') || 'Enable on this site';
   setCheckboxSilently(enabled);
   toggleEl.disabled = canToggle === false;
-  toggleLabelEl.textContent = label;
+
+  getCurrentLanguage(function (lang) {
+    var label = (popupTranslations[lang] && popupTranslations[lang]['popupEnableToggle']) || chrome.i18n.getMessage('popupEnableToggle') || 'Enable on this site';
+    toggleLabelEl.textContent = label;
+  });
 }
 
 function persistState(enabled) {

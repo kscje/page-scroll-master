@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Page Scroll Master",
+    "message": "One Click Top & Bottom – Fast Page Scroll",
     "description": "插件名称"
   },
   "extensionDescription": {
@@ -30,5 +30,13 @@
   "popupEnableToggle": {
     "message": "Enable on this site",
     "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "Distance from Edge(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "Distance from edge must be between 0px and 200px",
+    "description": "Edge distance input error message"
   }
 }
