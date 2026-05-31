@@ -1,7 +1,21 @@
 // 多语言翻译数据
 const translations = {
   'zh-CN': {
-    'settings.title': '页面滚动助手',
+    'settings.title': '智能页面滚动导航器',
+    'settings.subtitle': '配置滚动按钮、阅读进度和网站启用状态。',
+    'settings.tab.basic': '基础设置',
+    'settings.tab.advanced': '高级功能',
+    'settings.tab.domains': '域名管理',
+    'settings.tab.feedback': '建议&反馈',
+    'settings.basicIntro': '调整滚动速度、按钮位置、外观图标和快捷键。',
+    'settings.advancedIntro': '配置页面进度条的显示方式和交互行为。',
+    'settings.domainIntro': '管理不同网站中滚动按钮的启用或禁用状态。',
+    'settings.scrollBehavior': '滚动行为',
+    'settings.buttonIcons': '按钮图标',
+    'settings.progressBar': '页面进度条',
+    'settings.aboutDescription': '智能页面滚动导航器用于在网页中快速跳转到顶部或底部，并支持阅读进度、进度跳转与站点启用状态配置。',
+    'settings.versionLabel': '当前版本：',
+    'settings.authorLabel': '插件作者：',
     'settings.language': '语言',
     'settings.scrollSpeed': '滚动速度',
     'settings.buttonPosition': '按钮位置',
@@ -43,7 +57,21 @@ const translations = {
     'settings.key.macShift': 'Shift (⇧)'
   },
   'en-US': {
-    'settings.title': 'Page Scroll Master',
+    'settings.title': 'Smart Scroll Navigator',
+    'settings.subtitle': 'Configure scroll buttons, reading progress, and site enable status.',
+    'settings.tab.basic': 'Basic Settings',
+    'settings.tab.advanced': 'Advanced Features',
+    'settings.tab.domains': 'Domain Management',
+    'settings.tab.feedback': 'Suggestions & Feedback',
+    'settings.basicIntro': 'Adjust scroll speed, button position, appearance, icons, and shortcuts.',
+    'settings.advancedIntro': 'Configure page progress display and interaction behavior.',
+    'settings.domainIntro': 'Manage whether scroll buttons are enabled or disabled on specific sites.',
+    'settings.scrollBehavior': 'Scroll Behavior',
+    'settings.buttonIcons': 'Button Icons',
+    'settings.progressBar': 'Page Progress Bar',
+    'settings.aboutDescription': 'Smart Scroll Navigator helps you jump to the top or bottom of pages, track reading progress, and manage per-site enable settings.',
+    'settings.versionLabel': 'Version: ',
+    'settings.authorLabel': 'Author: ',
     'settings.language': 'Language',
     'settings.scrollSpeed': 'Scroll Speed',
     'settings.buttonPosition': 'Button Position',
@@ -86,6 +114,223 @@ const translations = {
   }
 };
 
+Object.assign(translations['zh-CN'], {
+  'settings.advancedFeatures': '高级功能',
+  'settings.progressBarEnabled': '启用页面进度条',
+  'settings.progressBarMode': '显示样式',
+  'settings.progressBarMode.verticalButton': '纵向进度按钮',
+  'settings.progressBarMode.horizontalBar': '横向页面边缘进度条',
+  'settings.progressVerticalHeight': '纵向高度(px)',
+  'settings.progressHorizontalPosition': '横向位置',
+  'settings.progressHorizontalPosition.top': '顶部',
+  'settings.progressHorizontalPosition.bottom': '底部',
+  'settings.progressThickness': '横向粗细(px)',
+  'settings.progressColorMode': '进度颜色',
+  'settings.progressColorMode.followTopButton': '跟随顶部按钮',
+  'settings.progressColorMode.followBottomButton': '跟随底部按钮',
+  'settings.progressColorMode.custom': '自定义',
+  'settings.progressCustomColor': '自定义进度颜色',
+  'settings.progressClickToJump': '点击进度条跳转',
+  'settings.progressShowPercentage': '显示百分比',
+  'settings.progressShowRemainingTime': '显示剩余阅读时间',
+  'settings.progressInfiniteNote': '无限滚动页面中进度可能随着内容加载而变化。',
+  'settings.iconSet': '图标样式',
+  'settings.iconSet.defaultArrow': '默认箭头',
+  'settings.iconSet.triangle': '三角形',
+  'settings.iconSet.chevron': '折线箭头',
+  'settings.iconSet.doubleArrow': '双箭头',
+  'settings.iconColor': '图标颜色',
+  'settings.customIconComingSoon': '上传自定义图标 Coming soon。',
+  'settings.siteManagement': '网站启用状态',
+  'settings.domainSearch': '搜索域名',
+  'settings.domainInput': 'example.com 或 https://example.com/page',
+  'settings.domainEnabled': '启用',
+  'settings.domainDisabled': '禁用',
+  'settings.domainEmpty': '暂无手动设置的网站。',
+  'settings.addDomain': '添加域名',
+  'settings.clearDisabledSites': '清除已关闭站点',
+  'settings.restoreAllSites': '恢复全部启用',
+  'settings.deleteDomain': '删除',
+  'settings.invalidDomain': '请输入有效的 http/https 网站域名。',
+  'settings.verticalHeightError': '纵向高度必须在40px至400px之间'
+});
+
+Object.assign(translations['en-US'], {
+  'settings.advancedFeatures': 'Advanced Features',
+  'settings.progressBarEnabled': 'Enable page progress bar',
+  'settings.progressBarMode': 'Display style',
+  'settings.progressBarMode.verticalButton': 'Vertical progress button',
+  'settings.progressBarMode.horizontalBar': 'Horizontal page edge bar',
+  'settings.progressVerticalHeight': 'Vertical height(px)',
+  'settings.progressHorizontalPosition': 'Horizontal position',
+  'settings.progressHorizontalPosition.top': 'Top',
+  'settings.progressHorizontalPosition.bottom': 'Bottom',
+  'settings.progressThickness': 'Horizontal thickness(px)',
+  'settings.progressColorMode': 'Progress color',
+  'settings.progressColorMode.followTopButton': 'Follow top button',
+  'settings.progressColorMode.followBottomButton': 'Follow bottom button',
+  'settings.progressColorMode.custom': 'Custom',
+  'settings.progressCustomColor': 'Custom progress color',
+  'settings.progressClickToJump': 'Click progress bar to jump',
+  'settings.progressShowPercentage': 'Show percentage',
+  'settings.progressShowRemainingTime': 'Show remaining reading time',
+  'settings.progressInfiniteNote': 'On infinite scrolling pages, progress may change as new content loads.',
+  'settings.iconSet': 'Icon style',
+  'settings.iconSet.defaultArrow': 'Default arrow',
+  'settings.iconSet.triangle': 'Triangle',
+  'settings.iconSet.chevron': 'Chevron',
+  'settings.iconSet.doubleArrow': 'Double arrow',
+  'settings.iconColor': 'Icon color',
+  'settings.customIconComingSoon': 'Custom icon upload Coming soon.',
+  'settings.siteManagement': 'Site Enable Status',
+  'settings.domainSearch': 'Search domains',
+  'settings.domainInput': 'example.com or https://example.com/page',
+  'settings.domainEnabled': 'Enabled',
+  'settings.domainDisabled': 'Disabled',
+  'settings.domainEmpty': 'No manually configured sites yet.',
+  'settings.addDomain': 'Add domain',
+  'settings.clearDisabledSites': 'Clear disabled sites',
+  'settings.restoreAllSites': 'Restore all enabled',
+  'settings.deleteDomain': 'Delete',
+  'settings.invalidDomain': 'Enter a valid http/https website hostname.',
+  'settings.verticalHeightError': 'Vertical height must be between 40px and 400px'
+});
+
+translations['es-ES'] = Object.assign({}, translations['en-US'], {
+  'settings.title': 'Navegador Scroll Inteligente',
+  'settings.subtitle': 'Configura botones de desplazamiento, progreso de lectura y estado por sitio.',
+  'settings.tab.basic': 'Basico',
+  'settings.tab.advanced': 'Avanzado',
+  'settings.tab.domains': 'Dominios',
+  'settings.tab.feedback': 'Sugerencias',
+  'settings.basicIntro': 'Ajusta velocidad, posicion, apariencia, iconos y atajos.',
+  'settings.advancedIntro': 'Configura la visualizacion e interaccion del progreso de lectura.',
+  'settings.domainIntro': 'Gestiona si los botones estan activos o inactivos en sitios concretos.',
+  'settings.scrollBehavior': 'Desplazamiento',
+  'settings.buttonIcons': 'Iconos de botones',
+  'settings.progressBar': 'Barra de progreso de pagina',
+  'settings.aboutDescription': 'Navegador Scroll Inteligente te ayuda a ir al inicio o final, ver el progreso de lectura y gestionar ajustes por sitio.',
+  'settings.versionLabel': 'Version: ',
+  'settings.authorLabel': 'Autor: ',
+  'settings.language': 'Idioma',
+  'settings.scrollSpeed': 'Velocidad de desplazamiento',
+  'settings.buttonPosition': 'Posicion del boton',
+  'settings.horizontalPosition': 'Posicion horizontal',
+  'settings.verticalAlignment': 'Alineacion vertical',
+  'settings.position.right': 'Borde derecho',
+  'settings.position.left': 'Borde izquierdo',
+  'settings.alignment.center': 'Centro',
+  'settings.alignment.top': 'Arriba',
+  'settings.alignment.bottom': 'Abajo',
+  'settings.buttonStyle': 'Estilo del boton',
+  'settings.buttonShape': 'Forma del boton',
+  'settings.buttonShape.round': 'Redondo',
+  'settings.buttonShape.square': 'Cuadrado',
+  'settings.buttonSize': 'Tamano del boton(px)',
+  'settings.buttonSpacing': 'Espaciado de botones(px)',
+  'settings.edgeDistance': 'Distancia al borde(px)',
+  'settings.opacity': 'Opacidad',
+  'settings.shortcutSettings': 'Atajos',
+  'settings.enableHoverHide': 'Ocultar botones al pasar el cursor + atajo',
+  'settings.hoverHideKey': 'Tecla de atajo',
+  'settings.preview': 'Vista previa',
+  'settings.about': 'Acerca de',
+  'settings.feedback': 'Para sugerencias o comentarios, contacta al desarrollador:',
+  'settings.saveButton': 'Guardar',
+  'settings.saveSuccess': 'Guardado correctamente!',
+  'settings.advancedFeatures': 'Funciones avanzadas',
+  'settings.progressBarEnabled': 'Activar barra de progreso de pagina',
+  'settings.progressBarMode.verticalButton': 'Boton vertical de progreso',
+  'settings.progressBarMode.horizontalBar': 'Barra horizontal en el borde',
+  'settings.siteManagement': 'Estado por sitio',
+  'settings.domainEnabled': 'Activado',
+  'settings.domainDisabled': 'Desactivado',
+  'settings.addDomain': 'Agregar dominio',
+  'settings.deleteDomain': 'Eliminar'
+});
+
+translations['ja-JP'] = Object.assign({}, translations['en-US'], {
+  'settings.title': 'スマートスクロールナビ',
+  'settings.subtitle': 'スクロールボタン、読書進捗、サイトごとの有効状態を設定します。',
+  'settings.tab.basic': '基本設定',
+  'settings.tab.advanced': '高度な機能',
+  'settings.tab.domains': 'ドメイン管理',
+  'settings.tab.feedback': '提案とフィードバック',
+  'settings.basicIntro': 'スクロール速度、ボタン位置、外観、アイコン、ショートカットを調整します。',
+  'settings.advancedIntro': '読書進捗バーの表示と操作を設定します。',
+  'settings.domainIntro': 'サイトごとのスクロールボタンの有効・無効を管理します。',
+  'settings.scrollBehavior': 'スクロール動作',
+  'settings.buttonIcons': 'ボタンアイコン',
+  'settings.progressBar': 'ページ進捗バー',
+  'settings.aboutDescription': 'スマートスクロールナビは、ページの先頭や末尾への移動、読書進捗の表示、サイト別の有効設定をサポートします。',
+  'settings.versionLabel': '現在のバージョン：',
+  'settings.authorLabel': '作者：',
+  'settings.language': '言語',
+  'settings.scrollSpeed': 'スクロール速度',
+  'settings.buttonPosition': 'ボタン位置',
+  'settings.horizontalPosition': '水平位置',
+  'settings.verticalAlignment': '垂直位置',
+  'settings.position.right': '右端',
+  'settings.position.left': '左端',
+  'settings.alignment.center': '中央',
+  'settings.alignment.top': '上',
+  'settings.alignment.bottom': '下',
+  'settings.buttonStyle': 'ボタンスタイル',
+  'settings.buttonShape': 'ボタン形状',
+  'settings.buttonShape.round': '丸',
+  'settings.buttonShape.square': '四角',
+  'settings.buttonSize': 'ボタンサイズ(px)',
+  'settings.buttonSpacing': 'ボタン間隔(px)',
+  'settings.edgeDistance': '端からの距離(px)',
+  'settings.opacity': '透明度',
+  'settings.shortcutSettings': 'ショートカット設定',
+  'settings.enableHoverHide': 'ホバー + ショートカットでボタンを隠す',
+  'settings.hoverHideKey': 'ショートカットキー',
+  'settings.preview': 'ライブプレビュー',
+  'settings.about': '拡張機能について',
+  'settings.feedback': 'ご意見やフィードバックはこちらへ:',
+  'settings.saveButton': '保存',
+  'settings.saveSuccess': '保存しました!',
+  'settings.advancedFeatures': '高度な機能',
+  'settings.progressBarEnabled': 'ページ進捗バーを有効化',
+  'settings.progressBarMode.verticalButton': '縦型進捗ボタン',
+  'settings.progressBarMode.horizontalBar': '画面端の横型バー',
+  'settings.siteManagement': 'サイトごとの有効状態',
+  'settings.domainEnabled': '有効',
+  'settings.domainDisabled': '無効',
+  'settings.addDomain': 'ドメインを追加',
+  'settings.deleteDomain': '削除'
+});
+
+const DEFAULT_ADVANCED_SETTINGS = {
+  progressBar: {
+    enabled: false,
+    mode: 'verticalButton',
+    horizontalPosition: 'top',
+    colorMode: 'followTopButton',
+    customColor: '#4A9EDD',
+    thickness: 4,
+    verticalHeight: 120,
+    clickToJump: true,
+    showPercentage: true,
+    showRemainingTime: false
+  },
+  iconCustomization: {
+    enabled: true,
+    iconSet: 'defaultArrow',
+    iconColor: '#FFFFFF',
+    customIcon: {
+      enabled: false,
+      topIconDataUrl: '',
+      bottomIconDataUrl: ''
+    }
+  }
+};
+
+let advancedSettingsState = mergeAdvancedSettings();
+let enableStates = {};
+let domainSearchText = '';
+
 // 检测操作系统平台
 function detectPlatform() {
   const platform = navigator.platform.toLowerCase();
@@ -98,6 +343,108 @@ function detectPlatform() {
   } else {
     return 'windows';
   }
+}
+
+function normalizeLanguage(browserLang) {
+  const lang = (browserLang || '').toLowerCase();
+  if (lang.startsWith('zh')) return 'zh-CN';
+  if (lang.startsWith('es')) return 'es-ES';
+  if (lang.startsWith('ja')) return 'ja-JP';
+  return 'en-US';
+}
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMergeDefaults(defaults, saved) {
+  const result = {};
+  Object.keys(defaults).forEach((key) => {
+    const defaultValue = defaults[key];
+    const savedValue = isPlainObject(saved) ? saved[key] : undefined;
+    result[key] = isPlainObject(defaultValue)
+      ? deepMergeDefaults(defaultValue, savedValue)
+      : (savedValue === undefined ? defaultValue : savedValue);
+  });
+  return result;
+}
+
+function validateHexColor(color, fallback) {
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color || '') ? color : fallback;
+}
+
+function hexToRgb(color) {
+  const hex = validateHexColor(color, '#4A9EDD').slice(1);
+  const normalized = hex.length === 3
+    ? hex.split('').map((char) => char + char).join('')
+    : hex;
+  const value = parseInt(normalized, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255
+  };
+}
+
+function getProgressFillColor(color) {
+  const rgb = hexToRgb(color);
+  const shade = 0.72;
+  const r = Math.round(rgb.r * shade);
+  const g = Math.round(rgb.g * shade);
+  const b = Math.round(rgb.b * shade);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
+}
+
+function normalizeProgressThickness(value) {
+  const number = Number(value);
+  return [2, 3, 4, 6, 8, 12, 16].includes(number) ? number : 4;
+}
+
+function normalizeIconSet(value) {
+  return ['defaultArrow', 'triangle', 'chevron', 'doubleArrow'].includes(value)
+    ? value
+    : 'defaultArrow';
+}
+
+function mergeAdvancedSettings(savedSettings) {
+  const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
+  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4A9EDD');
+  merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
+  merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, 120);
+  merged.iconCustomization.enabled = true;
+  merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
+  merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, '#FFFFFF');
+  return merged;
+}
+
+function getIconSvg(direction, iconSet) {
+  const isTop = direction === 'top';
+  const icons = {
+    defaultArrow: {
+      top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+      bottom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'
+    },
+    triangle: {
+      top: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l8 12H4z"/></svg>',
+      bottom: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 19L4 7h16z"/></svg>'
+    },
+    chevron: {
+      top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg>',
+      bottom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg>'
+    },
+    doubleArrow: {
+      top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13l5-5 5 5M7 19l5-5 5 5"/></svg>',
+      bottom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l5 5 5-5M7 11l5 5 5-5"/></svg>'
+    }
+  };
+  const set = icons[iconSet] || icons.defaultArrow;
+  return isTop ? set.top : set.bottom;
 }
 
 // 获取平台特定的快捷键显示名称（支持多语言）
@@ -155,8 +502,7 @@ function getCurrentLanguage() {
       } else {
         // 自动检测语言
         const browserLang = navigator.language || navigator.userLanguage;
-        const lang = browserLang.startsWith('zh') ? 'zh-CN' : 'en-US';
-        resolve(lang);
+        resolve(normalizeLanguage(browserLang));
       }
     });
   });
@@ -171,15 +517,36 @@ function applyTranslation(lang) {
       element.textContent = translations[lang][key];
     }
   });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+    const key = element.getAttribute('data-i18n-placeholder');
+    if (translations[lang] && translations[lang][key]) {
+      element.setAttribute('placeholder', translations[lang][key]);
+    }
+  });
 }
 
 // 统一的间距规范（像素）
 const BUTTON_GAP = 8; // 按钮之间的标准间距
+const PREVIEW_PROGRESS_RATIO = 0.46;
+
+function getPreviewProgressColor(topButtonColor, bottomButtonColor) {
+  const colorMode = document.getElementById('progressColorMode')?.value || 'followTopButton';
+  if (colorMode === 'followBottomButton') {
+    return validateHexColor(bottomButtonColor, '#4A9EDD');
+  }
+  if (colorMode === 'custom') {
+    return validateHexColor(document.getElementById('progressCustomColor')?.value, '#4A9EDD');
+  }
+  return validateHexColor(topButtonColor, '#4A9EDD');
+}
 
 // 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
 function updatePreviewButtons() {
   const topButton = document.getElementById('previewTopButton');
   const bottomButton = document.getElementById('previewBottomButton');
+  const progressButton = document.getElementById('previewProgressButton');
+  const horizontalProgress = document.getElementById('previewHorizontalProgress');
   if (!topButton || !bottomButton) return;
   
   // 获取当前设置
@@ -192,6 +559,14 @@ function updatePreviewButtons() {
   const opacity = parseInt(document.getElementById('opacity').value) / 100;
   const horizontalPosition = document.getElementById('horizontalPosition').value;
   const verticalAlignment = document.getElementById('verticalAlignment').value;
+  const iconSet = normalizeIconSet(document.getElementById('iconSet').value);
+  const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
+  const progressEnabled = document.getElementById('progressBarEnabled')?.checked === true;
+  const progressMode = document.getElementById('progressBarMode')?.value || 'verticalButton';
+  const showProgressPercentage = document.getElementById('progressShowPercentage')?.checked === true;
+  const progressHorizontalPosition = document.getElementById('progressHorizontalPosition')?.value || 'top';
+  const progressThickness = normalizeProgressThickness(document.getElementById('progressThickness')?.value);
+  const progressColor = getPreviewProgressColor(topButtonColor, bottomButtonColor);
   
   // 验证并调整按钮尺寸（允许10-120px范围）
   let displaySize = buttonSize;
@@ -212,6 +587,15 @@ function updatePreviewButtons() {
   } else if (displaySpacing > 800) {
     displaySpacing = 800;
   }
+
+  const displayProgressHeight = clampNumber(
+    document.getElementById('progressVerticalHeight')?.value,
+    40,
+    400,
+    120
+  );
+  const isVerticalProgressPreview = progressEnabled && progressMode === 'verticalButton';
+  const isHorizontalProgressPreview = progressEnabled && progressMode === 'horizontalBar';
   
   // 验证并调整边缘距离
   let displayEdgeDistance = edgeDistance;
@@ -239,8 +623,10 @@ function updatePreviewButtons() {
   // 强制设置按钮尺寸
   const size = displaySize + 'px';
   
-  // 计算按钮组的总高度（两个按钮 + 间距）
-  const totalGroupHeight = (displaySize * 2) + displaySpacing;
+  // 计算按钮组的总高度
+  const totalGroupHeight = isVerticalProgressPreview
+    ? (displaySize * 2) + displayProgressHeight + (displaySpacing * 2)
+    : (displaySize * 2) + displaySpacing;
   
   // 顶部按钮位置计算
   let topButtonTop, topButtonBottom;
@@ -256,7 +642,9 @@ function updatePreviewButtons() {
   } else {
     // bottom
     topButtonTop = 'auto';
-    topButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+    topButtonBottom = isVerticalProgressPreview
+      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
+      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
   }
   
   // 底部按钮位置计算
@@ -264,20 +652,36 @@ function updatePreviewButtons() {
   if (verticalAlignment === 'center') {
     // 居中模式：底部按钮在顶部按钮下方固定间距
     const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
-    bottomButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
+    bottomButtonTop = isVerticalProgressPreview
+      ? `calc(${groupTopOffset} + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
+      : `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
-    bottomButtonTop = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+    bottomButtonTop = isVerticalProgressPreview
+      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
+      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
     bottomButtonBottom = 'auto';
   } else {
     // bottom
     bottomButtonTop = 'auto';
     bottomButtonBottom = displayEdgeDistance + 'px';
   }
+
+  let progressButtonTop = 'auto';
+  let progressButtonBottom = 'auto';
+  if (verticalAlignment === 'center') {
+    const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
+    progressButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
+  } else if (verticalAlignment === 'top') {
+    progressButtonTop = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+  } else {
+    progressButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+  }
   
   // 使用 requestAnimationFrame 确保流畅更新，避免弹跳
   requestAnimationFrame(() => {
     // 设置顶部按钮样式 - 使用fixed定位
+    topButton.innerHTML = getIconSvg('top', iconSet);
     topButton.style.width = size;
     topButton.style.height = size;
     topButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
@@ -290,8 +694,10 @@ function updatePreviewButtons() {
     // 移除transform，使用精确计算的位置避免弹跳
     topButton.style.transform = 'none';
     topButton.style.willChange = 'top, bottom, width, height';
+    topButton.style.color = iconColor;
     
     // 设置底部按钮样式 - 使用fixed定位
+    bottomButton.innerHTML = getIconSvg('bottom', iconSet);
     bottomButton.style.width = size;
     bottomButton.style.height = size;
     bottomButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
@@ -304,6 +710,7 @@ function updatePreviewButtons() {
     // 移除transform，使用精确计算的位置避免弹跳
     bottomButton.style.transform = 'none';
     bottomButton.style.willChange = 'top, bottom, width, height';
+    bottomButton.style.color = iconColor;
     
     // 更新SVG图标样式 - 确保与实际页面完全一致
     const topIcon = topButton.querySelector('svg');
@@ -315,23 +722,64 @@ function updatePreviewButtons() {
     if (topIcon) {
       topIcon.style.width = iconSize;
       topIcon.style.height = iconSize;
-      topIcon.style.stroke = 'white';
-      topIcon.style.strokeWidth = 3;
       topIcon.style.display = 'block';
-      topIcon.style.fill = 'none';
-      topIcon.style.strokeLinecap = 'round';
-      topIcon.style.strokeLinejoin = 'round';
     }
     
     if (bottomIcon) {
       bottomIcon.style.width = iconSize;
       bottomIcon.style.height = iconSize;
-      bottomIcon.style.stroke = 'white';
-      bottomIcon.style.strokeWidth = 3;
       bottomIcon.style.display = 'block';
-      bottomIcon.style.fill = 'none';
-      bottomIcon.style.strokeLinecap = 'round';
-      bottomIcon.style.strokeLinejoin = 'round';
+    }
+
+    if (progressButton) {
+      progressButton.classList.toggle('hidden', !isVerticalProgressPreview);
+      progressButton.style.display = isVerticalProgressPreview ? 'flex' : 'none';
+      progressButton.style.width = size;
+      progressButton.style.height = displayProgressHeight + 'px';
+      progressButton.style.borderRadius = buttonShape === 'square' ? '4px' : '999px';
+      progressButton.style.backgroundColor = progressColor;
+      progressButton.style.opacity = opacity;
+      progressButton.style.left = leftPos;
+      progressButton.style.right = rightPos;
+      progressButton.style.top = progressButtonTop;
+      progressButton.style.bottom = progressButtonBottom;
+      progressButton.style.transform = 'none';
+      progressButton.style.willChange = 'top, bottom, width, height';
+      progressButton.style.color = iconColor;
+
+      const fill = progressButton.querySelector('.preview-progress-fill');
+      const label = progressButton.querySelector('.preview-progress-label');
+      if (fill) {
+        fill.style.height = (PREVIEW_PROGRESS_RATIO * 100) + '%';
+        fill.style.backgroundColor = getProgressFillColor(progressColor);
+      }
+      if (label) {
+        label.textContent = showProgressPercentage ? `${Math.round(PREVIEW_PROGRESS_RATIO * 100)}%` : '';
+        label.style.display = showProgressPercentage ? 'block' : 'none';
+        label.style.color = iconColor;
+      }
+    }
+
+    if (horizontalProgress) {
+      horizontalProgress.classList.toggle('hidden', !isHorizontalProgressPreview);
+      horizontalProgress.classList.toggle('is-bottom', progressHorizontalPosition === 'bottom');
+      horizontalProgress.style.display = isHorizontalProgressPreview ? 'block' : 'none';
+      horizontalProgress.style.top = progressHorizontalPosition === 'bottom' ? 'auto' : '0';
+      horizontalProgress.style.bottom = progressHorizontalPosition === 'bottom' ? '0' : 'auto';
+      horizontalProgress.style.height = progressThickness + 'px';
+      horizontalProgress.style.backgroundColor = progressColor;
+
+      const fill = horizontalProgress.querySelector('.preview-horizontal-progress-fill');
+      const label = horizontalProgress.querySelector('.preview-horizontal-progress-label');
+      if (fill) {
+        fill.style.width = (PREVIEW_PROGRESS_RATIO * 100) + '%';
+        fill.style.backgroundColor = getProgressFillColor(progressColor);
+      }
+      if (label) {
+        label.textContent = `${Math.round(PREVIEW_PROGRESS_RATIO * 100)}%`;
+        label.style.display = showProgressPercentage ? 'block' : 'none';
+        label.style.color = iconColor;
+      }
     }
   });
   
@@ -403,9 +851,241 @@ function adjustColorBrightness(color, percent) {
   return '#' + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
 }
 
+function updateAdvancedVisibility() {
+  const progressSettings = document.getElementById('progressBarSettings');
+  const verticalSettings = document.getElementById('verticalProgressSettings');
+  const horizontalSettings = document.getElementById('horizontalProgressSettings');
+  const customColorSettings = document.getElementById('progressCustomColorContainer');
+  const progressEnabled = document.getElementById('progressBarEnabled');
+  const progressMode = document.getElementById('progressBarMode');
+  const colorMode = document.getElementById('progressColorMode');
+
+  if (progressSettings && progressEnabled) {
+    progressSettings.style.display = progressEnabled.checked ? 'block' : 'none';
+  }
+  if (verticalSettings && progressMode) {
+    verticalSettings.style.display = progressMode.value === 'verticalButton' ? 'block' : 'none';
+  }
+  if (horizontalSettings && progressMode) {
+    horizontalSettings.style.display = progressMode.value === 'horizontalBar' ? 'block' : 'none';
+  }
+  if (customColorSettings && colorMode) {
+    customColorSettings.style.display = colorMode.value === 'custom' ? 'block' : 'none';
+  }
+}
+
+function updateAdvancedPreviewControls() {
+  updateAdvancedVisibility();
+  updatePreviewButtons();
+}
+
+function setAdvancedSettingsControls(settings) {
+  advancedSettingsState = mergeAdvancedSettings(settings);
+  const progress = advancedSettingsState.progressBar;
+  const icons = advancedSettingsState.iconCustomization;
+
+  document.getElementById('progressBarEnabled').checked = progress.enabled;
+  document.getElementById('progressBarMode').value = progress.mode;
+  document.getElementById('progressHorizontalPosition').value = progress.horizontalPosition;
+  document.getElementById('progressColorMode').value = progress.colorMode;
+  document.getElementById('progressCustomColor').value = progress.customColor;
+  document.getElementById('progressCustomColorHex').value = progress.customColor;
+  document.getElementById('progressThickness').value = String(progress.thickness);
+  document.getElementById('progressVerticalHeight').value = progress.verticalHeight;
+  document.getElementById('progressClickToJump').checked = progress.clickToJump !== false;
+  document.getElementById('progressShowPercentage').checked = Boolean(progress.showPercentage);
+  document.getElementById('progressShowRemainingTime').checked = Boolean(progress.showRemainingTime);
+
+  document.getElementById('iconSet').value = normalizeIconSet(icons.iconSet);
+  document.getElementById('iconColor').value = icons.iconColor;
+  document.getElementById('iconColorHex').value = icons.iconColor;
+
+  updateAdvancedVisibility();
+  updatePreviewButtons();
+}
+
+function getAdvancedSettingsFromControls() {
+  const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
+  const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4A9EDD');
+  const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
+
+  return mergeAdvancedSettings({
+    progressBar: {
+      enabled: document.getElementById('progressBarEnabled').checked,
+      mode: document.getElementById('progressBarMode').value,
+      horizontalPosition: document.getElementById('progressHorizontalPosition').value,
+      colorMode: document.getElementById('progressColorMode').value,
+      customColor,
+      thickness: normalizeProgressThickness(document.getElementById('progressThickness').value),
+      verticalHeight,
+      clickToJump: document.getElementById('progressClickToJump').checked,
+      showPercentage: document.getElementById('progressShowPercentage').checked,
+      showRemainingTime: document.getElementById('progressShowRemainingTime').checked
+    },
+    iconCustomization: {
+      enabled: true,
+      iconSet: normalizeIconSet(document.getElementById('iconSet').value),
+      iconColor,
+      customIcon: {
+        enabled: false,
+        topIconDataUrl: '',
+        bottomIconDataUrl: ''
+      }
+    }
+  });
+}
+
+function normalizeEnableStates(states) {
+  return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
+}
+
+function parseHostnameInput(value) {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return '';
+
+  const candidates = [trimmed];
+  if (!new RegExp('^[a-z][a-z0-9+.-]*://', 'i').test(trimmed)) {
+    candidates.push('https://' + trimmed);
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = new URL(candidate);
+      if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname) {
+        return parsed.hostname.toLowerCase();
+      }
+    } catch (err) {
+      // Try the next candidate.
+    }
+  }
+  return '';
+}
+
+function saveEnableStates(nextStates, callback) {
+  enableStates = normalizeEnableStates(nextStates);
+  chrome.storage.local.set({ enableStates }, () => {
+    renderEnableStatesList();
+    if (callback) callback();
+  });
+}
+
+function saveEnableState(hostname, enabled) {
+  const nextStates = { ...enableStates, [hostname]: Boolean(enabled) };
+  saveEnableStates(nextStates);
+}
+
+function removeEnableState(hostname) {
+  const nextStates = { ...enableStates };
+  delete nextStates[hostname];
+  saveEnableStates(nextStates);
+}
+
+function clearDisabledSites() {
+  const nextStates = {};
+  Object.keys(enableStates).forEach((hostname) => {
+    if (enableStates[hostname] !== false) {
+      nextStates[hostname] = enableStates[hostname];
+    }
+  });
+  saveEnableStates(nextStates);
+  return nextStates;
+}
+
+function restoreAllSitesEnabled() {
+  saveEnableStates({});
+  return {};
+}
+
+function showDomainError(message) {
+  const error = document.getElementById('domainError');
+  if (!error) return;
+  error.textContent = message || '';
+  error.style.display = message ? 'block' : 'none';
+}
+
+function renderEnableStatesList() {
+  const list = document.getElementById('domainList');
+  const empty = document.getElementById('domainEmpty');
+  if (!list || !empty) return;
+  list.innerHTML = '';
+
+  const lang = document.getElementById('languageSelector')?.value === 'auto'
+    ? normalizeLanguage(navigator.language || navigator.userLanguage)
+    : document.getElementById('languageSelector')?.value || 'en-US';
+  const query = domainSearchText.toLowerCase();
+  const hostnames = Object.keys(enableStates).sort().filter((hostname) => hostname.toLowerCase().includes(query));
+
+  empty.style.display = hostnames.length === 0 ? 'block' : 'none';
+  hostnames.forEach((hostname) => {
+    const row = document.createElement('div');
+    row.className = 'domain-row';
+
+    const name = document.createElement('span');
+    name.className = 'domain-name';
+    name.textContent = hostname;
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'checkbox-container';
+    toggleLabel.style.marginBottom = '0';
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.checked = enableStates[hostname] !== false;
+    const toggleText = document.createElement('span');
+    toggleText.textContent = toggle.checked
+      ? (translations[lang]?.['settings.domainEnabled'] || 'Enabled')
+      : (translations[lang]?.['settings.domainDisabled'] || 'Disabled');
+    toggle.addEventListener('change', () => saveEnableState(hostname, toggle.checked));
+    toggleLabel.appendChild(toggle);
+    toggleLabel.appendChild(toggleText);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.textContent = translations[lang]?.['settings.deleteDomain'] || 'Delete';
+    deleteButton.addEventListener('click', () => removeEnableState(hostname));
+
+    row.appendChild(name);
+    row.appendChild(toggleLabel);
+    row.appendChild(deleteButton);
+    list.appendChild(row);
+  });
+}
+
+function loadEnableStates() {
+  chrome.storage.local.get(['enableStates'], (result) => {
+    enableStates = normalizeEnableStates(result.enableStates);
+    renderEnableStatesList();
+  });
+}
+
+function setupTabs() {
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+
+  tabButtons.forEach((button) => {
+    button.setAttribute('aria-selected', String(button.classList.contains('is-active')));
+    button.addEventListener('click', () => {
+      const targetTab = button.getAttribute('data-tab');
+      tabButtons.forEach((item) => {
+        const isActive = item === button;
+        item.classList.toggle('is-active', isActive);
+        item.setAttribute('aria-selected', String(isActive));
+      });
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle('is-active', panel.getAttribute('data-tab-panel') === targetTab);
+      });
+    });
+  });
+}
+
+function setManifestVersion() {
+  const versionElement = document.getElementById('manifestVersion');
+  if (!versionElement || typeof chrome === 'undefined' || !chrome.runtime?.getManifest) return;
+  versionElement.textContent = chrome.runtime.getManifest().version || versionElement.textContent;
+}
+
 // 加载保存的设置
 function loadSettings() {
-  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language'], (result) => {
+  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
     if (result.scrollSpeed) {
       document.getElementById('scrollSpeed').value = result.scrollSpeed;
       document.getElementById('speedValue').textContent = result.scrollSpeed + 'ms';
@@ -418,7 +1098,7 @@ function loadSettings() {
       document.getElementById('buttonSize').value = buttonSettings.buttonSize || 40;
       document.getElementById('buttonShape').value = buttonSettings.buttonShape || 'round';
       document.getElementById('buttonSpacing').value = buttonSettings.buttonSpacing || 8;
-      document.getElementById('edgeDistance').value = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 12;
+      document.getElementById('edgeDistance').value = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 8;
       // 使用用户保存的颜色或默认颜色 #4A9EDD
       const defaultColor = '#4A9EDD';
       const topColor = buttonSettings.topButtonColor || defaultColor;
@@ -439,10 +1119,13 @@ function loadSettings() {
     if (result.language) {
       document.getElementById('languageSelector').value = result.language;
     }
+
+    setAdvancedSettingsControls(result.advancedSettings);
     
     // 应用语言设置
     getCurrentLanguage().then(lang => {
       applyTranslation(lang);
+      renderEnableStatesList();
     });
   });
 }
@@ -476,6 +1159,11 @@ function saveSettings() {
     const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     return hexRegex.test(color) ? color : '#4A9EDD';
   }
+
+  const verticalHeight = parseInt(document.getElementById('progressVerticalHeight').value);
+  if (isNaN(verticalHeight) || verticalHeight < 40 || verticalHeight > 400) {
+    return;
+  }
   
   const buttonSettings = {
     showButton: true, // 始终显示按钮
@@ -493,8 +1181,9 @@ function saveSettings() {
     hoverHideKey: document.getElementById('hoverHideKey').value
   };
   const language = document.getElementById('languageSelector').value;
+  const advancedSettings = getAdvancedSettingsFromControls();
   
-  chrome.storage.sync.set({scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, language: language}, () => {
+  chrome.storage.sync.set({scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, advancedSettings: advancedSettings, language: language}, () => {
     // 显示保存成功提示
     const saveButton = document.getElementById('saveButton');
     const originalText = saveButton.textContent;
@@ -527,13 +1216,21 @@ function saveSettings() {
           return;
         }
       });
+      chrome.tabs.sendMessage(tab.id, {action: 'updateAdvancedSettings', settings: advancedSettings}, () => {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+      });
     });
   });
 }
 
 // 初始化页面
 function init() {
+  setupTabs();
+  setManifestVersion();
   loadSettings();
+  loadEnableStates();
   
   // 更新快捷键显示（根据操作系统平台）
   updateShortcutKeyDisplay();
@@ -571,6 +1268,59 @@ function init() {
       updatePreviewButtons();
     }
   });
+
+  document.getElementById('progressBarEnabled').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
+  document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
+  document.getElementById('progressVerticalHeight').addEventListener('input', updatePreviewButtons);
+  document.getElementById('progressColorMode').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('progressShowPercentage').addEventListener('change', updatePreviewButtons);
+
+  document.getElementById('progressCustomColor').addEventListener('input', (e) => {
+    document.getElementById('progressCustomColorHex').value = e.target.value;
+    updatePreviewButtons();
+  });
+  document.getElementById('progressCustomColorHex').addEventListener('input', (e) => {
+    const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (colorRegex.test(e.target.value)) {
+      document.getElementById('progressCustomColor').value = e.target.value;
+      updatePreviewButtons();
+    }
+  });
+
+  document.getElementById('iconSet').addEventListener('change', updatePreviewButtons);
+  document.getElementById('iconColor').addEventListener('input', (e) => {
+    document.getElementById('iconColorHex').value = e.target.value;
+    updatePreviewButtons();
+  });
+  document.getElementById('iconColorHex').addEventListener('input', (e) => {
+    const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (colorRegex.test(e.target.value)) {
+      document.getElementById('iconColor').value = e.target.value;
+      updatePreviewButtons();
+    }
+  });
+
+  document.getElementById('domainSearch').addEventListener('input', (e) => {
+    domainSearchText = e.target.value || '';
+    renderEnableStatesList();
+  });
+  document.getElementById('addDomainButton').addEventListener('click', () => {
+    const input = document.getElementById('domainInput');
+    const hostname = parseHostnameInput(input.value);
+    if (!hostname) {
+      getCurrentLanguage().then(lang => {
+        showDomainError(translations[lang]?.['settings.invalidDomain'] || 'Enter a valid http/https website hostname.');
+      });
+      return;
+    }
+    showDomainError('');
+    saveEnableState(hostname, document.getElementById('domainInitialState').value === 'true');
+    input.value = '';
+  });
+  document.getElementById('clearDisabledSitesButton').addEventListener('click', clearDisabledSites);
+  document.getElementById('restoreAllSitesButton').addEventListener('click', restoreAllSitesEnabled);
   
   // 监听按钮尺寸变化
   const buttonSizeInput = document.getElementById('buttonSize');
@@ -753,9 +1503,11 @@ function init() {
     if (lang === 'auto') {
       getCurrentLanguage().then(detectedLang => {
         applyTranslation(detectedLang);
+        renderEnableStatesList();
       });
     } else {
       applyTranslation(lang);
+      renderEnableStatesList();
     }
   });
   

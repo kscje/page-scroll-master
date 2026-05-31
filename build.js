@@ -55,8 +55,8 @@ function validateManifest() {
     errors.push('version must follow semver (e.g. 1.3.0)');
   }
 
-  if (MANIFEST.name && MANIFEST.name.length > 45) {
-    errors.push('name exceeds 45 character limit');
+  if (MANIFEST.name && MANIFEST.name.length > 75) {
+    errors.push('name exceeds 75 character limit');
   }
 
   if (MANIFEST.description && MANIFEST.description.length > 132) {
@@ -381,7 +381,35 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-content-enable-state.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-scroll-container-detection.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-spa-loading.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
   execFileSync(process.execPath, [path.join(ROOT, 'test-options-page.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-progress-bar.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-icon-customization.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-domain-management.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-language-normalization.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
@@ -393,12 +421,28 @@ function runRegressionTests() {
     },
     stdio: 'inherit',
   });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-progress-bar.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      CONTENT_SOURCE: path.join(BUILD_DIR, 'content.js'),
+    },
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(ROOT, 'test-icon-customization.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      CONTENT_SOURCE: path.join(BUILD_DIR, 'content.js'),
+    },
+    stdio: 'inherit',
+  });
 
   console.log('  ✓ Regression tests passed');
 }
 
 function main() {
-  console.log('═══ Page Scroll Master — Production Build ═══\n');
+  console.log('═══ Smart Scroll Navigator — Production Build ═══\n');
 
   console.log('[1/7] Validating manifest.json...');
   const errors = validateManifest();

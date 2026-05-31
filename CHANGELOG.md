@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-05-31
+
+### Added
+- ✅ 新增高级阅读进度条：支持按钮组内纵向进度按钮和页面顶部/底部横向进度条
+- ✅ 新增点击进度条跳转能力，并支持百分比显示、颜色模式、横向粗细和纵向高度配置
+- ✅ 新增按钮图标自定义：内置默认箭头、三角形、折线箭头、极简箭头、双箭头 5 套 SVG 图标
+- ✅ 新增图标颜色自定义，并预留未来自定义图标上传的数据结构
+- ✅ 新增设置页网站启用状态管理，复用 `enableStates`，支持搜索、添加、删除、切换、清除已关闭站点和恢复全部启用
+- ✅ 新增西班牙语和日语界面支持，自动语言检测扩展到 `zh*`、`es*`、`ja*`
+- ✅ 新增进度条、图标自定义、网站管理和语言规范化测试
+
+### Changed
+- ✅ 更新扩展显示名为 `Smart Scroll Navigator – Top, Bottom & Progress`，并同步中文、西班牙语和日语名称
+- ✅ 抽取通用 `smoothScrollTo()`，顶部/底部按钮和进度条点击跳转统一复用现有滚动容器逻辑
+- ✅ 构建回归测试纳入 v1.8 新增测试
+
 ## [1.7.0] - 2026-05-19
 
 ### Changed
@@ -124,6 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[1.8.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.8.0
 [1.7.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.7.0
 [1.6.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.6.0
 [1.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.5.0

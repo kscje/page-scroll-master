@@ -102,7 +102,7 @@ function settingsMockup(x, y, locale) {
       <rect x="${x}" y="${y}" width="620" height="72" rx="20" fill="#eef5fb"/>
       <rect x="${x}" y="${y + 50}" width="620" height="22" fill="#eef5fb"/>
       <image x="${x + 30}" y="${y + 20}" width="32" height="32" href="data:image/png;base64,${ICON_DATA}"/>
-      ${text({ x: x + 78, y: y + 44, value: chinese ? '一键顶部/底部滚动 设置' : 'One Click Top & Bottom Settings', size: 24, weight: 760, fill: '#23384c' })}
+      ${text({ x: x + 78, y: y + 44, value: chinese ? '智能页面滚动导航器 设置' : 'Smart Scroll Navigator Settings', size: 24, weight: 760, fill: '#23384c' })}
       ${labels.map((label, i) => {
         const yy = y + 116 + i * 76;
         return `
@@ -156,7 +156,7 @@ const assets = [
     name: 'zh-CN-01-overview',
     svg: frame(`
       <image x="76" y="74" width="86" height="86" href="data:image/png;base64,${ICON_DATA}"/>
-      ${text({ x: 184, y: 118, value: '一键顶部/底部滚动', size: 52, weight: 850, fill: '#18324a' })}
+      ${text({ x: 184, y: 118, value: '智能页面滚动导航器', size: 52, weight: 850, fill: '#18324a' })}
       ${text({ x: 186, y: 164, value: '长页面浏览，一键到达顶部或底部', size: 26, weight: 650, fill: '#2d617b' })}
       ${multiline(['浮动按钮常驻页面边缘', '平滑滚动动画与快捷键', '可按网站启用或停用'], 90, 250, { size: 30, weight: 750, fill: '#21384e', gap: 58 })}
       ${chip(90, 448, '顶部 / 底部滚动')}
@@ -186,7 +186,7 @@ const assets = [
     name: 'en-01-overview',
     svg: frame(`
       <image x="76" y="74" width="86" height="86" href="data:image/png;base64,${ICON_DATA}"/>
-      ${text({ x: 184, y: 118, value: 'One Click Top & Bottom', size: 52, weight: 850, fill: '#18324a' })}
+      ${text({ x: 184, y: 118, value: 'Smart Scroll Navigator', size: 52, weight: 850, fill: '#18324a' })}
       ${text({ x: 186, y: 164, value: 'Jump through long pages in one click', size: 26, weight: 650, fill: '#2d617b' })}
       ${multiline(['Floating page-edge controls', 'Smooth scrolling and shortcuts', 'Enable or disable per website'], 90, 250, { size: 30, weight: 750, fill: '#21384e', gap: 58 })}
       ${chip(90, 448, 'Top / bottom scroll')}

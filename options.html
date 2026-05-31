@@ -2,71 +2,316 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Page Scroll Master - 设置</title>
+  <title>Smart Scroll Navigator - 设置</title>
   <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #172033;
+      --muted: #657184;
+      --line: #e4e9f1;
+      --primary: #4A9EDD;
+      --primary-dark: #2d7fbd;
+      --danger: #e5484d;
+      --shadow: 0 18px 45px rgba(34, 45, 70, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      padding: 20px;
-      padding-top: 80px; /* 为固定的header-row留出空间 */
+      padding: 28px 24px 56px;
       font-family: Arial, sans-serif;
-      max-width: 500px;
+      max-width: 980px;
       margin: 0 auto;
-      /* 为固定定位的预览按钮留出空间 */
       min-height: 100vh;
       position: relative;
+      background: var(--bg);
+      color: var(--text);
     }
+
     h1 {
-      color: #333;
+      color: var(--text);
+      font-size: 28px;
+      line-height: 1.2;
+      margin: 0 0 8px;
     }
+
+    h2 {
+      font-size: 22px;
+      margin: 0 0 6px;
+    }
+
+    h3 {
+      font-size: 16px;
+      margin: 0 0 14px;
+      color: var(--text);
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .settings-shell {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid rgba(228, 233, 241, 0.9);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding: 28px 32px;
+      background:
+        linear-gradient(135deg, rgba(74, 158, 221, 0.12), rgba(63, 189, 157, 0.08)),
+        var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-copy {
+      min-width: 0;
+    }
+
+    .header-copy p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .language-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .language-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .language-selector select {
+      margin-bottom: 0;
+      width: auto;
+      min-width: 112px;
+    }
+
+    .tab-nav {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      padding: 0 24px;
+      background: #fbfcfe;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tab-button {
+      margin: 0;
+      padding: 18px 10px 16px;
+      border-radius: 0;
+      border: none;
+      border-bottom: 3px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      box-shadow: none;
+      font-size: 15px;
+    }
+
+    .tab-button:hover {
+      background: rgba(74, 158, 221, 0.08);
+      color: var(--primary-dark);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .tab-button.is-active {
+      color: var(--primary-dark);
+      border-bottom-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .tab-panels {
+      padding: 30px 42px 38px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+    }
+
+    .panel-heading {
+      margin-bottom: 22px;
+    }
+
+    .panel-heading p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .setting-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
     .setting-group {
-      margin-bottom: 20px;
-      padding: 15px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
+      margin-bottom: 18px;
+      padding: 20px;
+      background-color: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
     }
+
+    .setting-group.full-width {
+      grid-column: 1 / -1;
+    }
+
     label {
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #555;
+      color: #354052;
+      font-size: 14px;
     }
+
     input[type="range"] {
       width: 100%;
       margin-bottom: 10px;
+      accent-color: var(--primary);
     }
+
     .speed-value {
       font-size: 14px;
-      color: #666;
+      color: var(--muted);
     }
+
+    input[type="number"],
+    input[type="text"],
     select {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      padding: 10px 12px;
+      border: 1px solid #d6deea;
+      border-radius: 8px;
       margin-bottom: 10px;
+      background: #ffffff;
+      color: var(--text);
+      font-size: 14px;
     }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(74, 158, 221, 0.16);
+      outline: none;
+    }
+
     .checkbox-container {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 10px;
     }
+
+    .checkbox-container label {
+      margin-bottom: 0;
+    }
+
+    .inline-control {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .inline-control input[type="number"],
+    .inline-control input[type="text"],
+    .inline-control select {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .sub-setting {
+      margin-top: 12px;
+      padding: 14px 0 0 28px;
+      border-top: 1px solid var(--line);
+    }
+    #iconCustomizationSettings {
+      padding-left: 0;
+    }
+
+    .muted-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 6px 0 10px;
+    }
+
+    .domain-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .domain-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .domain-name {
+      overflow-wrap: anywhere;
+      color: var(--text);
+    }
+
+    .domain-error {
+      display: none;
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
     input[type="checkbox"] {
       width: 18px;
       height: 18px;
+      accent-color: var(--primary);
     }
+
     button {
       padding: 10px 20px;
-      background-color: #4A9EDD;
+      background-color: var(--primary);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
       margin-top: 10px;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
+
     button:hover {
       background-color: #3a8bc9;
     }
+
     button:active {
       background-color: #2a7bb9;
     }
@@ -74,16 +319,16 @@
     /* 保存按钮样式 */
     #saveButton {
       margin-top: 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      padding: 8px 16px;
+      box-shadow: 0 8px 18px rgba(74, 158, 221, 0.28);
+      padding: 10px 18px;
       font-size: 14px;
-      transition: all 0.2s ease;
     }
     
     #saveButton:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 12px 22px rgba(74, 158, 221, 0.34);
       transform: translateY(-2px);
     }
+
     .size-input-container {
       display: flex;
       gap: 10px;
@@ -107,61 +352,22 @@
     }
     .color-input-container input[type="color"] {
       width: 50px;
-      height: 30px;
+      height: 38px;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
+      padding: 0;
     }
+
     .color-input-container input[type="text"] {
       flex: 1;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    /* 顶部固定栏样式 */
-    .header-row {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 20px;
-      background-color: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      z-index: 10001;
-      max-width: 500px;
-      margin: 0 auto;
-      box-sizing: border-box;
-    }
-    
-    .header-row h1 {
-      margin: 0;
-    }
-    
-    .language-selector {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .language-icon {
-      font-size: 18px;
-      line-height: 1;
-    }
-    
-    .language-selector select {
       margin-bottom: 0;
-      width: auto;
-      min-width: 100px;
-      padding: 6px 10px;
     }
     
     /* 颜色说明文字样式 */
     .color-note {
       font-size: 12px;
-      color: #666;
+      color: var(--muted);
       margin-top: 5px;
       font-style: italic;
     }
@@ -169,15 +375,65 @@
     /* 预览说明样式 */
     .preview-info {
       background-color: #e8f4fd;
-      border-left: 4px solid #4A9EDD;
+      border-left: 4px solid var(--primary);
       padding: 12px;
       margin-bottom: 15px;
-      border-radius: 4px;
+      border-radius: 8px;
     }
     .preview-info p {
       margin: 0;
       font-size: 13px;
-      color: #555;
+      color: var(--muted);
+    }
+
+    .about-card {
+      background: linear-gradient(135deg, rgba(74, 158, 221, 0.12), rgba(63, 189, 157, 0.08));
+      border-left: 4px solid var(--primary);
+    }
+
+    .about-card a {
+      color: var(--primary-dark);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .about-card a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 16px 14px 44px;
+      }
+
+      .header-row {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 22px;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .tab-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 0 12px;
+      }
+
+      .tab-panels {
+        padding: 22px 18px 28px;
+      }
+
+      .setting-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .inline-control {
+        align-items: stretch;
+        flex-direction: column;
+      }
     }
     
     /* 实际预览按钮样式 - 固定在设置页面上 */
@@ -240,16 +496,12 @@
     .preview-scroll-button svg {
       width: 60%;
       height: 60%;
-      stroke: white;
-      stroke-width: 3;
+      color: currentColor;
+      stroke: currentColor;
       display: block;
-      fill: none;
       /* 防止SVG在动画中抖动 */
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
-      /* 确保SVG属性与实际页面一致 */
-      stroke-linecap: round;
-      stroke-linejoin: round;
     }
     
     /* 隐藏状态 */
@@ -257,6 +509,59 @@
       opacity: 0;
       pointer-events: none;
       transform: scale(0.8);
+    }
+    .preview-progress-button.hidden,
+    .preview-horizontal-progress.hidden {
+      display: none;
+    }
+
+    .preview-progress-button {
+      position: fixed;
+      overflow: hidden;
+    }
+    .preview-progress-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 46%;
+      opacity: 0.86;
+      pointer-events: none;
+    }
+    .preview-progress-label {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .preview-horizontal-progress {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 3px;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.12);
+      pointer-events: none;
+    }
+    .preview-horizontal-progress-fill {
+      width: 46%;
+      height: 100%;
+      background: #4A9EDD;
+    }
+    .preview-horizontal-progress-label {
+      position: absolute;
+      right: 10px;
+      top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: none;
+    }
+    .preview-horizontal-progress.is-bottom .preview-horizontal-progress-label {
+      top: auto;
+      bottom: 6px;
     }
     
     /* 针对Firefox的优化 */
@@ -285,117 +590,269 @@
   </style>
 </head>
 <body>
-  <div class="header-row">
-    <h1 data-i18n="settings.title">Page Scroll Master</h1>
-    <div style="display: flex; align-items: center; gap: 20px;">
-      <div class="language-selector">
-        <span class="language-icon">🌐</span>
-        <select id="languageSelector">
-          <option value="auto">自动</option>
-          <option value="zh-CN">中文</option>
-          <option value="en-US">English</option>
-        </select>
+  <main class="settings-shell">
+    <div class="header-row">
+      <div class="header-copy">
+        <h1 data-i18n="settings.title">Smart Scroll Navigator</h1>
+        <p data-i18n="settings.subtitle">配置滚动按钮、阅读进度和网站启用状态。</p>
       </div>
-      <button id="saveButton" data-i18n="settings.saveButton">保存</button>
-    </div>
-  </div>
-  
-  <div class="setting-group">
-    <label for="scrollSpeed" data-i18n="settings.scrollSpeed">滚动速度</label>
-    <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="100">
-    <div class="speed-value" id="speedValue">100ms</div>
-  </div>
-  
-  <div class="setting-group">
-    <label data-i18n="settings.buttonPosition">按钮位置</label>
-    
-    <label for="horizontalPosition" data-i18n="settings.horizontalPosition">水平位置</label>
-    <select id="horizontalPosition">
-      <option value="right" data-i18n="settings.position.right">右侧边缘</option>
-      <option value="left" data-i18n="settings.position.left">左侧边缘</option>
-    </select>
-    
-    <label for="verticalAlignment" data-i18n="settings.verticalAlignment">垂直对齐方式</label>
-    <select id="verticalAlignment">
-      <option value="center" data-i18n="settings.alignment.center">居中显示</option>
-      <option value="top" data-i18n="settings.alignment.top">顶部对齐</option>
-      <option value="bottom" data-i18n="settings.alignment.bottom">底部对齐</option>
-    </select>
-    
-    <label for="edgeDistance" data-i18n="settings.edgeDistance">边缘距离(px)</label>
-    <div style="margin-bottom: 10px;">
-      <input type="number" id="edgeDistance" min="0" max="200" value="12" placeholder="输入边缘距离" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-      <div id="edgeDistanceError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
-    </div>
-  </div>
-  
-  <div class="setting-group">
-    <label data-i18n="settings.buttonStyle">按钮样式</label>
-    
-    <label data-i18n="settings.buttonShape">按钮形状</label>
-    <div style="margin-bottom: 10px;">
-      <select id="buttonShape" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; background: white;">
-        <option value="round" data-i18n="settings.buttonShape.round">圆形</option>
-        <option value="square" data-i18n="settings.buttonShape.square">正方形</option>
-      </select>
-    </div>
-    
-    <label data-i18n="settings.buttonSize">按钮尺寸(px)</label>
-    <div style="margin-bottom: 10px;">
-      <input type="number" id="buttonSize" min="10" max="120" value="48" placeholder="输入尺寸" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-      <div id="sizeError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
-    </div>
-    
-    <label data-i18n="settings.buttonSpacing">按钮间距(px)</label>
-    <div style="margin-bottom: 10px;">
-      <input type="number" id="buttonSpacing" min="0" max="800" value="8" placeholder="输入间距" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-      <div id="spacingError" style="display: none; color: red; font-size: 12px; margin-top: 4px;"></div>
-    </div>
-    
-    <label data-i18n="settings.topButtonColor">顶部按钮颜色</label>
-    <div class="color-input-container">
-      <input type="color" id="topButtonColor" value="#4A9EDD">
-      <input type="text" id="topButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
-    </div>
-    
-    <label data-i18n="settings.bottomButtonColor">底部按钮颜色</label>
-    <div class="color-input-container">
-      <input type="color" id="bottomButtonColor" value="#4A9EDD">
-      <input type="text" id="bottomButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+      <div class="header-actions">
+        <div class="language-selector">
+          <span class="language-icon">🌐</span>
+          <select id="languageSelector">
+            <option value="auto">自动</option>
+            <option value="zh-CN">中文</option>
+            <option value="en-US">English</option>
+            <option value="es-ES">Español</option>
+            <option value="ja-JP">日本語</option>
+          </select>
+        </div>
+        <button id="saveButton" data-i18n="settings.saveButton">保存</button>
+      </div>
     </div>
 
-    
-    <label data-i18n="settings.opacity">透明度</label>
-    <input type="range" id="opacity" min="0" max="100" step="1" value="100">
-    <div class="speed-value" id="opacityValue">100%</div>
-  </div>
-  
-  <div class="setting-group">
-    <label data-i18n="settings.shortcutSettings">快捷键设置</label>
-    
-    <div class="checkbox-container">
-      <input type="checkbox" id="enableHoverHide" checked>
-      <label for="enableHoverHide" data-i18n="settings.enableHoverHide">启用鼠标悬停+快捷键隐藏按钮</label>
-    </div>
-    
-    <div id="hoverHideSettings" style="margin-top: 10px; padding-left: 28px;">
-      <label data-i18n="settings.hoverHideKey">快捷键组合</label>
-      <select id="hoverHideKey">
-        <option value="Alt" data-platform-name="alt">Alt</option>
-        <option value="Ctrl" selected data-platform-name="ctrl">Ctrl</option>
-        <option value="Shift" data-platform-name="shift">Shift</option>
-      </select>
-      <p style="font-size: 12px; color: #666; margin-top: 5px;" data-i18n="settings.hoverHideHint">提示：当鼠标悬停在按钮上并按住所选快捷键时，按钮将平滑隐藏</p>
-    </div>
-  </div>
-  
+    <nav class="tab-nav" aria-label="Settings sections">
+      <button type="button" class="tab-button is-active" data-tab="basic" data-i18n="settings.tab.basic">基础设置</button>
+      <button type="button" class="tab-button" data-tab="advanced" data-i18n="settings.tab.advanced">高级功能</button>
+      <button type="button" class="tab-button" data-tab="domains" data-i18n="settings.tab.domains">域名管理</button>
+      <button type="button" class="tab-button" data-tab="feedback" data-i18n="settings.tab.feedback">建议&反馈</button>
+    </nav>
 
-  
-  <div class="setting-group" style="background-color: #e3f2fd; border-left: 4px solid #2196F3;">
-    <h3 data-i18n="settings.about">关于插件</h3>
-    <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
-    <a href="mailto:kscj.e@live.com" style="color: #2196F3; text-decoration: none;">kscj.e@live.com</a>
-  </div>
+    <div class="tab-panels">
+      <section class="tab-panel is-active" data-tab-panel="basic">
+        <div class="panel-heading">
+          <h2 data-i18n="settings.tab.basic">基础设置</h2>
+          <p data-i18n="settings.basicIntro">调整滚动速度、按钮位置、外观图标和快捷键。</p>
+        </div>
+
+        <div class="setting-grid">
+          <div class="setting-group">
+            <h3 data-i18n="settings.scrollBehavior">滚动行为</h3>
+            <label for="scrollSpeed" data-i18n="settings.scrollSpeed">滚动速度</label>
+            <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="100">
+            <div class="speed-value" id="speedValue">100ms</div>
+          </div>
+
+          <div class="setting-group">
+            <h3 data-i18n="settings.buttonPosition">按钮位置</h3>
+
+            <label for="horizontalPosition" data-i18n="settings.horizontalPosition">水平位置</label>
+            <select id="horizontalPosition">
+              <option value="right" data-i18n="settings.position.right">右侧边缘</option>
+              <option value="left" data-i18n="settings.position.left">左侧边缘</option>
+            </select>
+
+            <label for="verticalAlignment" data-i18n="settings.verticalAlignment">垂直对齐方式</label>
+            <select id="verticalAlignment">
+              <option value="center" data-i18n="settings.alignment.center">居中显示</option>
+              <option value="top" data-i18n="settings.alignment.top">顶部对齐</option>
+              <option value="bottom" data-i18n="settings.alignment.bottom">底部对齐</option>
+            </select>
+
+            <label for="edgeDistance" data-i18n="settings.edgeDistance">边缘距离(px)</label>
+            <input type="number" id="edgeDistance" min="0" max="200" value="8" placeholder="输入边缘距离">
+            <div id="edgeDistanceError" class="domain-error"></div>
+          </div>
+
+          <div class="setting-group">
+            <h3 data-i18n="settings.buttonStyle">按钮样式</h3>
+
+            <label for="buttonShape" data-i18n="settings.buttonShape">按钮形状</label>
+            <select id="buttonShape">
+              <option value="round" data-i18n="settings.buttonShape.round">圆形</option>
+              <option value="square" data-i18n="settings.buttonShape.square">正方形</option>
+            </select>
+
+            <label for="buttonSize" data-i18n="settings.buttonSize">按钮尺寸(px)</label>
+            <input type="number" id="buttonSize" min="10" max="120" value="40" placeholder="输入尺寸">
+            <div id="sizeError" class="domain-error"></div>
+
+            <label for="buttonSpacing" data-i18n="settings.buttonSpacing">按钮间距(px)</label>
+            <input type="number" id="buttonSpacing" min="0" max="800" value="8" placeholder="输入间距">
+            <div id="spacingError" class="domain-error"></div>
+
+            <label data-i18n="settings.topButtonColor">顶部按钮颜色</label>
+            <div class="color-input-container">
+              <input type="color" id="topButtonColor" value="#4A9EDD">
+              <input type="text" id="topButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+            </div>
+
+            <label data-i18n="settings.bottomButtonColor">底部按钮颜色</label>
+            <div class="color-input-container">
+              <input type="color" id="bottomButtonColor" value="#4A9EDD">
+              <input type="text" id="bottomButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+            </div>
+
+            <label for="opacity" data-i18n="settings.opacity">透明度</label>
+            <input type="range" id="opacity" min="0" max="100" step="1" value="100">
+            <div class="speed-value" id="opacityValue">100%</div>
+          </div>
+
+          <div class="setting-group">
+            <h3 data-i18n="settings.buttonIcons">按钮图标</h3>
+
+            <div id="iconCustomizationSettings" class="sub-setting">
+              <label for="iconSet" data-i18n="settings.iconSet">图标样式</label>
+              <select id="iconSet">
+                <option value="defaultArrow" data-i18n="settings.iconSet.defaultArrow">默认箭头</option>
+                <option value="triangle" data-i18n="settings.iconSet.triangle">三角形</option>
+                <option value="chevron" data-i18n="settings.iconSet.chevron">折线箭头</option>
+                <option value="doubleArrow" data-i18n="settings.iconSet.doubleArrow">双箭头</option>
+              </select>
+
+              <label data-i18n="settings.iconColor">图标颜色</label>
+              <div class="color-input-container">
+                <input type="color" id="iconColor" value="#FFFFFF">
+                <input type="text" id="iconColorHex" value="#FFFFFF" placeholder="#FFFFFF">
+              </div>
+              <p class="muted-note" data-i18n="settings.customIconComingSoon">上传自定义图标 Coming soon。</p>
+            </div>
+          </div>
+
+          <div class="setting-group full-width">
+            <h3 data-i18n="settings.shortcutSettings">快捷键设置</h3>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="enableHoverHide" checked>
+              <label for="enableHoverHide" data-i18n="settings.enableHoverHide">启用鼠标悬停+快捷键隐藏按钮</label>
+            </div>
+
+            <div id="hoverHideSettings" class="sub-setting">
+              <label for="hoverHideKey" data-i18n="settings.hoverHideKey">快捷键组合</label>
+              <select id="hoverHideKey">
+                <option value="Alt" data-platform-name="alt">Alt</option>
+                <option value="Ctrl" selected data-platform-name="ctrl">Ctrl</option>
+                <option value="Shift" data-platform-name="shift">Shift</option>
+              </select>
+              <p class="muted-note" data-i18n="settings.hoverHideHint">提示：当鼠标悬停在按钮上并按住所选快捷键时，按钮将平滑隐藏</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="advanced">
+        <div class="panel-heading">
+          <h2 data-i18n="settings.advancedFeatures">高级功能</h2>
+          <p data-i18n="settings.advancedIntro">配置页面进度条的显示方式和交互行为。</p>
+        </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.progressBar">页面进度条</h3>
+
+          <div class="checkbox-container">
+            <input type="checkbox" id="progressBarEnabled">
+            <label for="progressBarEnabled" data-i18n="settings.progressBarEnabled">启用页面进度条</label>
+          </div>
+
+          <div id="progressBarSettings" class="sub-setting">
+            <label for="progressBarMode" data-i18n="settings.progressBarMode">显示样式</label>
+            <select id="progressBarMode">
+              <option value="verticalButton" data-i18n="settings.progressBarMode.verticalButton">纵向进度按钮</option>
+              <option value="horizontalBar" data-i18n="settings.progressBarMode.horizontalBar">横向页面边缘进度条</option>
+            </select>
+
+            <div id="verticalProgressSettings">
+              <label for="progressVerticalHeight" data-i18n="settings.progressVerticalHeight">纵向高度(px)</label>
+              <input type="number" id="progressVerticalHeight" min="40" max="400" value="120">
+            </div>
+
+            <div id="horizontalProgressSettings">
+              <label for="progressHorizontalPosition" data-i18n="settings.progressHorizontalPosition">横向位置</label>
+              <select id="progressHorizontalPosition">
+                <option value="top" data-i18n="settings.progressHorizontalPosition.top">顶部</option>
+                <option value="bottom" data-i18n="settings.progressHorizontalPosition.bottom">底部</option>
+              </select>
+
+              <label for="progressThickness" data-i18n="settings.progressThickness">横向粗细(px)</label>
+              <select id="progressThickness">
+                <option value="2">2px</option>
+                <option value="3">3px</option>
+                <option value="4" selected>4px</option>
+                <option value="6">6px</option>
+                <option value="8">8px</option>
+                <option value="12">12px</option>
+                <option value="16">16px</option>
+              </select>
+            </div>
+
+            <label for="progressColorMode" data-i18n="settings.progressColorMode">进度颜色</label>
+            <select id="progressColorMode">
+              <option value="followTopButton" data-i18n="settings.progressColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followBottomButton" data-i18n="settings.progressColorMode.followBottomButton">跟随底部按钮</option>
+              <option value="custom" data-i18n="settings.progressColorMode.custom">自定义</option>
+            </select>
+
+            <div id="progressCustomColorContainer">
+              <label data-i18n="settings.progressCustomColor">自定义进度颜色</label>
+              <div class="color-input-container">
+                <input type="color" id="progressCustomColor" value="#4A9EDD">
+                <input type="text" id="progressCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+              </div>
+            </div>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="progressClickToJump" checked>
+              <label for="progressClickToJump" data-i18n="settings.progressClickToJump">点击进度条跳转</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="progressShowPercentage" checked>
+              <label for="progressShowPercentage" data-i18n="settings.progressShowPercentage">显示百分比</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="progressShowRemainingTime">
+              <label for="progressShowRemainingTime" data-i18n="settings.progressShowRemainingTime">显示剩余阅读时间</label>
+            </div>
+            <p class="muted-note" data-i18n="settings.progressInfiniteNote">无限滚动页面中进度可能随着内容加载而变化。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="domains">
+        <div class="panel-heading">
+          <h2 data-i18n="settings.tab.domains">域名管理</h2>
+          <p data-i18n="settings.domainIntro">管理不同网站中滚动按钮的启用或禁用状态。</p>
+        </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.siteManagement">网站启用状态</h3>
+          <input type="text" id="domainSearch" data-i18n-placeholder="settings.domainSearch" placeholder="搜索域名">
+
+          <div class="inline-control">
+            <input type="text" id="domainInput" data-i18n-placeholder="settings.domainInput" placeholder="example.com 或 https://example.com/page">
+            <select id="domainInitialState">
+              <option value="true" data-i18n="settings.domainEnabled">启用</option>
+              <option value="false" data-i18n="settings.domainDisabled">禁用</option>
+            </select>
+          </div>
+          <div id="domainError" class="domain-error"></div>
+
+          <div id="domainList" style="margin-top: 10px;"></div>
+          <p id="domainEmpty" class="muted-note" data-i18n="settings.domainEmpty">暂无手动设置的网站。</p>
+
+          <div class="domain-toolbar">
+            <button type="button" id="addDomainButton" data-i18n="settings.addDomain">添加域名</button>
+            <button type="button" id="clearDisabledSitesButton" data-i18n="settings.clearDisabledSites">清除已关闭站点</button>
+            <button type="button" id="restoreAllSitesButton" data-i18n="settings.restoreAllSites">恢复全部启用</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="feedback">
+        <div class="panel-heading">
+          <h2 data-i18n="settings.tab.feedback">建议&反馈</h2>
+        </div>
+
+        <div class="setting-group about-card">
+          <h3 data-i18n="settings.about">关于插件</h3>
+          <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">1.8.0</span></p>
+          <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
+          <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
+          <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
+        </div>
+      </section>
+    </div>
+  </main>
   
   <!-- 实际预览按钮 - 直接显示在设置页面上 -->
   <button id="previewTopButton" class="preview-scroll-button" title="滚动到顶部">
@@ -403,11 +860,19 @@
       <path d="M12 19V5M5 12l7-7 7 7"/>
     </svg>
   </button>
+  <button id="previewProgressButton" class="preview-scroll-button preview-progress-button hidden" title="页面进度">
+    <span class="preview-progress-fill"></span>
+    <span class="preview-progress-label"></span>
+  </button>
   <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">
     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 5v14M5 12l7 7 7-7"/>
     </svg>
   </button>
+  <div id="previewHorizontalProgress" class="preview-horizontal-progress hidden" aria-hidden="true">
+    <div class="preview-horizontal-progress-fill"></div>
+    <span class="preview-horizontal-progress-label"></span>
+  </div>
   
   <script src="options.js"></script>
 </body>

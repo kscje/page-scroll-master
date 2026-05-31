@@ -1,42 +1,42 @@
 {
   "extensionName": {
-    "message": "Smart Scroll Navigator – Top, Bottom & Progress",
-    "description": "插件名称"
+    "message": "スマートスクロールナビ – 上下移動と進捗",
+    "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Scroll to top or bottom, track page progress, and jump through long pages",
-    "description": "插件描述"
+    "message": "ページの先頭や末尾へ移動し、進捗表示と長ページのジャンプに対応します",
+    "description": "Extension description"
   },
   "commandScrollToTop": {
-    "message": "Scroll to the top of the page",
+    "message": "ページの先頭へスクロール",
     "description": "Command description"
   },
   "commandScrollToBottom": {
-    "message": "Scroll to the bottom of the page",
+    "message": "ページの末尾へスクロール",
     "description": "Command description"
   },
   "popupScrollTop": {
-    "message": "Scroll to Top",
+    "message": "先頭へスクロール",
     "description": "Floating button tooltip"
   },
   "popupScrollBottom": {
-    "message": "Scroll to Bottom",
+    "message": "末尾へスクロール",
     "description": "Floating button tooltip"
   },
   "popupSettings": {
-    "message": "Settings",
+    "message": "設定",
     "description": "Popup settings button label"
   },
   "popupEnableToggle": {
-    "message": "Enable on this site",
+    "message": "このサイトで有効",
     "description": "Popup enable toggle label"
   },
   "settingsEdgeDistance": {
-    "message": "Distance from Edge(px)",
+    "message": "端からの距離(px)",
     "description": "Settings page edge distance label"
   },
   "settingsEdgeDistanceError": {
-    "message": "Distance from edge must be between 0px and 200px",
+    "message": "端からの距離は0pxから200pxの範囲で指定してください",
     "description": "Edge distance input error message"
   }
 }

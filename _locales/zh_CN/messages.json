@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "一键顶部/底部滚动",
+    "message": "智能页面滚动导航器：顶部/底部、进度与跳转",
     "description": "插件名称"
   },
   "extensionDescription": {
-    "message": "一键滚动到页面顶部或底部，支持平滑动画效果",
+    "message": "一键跳转页面顶部或底部，显示阅读进度，并支持长页面快速定位",
     "description": "插件描述"
   },
   "commandScrollToTop": {

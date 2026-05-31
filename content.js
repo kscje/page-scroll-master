@@ -1,14 +1,46 @@
 // 默认设置
 let scrollSpeed = 100; // 默认滚动速度为100ms
-let isExtensionEnabled = true; // 当前网站插件启用状态
+let isExtensionEnabled = false; // 当前网站插件启用状态
+let hasLoadedExtensionEnabledState = false; // 站点启用状态加载完成前不初始化按钮
 const currentHostname = window.location.hostname; // 当前页面域名
 let currentScrollContainer = null; // 当前页面的滚动容器
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
+const DEFAULT_ICON_COLOR = '#FFFFFF';
+const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 120;
+const MAX_PROGRESS_VERTICAL_HEIGHT = 400;
+const READING_SPEED_CJK_CHARS_PER_MINUTE = 500;
+const READING_SPEED_LATIN_WORDS_PER_MINUTE = 225;
+const READING_ESTIMATE_CACHE_MS = 5000;
 const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
 const DYNAMIC_STYLE_ID = 'page-scroll-master-dynamic-styles';
+const HORIZONTAL_PROGRESS_ID = 'page-scroll-master-horizontal-progress';
 const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to Top';
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
+const DEFAULT_ADVANCED_SETTINGS = {
+  progressBar: {
+    enabled: false,
+    mode: 'verticalButton',
+    horizontalPosition: 'top',
+    colorMode: 'followTopButton',
+    customColor: DEFAULT_BUTTON_COLOR,
+    thickness: 4,
+    verticalHeight: DEFAULT_PROGRESS_VERTICAL_HEIGHT,
+    clickToJump: true,
+    showPercentage: true,
+    showRemainingTime: false
+  },
+  iconCustomization: {
+    enabled: true,
+    iconSet: 'defaultArrow',
+    iconColor: DEFAULT_ICON_COLOR,
+    customIcon: {
+      enabled: false,
+      topIconDataUrl: '',
+      bottomIconDataUrl: ''
+    }
+  }
+};
 
 // SPA 页面动态加载检测配置
 const SPA_DETECTION_CONFIG = {
@@ -35,7 +67,7 @@ let buttonSettings = {
   buttonSize: 40,
   buttonSizeUnit: 'px', // 固定为px单位
   buttonSpacing: 8, // 按钮间距，默认8px
-  edgeDistance: 12, // 边缘距离，默认12px
+  edgeDistance: 8, // 边缘距离，默认8px
   topButtonColor: DEFAULT_BUTTON_COLOR, // 默认顶部按钮颜色
   bottomButtonColor: DEFAULT_BUTTON_COLOR, // 默认底部按钮颜色
   opacity: 100,
@@ -43,8 +75,96 @@ let buttonSettings = {
   hoverHideKey: 'Ctrl', // 快捷键组合
   buttonShape: 'round' // 按钮形状：round-圆形，square-正方形
 };
+let advancedSettings = mergeAdvancedSettings();
+let progressScrollTarget = null;
+let progressUpdateFrame = null;
+let readingEstimateCache = {
+  target: null,
+  calculatedAt: 0,
+  textLength: 0,
+  seconds: 0
+};
 
 const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMergeDefaults(defaults, saved) {
+  const result = Array.isArray(defaults) ? [] : {};
+
+  Object.keys(defaults).forEach((key) => {
+    const defaultValue = defaults[key];
+    const savedValue = isPlainObject(saved) ? saved[key] : undefined;
+
+    if (isPlainObject(defaultValue)) {
+      result[key] = deepMergeDefaults(defaultValue, savedValue);
+    } else {
+      result[key] = savedValue === undefined ? defaultValue : savedValue;
+    }
+  });
+
+  return result;
+}
+
+function mergeAdvancedSettings(savedSettings) {
+  const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
+  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, DEFAULT_BUTTON_COLOR);
+  merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
+  merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT);
+  merged.iconCustomization.enabled = true;
+  merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
+  merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, DEFAULT_ICON_COLOR);
+  return merged;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return clamp(number, min, max);
+}
+
+function validateHexColor(color, fallback) {
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color || '') ? color : fallback;
+}
+
+function hexToRgb(color) {
+  const hex = validateHexColor(color, DEFAULT_BUTTON_COLOR).slice(1);
+  const normalized = hex.length === 3
+    ? hex.split('').map((char) => char + char).join('')
+    : hex;
+  const value = parseInt(normalized, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255
+  };
+}
+
+function getProgressFillColor() {
+  const rgb = hexToRgb(getProgressColor());
+  const shade = 0.72;
+  const r = Math.round(rgb.r * shade);
+  const g = Math.round(rgb.g * shade);
+  const b = Math.round(rgb.b * shade);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function normalizeProgressThickness(value) {
+  const number = Number(value);
+  return [2, 3, 4, 6, 8, 12, 16].includes(number) ? number : 4;
+}
+
+function normalizeIconSet(value) {
+  return ['defaultArrow', 'triangle', 'chevron', 'doubleArrow'].includes(value)
+    ? value
+    : 'defaultArrow';
+}
 
 function isRootScrollElement(element) {
   return element === document.scrollingElement ||
@@ -199,12 +319,13 @@ function getButtonContainer() {
 function getButtonElements() {
   const root = getScrollRoot();
   if (!root) {
-    return { root: null, topButton: null, bottomButton: null };
+    return { root: null, topButton: null, progressButton: null, bottomButton: null };
   }
 
   return {
     root,
     topButton: root.querySelector('.psm-scroll-top'),
+    progressButton: root.querySelector('.psm-progress-button'),
     bottomButton: root.querySelector('.psm-scroll-bottom')
   };
 }
@@ -216,13 +337,14 @@ function getScrollTargetBottom() {
 
 // 从存储中加载用户设置
 function loadSettings() {
-  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings'], (result) => {
+  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'advancedSettings'], (result) => {
     if (result.scrollSpeed) {
       scrollSpeed = result.scrollSpeed;
     }
     if (result.buttonSettings) {
       buttonSettings = { ...buttonSettings, ...result.buttonSettings };
     }
+    advancedSettings = mergeAdvancedSettings(result.advancedSettings);
     loadExtensionEnabledState();
   });
 }
@@ -231,8 +353,11 @@ function loadExtensionEnabledState() {
   chrome.storage.local.get(['enableStates'], function (result) {
     var states = normalizeEnableStates(result.enableStates);
     isExtensionEnabled = states[currentHostname] !== false;
+    hasLoadedExtensionEnabledState = true;
     if (isExtensionEnabled) {
       initializeButton();
+    } else {
+      removeButton();
     }
   });
 }
@@ -241,52 +366,422 @@ function normalizeEnableStates(states) {
   return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
 }
 
-// 平滑滚动到顶部
-function scrollToTop() {
-  const container = resolveScrollContainer();
+function smoothScrollTo(container, targetTop) {
+  if (!container) return;
   const start = getScrollTop(container);
+  const range = getElementScrollRange(container);
+  const end = clampNumber(targetTop, 0, range, 0);
   const startTime = performance.now();
-  
+
   function scroll(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / scrollSpeed, 1);
     const easeProgress = easeInOutCubic(progress);
-    
-    setScrollTop(container, start * (1 - easeProgress));
-    
+
+    setScrollTop(container, start + (end - start) * easeProgress);
+
     if (progress < 1) {
       requestAnimationFrame(scroll);
+    } else {
+      requestProgressUpdate();
     }
   }
-  
+
   requestAnimationFrame(scroll);
+}
+
+// 平滑滚动到顶部
+function scrollToTop() {
+  const container = resolveScrollContainer();
+  smoothScrollTo(container, 0);
 }
 
 // 平滑滚动到底部
 function scrollToBottom() {
   const container = resolveScrollContainer();
-  const start = getScrollTop(container);
-  const end = getScrollTargetBottom();
-  const startTime = performance.now();
-  
-  function scroll(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / scrollSpeed, 1);
-    const easeProgress = easeInOutCubic(progress);
-    
-    setScrollTop(container, start + (end - start) * easeProgress);
-    
-    if (progress < 1) {
-      requestAnimationFrame(scroll);
-    }
-  }
-  
-  requestAnimationFrame(scroll);
+  smoothScrollTo(container, getElementScrollRange(container));
 }
 
 // 缓动函数
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function getIconSvg(direction, iconSet) {
+  const isTop = direction === 'top';
+  const icons = {
+    defaultArrow: {
+      top: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+      bottom: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'
+    },
+    triangle: {
+      top: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5l8 12H4z"/></svg>',
+      bottom: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 19L4 7h16z"/></svg>'
+    },
+    chevron: {
+      top: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg>',
+      bottom: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg>'
+    },
+    doubleArrow: {
+      top: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13l5-5 5 5M7 19l5-5 5 5"/></svg>',
+      bottom: '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l5 5 5-5M7 11l5 5 5-5"/></svg>'
+    }
+  };
+  const set = icons[iconSet] || icons.defaultArrow;
+  return isTop ? set.top : set.bottom;
+}
+
+function getActiveIconSet() {
+  return normalizeIconSet(advancedSettings.iconCustomization.iconSet);
+}
+
+function getActiveIconColor() {
+  return validateHexColor(advancedSettings.iconCustomization.iconColor, DEFAULT_ICON_COLOR);
+}
+
+function applyButtonIcons() {
+  const { topButton, bottomButton } = getButtonElements();
+  if (!topButton || !bottomButton) return;
+  const iconSet = getActiveIconSet();
+  topButton.innerHTML = getIconSvg('top', iconSet);
+  bottomButton.innerHTML = getIconSvg('bottom', iconSet);
+}
+
+function getProgressColor() {
+  const progressSettings = advancedSettings.progressBar;
+  if (progressSettings.colorMode === 'followBottomButton') {
+    return validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
+  }
+  if (progressSettings.colorMode === 'custom') {
+    return validateHexColor(progressSettings.customColor, DEFAULT_BUTTON_COLOR);
+  }
+  return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
+}
+
+function getScrollProgress(container) {
+  const range = getElementScrollRange(container);
+  if (range <= 0) return 0;
+  return clamp(getScrollTop(container) / range, 0, 1);
+}
+
+function getReadingText(container) {
+  const source = isRootScrollElement(container) ? document.body : container;
+  if (!source) return '';
+  return (source.innerText || source.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function estimateReadingSecondsFromText(text) {
+  if (!text) return 0;
+  const cjkMatches = text.match(/[\u3400-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/g) || [];
+  const latinText = text
+    .replace(/[\u3400-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/g, ' ')
+    .replace(/[0-9_]+/g, ' ');
+  const latinWords = latinText.match(/[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['-][A-Za-zÀ-ÖØ-öø-ÿ]+)?/g) || [];
+  const cjkSeconds = (cjkMatches.length / READING_SPEED_CJK_CHARS_PER_MINUTE) * 60;
+  const latinSeconds = (latinWords.length / READING_SPEED_LATIN_WORDS_PER_MINUTE) * 60;
+  return Math.max(0, cjkSeconds + latinSeconds);
+}
+
+function getEstimatedReadingSeconds(container) {
+  if (!advancedSettings.progressBar.showRemainingTime) return 0;
+  const target = isRootScrollElement(container) ? document.body : container;
+  const now = Date.now();
+  if (
+    readingEstimateCache.target === target &&
+    readingEstimateCache.seconds > 0 &&
+    now - readingEstimateCache.calculatedAt < READING_ESTIMATE_CACHE_MS
+  ) {
+    return readingEstimateCache.seconds;
+  }
+
+  const text = getReadingText(container);
+  const seconds = estimateReadingSecondsFromText(text);
+  readingEstimateCache = {
+    target,
+    calculatedAt: now,
+    textLength: text.length,
+    seconds
+  };
+  return seconds;
+}
+
+function formatRemainingReadingTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return '0m';
+  if (seconds < 60) return '<1m';
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
+
+function getRemainingReadingTimeText(progress, container) {
+  if (!advancedSettings.progressBar.showRemainingTime) return '';
+  const totalSeconds = getEstimatedReadingSeconds(container);
+  if (totalSeconds < 30) return '';
+  return formatRemainingReadingTime(totalSeconds * (1 - clamp(progress, 0, 1)));
+}
+
+function getProgressLabelText(percentText, remainingText, separator) {
+  const parts = [];
+  if (advancedSettings.progressBar.showPercentage) {
+    parts.push(percentText);
+  }
+  if (remainingText) {
+    parts.push(remainingText);
+  }
+  return parts.join(separator);
+}
+
+function getProgressEventTarget(container) {
+  return isRootScrollElement(container) ? window : container;
+}
+
+function requestProgressUpdate() {
+  if (!advancedSettings.progressBar.enabled) return;
+  if (progressUpdateFrame) return;
+  progressUpdateFrame = requestAnimationFrame(() => {
+    progressUpdateFrame = null;
+    updateProgressBar();
+  });
+}
+
+function bindProgressToContainer(container) {
+  if (!advancedSettings.progressBar.enabled || !container) {
+    unbindProgressContainer();
+    return;
+  }
+
+  const target = getProgressEventTarget(container);
+  if (progressScrollTarget === target) {
+    requestProgressUpdate();
+    return;
+  }
+
+  unbindProgressContainer();
+  progressScrollTarget = target;
+  progressScrollTarget.addEventListener('scroll', requestProgressUpdate, { passive: true });
+  requestProgressUpdate();
+}
+
+function unbindProgressContainer() {
+  if (progressScrollTarget) {
+    progressScrollTarget.removeEventListener('scroll', requestProgressUpdate);
+    progressScrollTarget = null;
+  }
+  if (progressUpdateFrame) {
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(progressUpdateFrame);
+    }
+    progressUpdateFrame = null;
+  }
+}
+
+function handleHorizontalProgressClick(event) {
+  if (!advancedSettings.progressBar.clickToJump) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const ratio = rect.width <= 0 ? 0 : (event.clientX - rect.left) / rect.width;
+  const container = resolveScrollContainer();
+  smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+}
+
+function handleVerticalProgressClick(event) {
+  if (!advancedSettings.progressBar.clickToJump) return;
+  const rect = event.currentTarget.getBoundingClientRect();
+  const ratio = rect.height <= 0 ? 0 : (event.clientY - rect.top) / rect.height;
+  const container = resolveScrollContainer();
+  smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+}
+
+function getPointerTargetRatio(event, orientation) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (orientation === 'horizontal') {
+    return rect.width <= 0 ? 0 : clamp((event.clientX - rect.left) / rect.width, 0, 1);
+  }
+  return rect.height <= 0 ? 0 : clamp((event.clientY - rect.top) / rect.height, 0, 1);
+}
+
+function updateProgressHoverPreview(target, ratio, orientation) {
+  const line = target.querySelector('.psm-progress-hover-line');
+  const tooltip = target.querySelector('.psm-progress-hover-tooltip');
+  if (!line || !tooltip) return;
+
+  const percent = Math.round(ratio * 100);
+  line.style.display = 'block';
+  tooltip.style.display = 'block';
+  tooltip.textContent = `${percent}%`;
+
+  if (orientation === 'horizontal') {
+    const position = `${ratio * 100}%`;
+    const isBottom = advancedSettings.progressBar.horizontalPosition === 'bottom';
+    line.style.left = position;
+    tooltip.style.left = position;
+    tooltip.style.top = isBottom ? 'auto' : '100%';
+    tooltip.style.bottom = isBottom ? '100%' : 'auto';
+    tooltip.style.marginTop = isBottom ? '0' : '6px';
+    tooltip.style.marginBottom = isBottom ? '6px' : '0';
+  } else {
+    line.style.top = `${ratio * 100}%`;
+    tooltip.style.top = `${ratio * 100}%`;
+  }
+}
+
+function hideProgressHoverPreview(event) {
+  const line = event.currentTarget.querySelector('.psm-progress-hover-line');
+  const tooltip = event.currentTarget.querySelector('.psm-progress-hover-tooltip');
+  if (line) line.style.display = 'none';
+  if (tooltip) tooltip.style.display = 'none';
+}
+
+function handleVerticalProgressPointerMove(event) {
+  if (!advancedSettings.progressBar.clickToJump) return;
+  updateProgressHoverPreview(event.currentTarget, getPointerTargetRatio(event, 'vertical'), 'vertical');
+}
+
+function handleHorizontalProgressPointerMove(event) {
+  if (!advancedSettings.progressBar.clickToJump) return;
+  updateProgressHoverPreview(event.currentTarget, getPointerTargetRatio(event, 'horizontal'), 'horizontal');
+}
+
+function createVerticalProgressButton() {
+  const button = document.createElement('button');
+  button.className = 'psm-scroll-button psm-progress-button';
+  button.type = 'button';
+  button.title = '0%';
+  button.setAttribute('aria-label', 'Scroll progress');
+  button.innerHTML = '<span class="psm-progress-fill"></span><span class="psm-progress-hover-line"></span><span class="psm-progress-hover-tooltip"></span><span class="psm-progress-label"></span>';
+  button.addEventListener('click', handleVerticalProgressClick);
+  button.addEventListener('pointermove', handleVerticalProgressPointerMove);
+  button.addEventListener('pointerleave', hideProgressHoverPreview);
+  return button;
+}
+
+function createHorizontalProgressBar(root) {
+  if (!root || root.getElementById(HORIZONTAL_PROGRESS_ID)) return;
+  const progress = document.createElement('div');
+  progress.id = HORIZONTAL_PROGRESS_ID;
+  progress.className = 'psm-horizontal-progress';
+  progress.innerHTML = '<div class="psm-horizontal-progress-fill"></div><span class="psm-progress-hover-line"></span><span class="psm-progress-hover-tooltip"></span><span class="psm-horizontal-progress-label"></span>';
+  progress.addEventListener('click', handleHorizontalProgressClick);
+  progress.addEventListener('pointermove', handleHorizontalProgressPointerMove);
+  progress.addEventListener('pointerleave', hideProgressHoverPreview);
+  root.appendChild(progress);
+}
+
+function removeHorizontalProgressBar() {
+  const root = getScrollRoot();
+  const progress = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
+  if (progress) {
+    progress.remove();
+  }
+}
+
+function removeVerticalProgressButton() {
+  const { progressButton } = getButtonElements();
+  if (progressButton) {
+    progressButton.remove();
+  }
+}
+
+function ensureProgressControls() {
+  const { root, topButton, bottomButton, progressButton } = getButtonElements();
+  if (!root || !topButton || !bottomButton) return;
+
+  if (!advancedSettings.progressBar.enabled) {
+    removeHorizontalProgressBar();
+    removeVerticalProgressButton();
+    unbindProgressContainer();
+    return;
+  }
+
+  if (advancedSettings.progressBar.mode === 'horizontalBar') {
+    removeVerticalProgressButton();
+    createHorizontalProgressBar(root);
+  } else {
+    removeHorizontalProgressBar();
+    if (!progressButton) {
+      bottomButton.parentNode.insertBefore(createVerticalProgressButton(), bottomButton);
+    }
+  }
+
+  updateButtonStyle();
+  bindProgressToContainer(resolveScrollContainer());
+  updateProgressBar();
+}
+
+function updateHorizontalProgressBar(progress) {
+  const root = getScrollRoot();
+  const bar = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
+  if (!bar) return;
+  const fill = bar.querySelector('.psm-horizontal-progress-fill');
+  const label = bar.querySelector('.psm-horizontal-progress-label');
+  const percentText = `${Math.round(progress * 100)}%`;
+  const remainingText = getRemainingReadingTimeText(progress, resolveScrollContainer());
+  const labelText = getProgressLabelText(percentText, remainingText, ' · ');
+  const isBottom = advancedSettings.progressBar.horizontalPosition === 'bottom';
+
+  bar.classList.toggle('psm-is-bottom', isBottom);
+  bar.style.top = isBottom ? 'auto' : '0';
+  bar.style.bottom = isBottom ? '0' : 'auto';
+  bar.style.height = `${normalizeProgressThickness(advancedSettings.progressBar.thickness)}px`;
+  bar.style.cursor = advancedSettings.progressBar.clickToJump ? 'pointer' : 'default';
+  bar.style.backgroundColor = getProgressColor();
+  bar.title = percentText;
+  if (!advancedSettings.progressBar.clickToJump) {
+    hideProgressHoverPreview({ currentTarget: bar });
+  }
+  if (fill) {
+    fill.style.width = `${progress * 100}%`;
+    fill.style.backgroundColor = getProgressFillColor();
+  }
+  if (label) {
+    label.textContent = labelText;
+    label.style.display = labelText ? 'block' : 'none';
+    label.style.color = getActiveIconColor();
+  }
+}
+
+function updateVerticalProgressButton(progress) {
+  const { progressButton } = getButtonElements();
+  if (!progressButton) return;
+  const fill = progressButton.querySelector('.psm-progress-fill');
+  const label = progressButton.querySelector('.psm-progress-label');
+  const percentText = `${Math.round(progress * 100)}%`;
+  const remainingText = getRemainingReadingTimeText(progress, resolveScrollContainer());
+  const labelText = getProgressLabelText(percentText, remainingText, '\n');
+
+  progressButton.title = percentText;
+  progressButton.style.cursor = advancedSettings.progressBar.clickToJump ? 'pointer' : 'default';
+  if (!advancedSettings.progressBar.clickToJump) {
+    hideProgressHoverPreview({ currentTarget: progressButton });
+  }
+  if (fill) {
+    fill.style.height = `${progress * 100}%`;
+    fill.style.backgroundColor = getProgressFillColor();
+  }
+  if (label) {
+    label.textContent = labelText;
+    label.style.display = labelText ? 'block' : 'none';
+    label.style.color = getActiveIconColor();
+  }
+}
+
+function updateProgressBar() {
+  if (!advancedSettings.progressBar.enabled) return;
+  const container = resolveScrollContainer();
+  const progress = getScrollProgress(container);
+  if (advancedSettings.progressBar.mode === 'horizontalBar') {
+    updateHorizontalProgressBar(progress);
+  } else {
+    updateVerticalProgressButton(progress);
+  }
+}
+
+function applyAdvancedSettings() {
+  advancedSettings = mergeAdvancedSettings(advancedSettings);
+  applyButtonIcons();
+  ensureProgressControls();
+  updateButtonStyle();
 }
 
 // 创建滚动按钮
@@ -319,11 +814,7 @@ function createScrollButton() {
   topButton.type = 'button';
   topButton.title = LABEL_SCROLL_TOP;
   topButton.setAttribute('aria-label', LABEL_SCROLL_TOP);
-  topButton.innerHTML = `
-    <svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 19V5M5 12l7-7 7 7"/>
-    </svg>
-  `;
+  topButton.innerHTML = getIconSvg('top', getActiveIconSet());
 
   // 创建底部按钮 - 使用SVG图标替代字体字符
   const bottomButton = document.createElement('button');
@@ -331,19 +822,21 @@ function createScrollButton() {
   bottomButton.type = 'button';
   bottomButton.title = LABEL_SCROLL_BOTTOM;
   bottomButton.setAttribute('aria-label', LABEL_SCROLL_BOTTOM);
-  bottomButton.innerHTML = `
-    <svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5v14M5 12l7 7 7-7"/>
-    </svg>
-  `;
+  bottomButton.innerHTML = getIconSvg('bottom', getActiveIconSet());
 
   // 添加按钮到容器
   buttonContainer.appendChild(topButton);
+  if (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton') {
+    buttonContainer.appendChild(createVerticalProgressButton());
+  }
   buttonContainer.appendChild(bottomButton);
 
   // 添加到页面，Shadow DOM 隔离扩展样式和网页样式
   root.appendChild(buttonContainer);
   document.body.appendChild(host);
+  if (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'horizontalBar') {
+    createHorizontalProgressBar(root);
+  }
 
   // 添加事件监听器
   topButton.addEventListener('click', scrollToTop);
@@ -368,6 +861,7 @@ function createScrollButton() {
 function removeButton() {
   const host = document.getElementById(HOST_ID);
   if (!host) return;
+  unbindProgressContainer();
 
   const root = host.shadowRoot;
   if (root) {
@@ -378,6 +872,7 @@ function removeButton() {
   }
 
   host.remove();
+  fullscreenManager.buttonContainer = null;
 }
 
 // 添加按钮样式
@@ -394,7 +889,7 @@ function addButtonStyles(root) {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding: 8px;
+      padding: 0;
       transition: opacity 0.3s ease, transform 0.3s ease;
     }
     
@@ -432,9 +927,119 @@ function addButtonStyles(root) {
     .psm-scroll-button .scroll-icon {
       width: 60%;
       height: 60%;
-      stroke: white;
+      color: currentColor;
+      stroke: currentColor;
       stroke-width: 3;
       display: block;
+    }
+
+    .psm-progress-button {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .psm-progress-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 0;
+      opacity: 0.86;
+      transition: height 0.12s linear, background-color 0.2s ease;
+      pointer-events: none;
+    }
+
+    .psm-progress-hover-line {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16);
+    }
+
+    .psm-progress-button .psm-progress-hover-line {
+      left: 0;
+      right: 0;
+      height: 2px;
+      transform: translateY(-1px);
+    }
+
+    .psm-horizontal-progress .psm-progress-hover-line {
+      top: -4px;
+      bottom: -4px;
+      width: 2px;
+      transform: translateX(-1px);
+    }
+
+    .psm-progress-hover-tooltip {
+      position: absolute;
+      display: none;
+      z-index: 3;
+      pointer-events: none;
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.86);
+      color: white;
+      font: 700 11px/1 Arial, sans-serif;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+    }
+
+    .psm-progress-button .psm-progress-hover-tooltip {
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .psm-horizontal-progress .psm-progress-hover-tooltip {
+      transform: translateX(-50%);
+    }
+
+    .psm-progress-label {
+      position: relative;
+      z-index: 1;
+      font: 600 11px/1.15 Arial, sans-serif;
+      pointer-events: none;
+      text-align: center;
+      white-space: pre-line;
+    }
+
+    .psm-horizontal-progress {
+      position: fixed;
+      left: 0;
+      right: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0.12);
+      overflow: visible;
+      pointer-events: auto;
+      transition: opacity 0.2s ease;
+    }
+
+    .psm-horizontal-progress-fill {
+      height: 100%;
+      width: 0;
+      transition: width 0.12s linear, background-color 0.2s ease;
+    }
+
+    .psm-horizontal-progress-label {
+      position: absolute;
+      right: 8px;
+      top: 100%;
+      margin-top: 3px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.46);
+      font: 600 11px/1.4 Arial, sans-serif;
+      color: white;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .psm-horizontal-progress.psm-is-bottom .psm-horizontal-progress-label {
+      top: auto;
+      bottom: 100%;
+      margin-top: 0;
+      margin-bottom: 3px;
     }
     
     .psm-scroll-button:hover {
@@ -466,6 +1071,11 @@ function addButtonStyles(root) {
       pointer-events: none !important;
       transform: scale(0.8) !important;
       transition: opacity 0.2s ease, transform 0.2s ease !important;
+    }
+
+    .psm-horizontal-progress.psm-fullscreen-hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   `;
   root.appendChild(style);
@@ -709,7 +1319,7 @@ function updateButtonPosition() {
   if (!buttonContainer) return;
   
   // 获取边缘距离，默认为20px
-  const edgeDistance = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 12;
+  const edgeDistance = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 8;
   
   // 水平位置
   if (buttonSettings.horizontalPosition === 'left') {
@@ -761,7 +1371,7 @@ function validateColor(color) {
 
 // 更新按钮样式
 function updateButtonStyle() {
-  const { root, topButton, bottomButton } = getButtonElements();
+  const { root, topButton, progressButton, bottomButton } = getButtonElements();
   if (!topButton || !bottomButton) return;
   
   // 更新按钮尺寸
@@ -770,12 +1380,19 @@ function updateButtonStyle() {
   topButton.style.height = size;
   bottomButton.style.width = size;
   bottomButton.style.height = size;
+  if (progressButton) {
+    progressButton.style.width = size;
+    progressButton.style.height = clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT) + 'px';
+  }
   
   // 更新按钮形状
   const shape = buttonSettings.buttonShape || 'round';
   const borderRadius = shape === 'square' ? '4px' : '50%';
   topButton.style.borderRadius = borderRadius;
   bottomButton.style.borderRadius = borderRadius;
+  if (progressButton) {
+    progressButton.style.borderRadius = borderRadius;
+  }
   
   // 更新SVG图标大小（根据按钮尺寸自动调整）
   const iconSize = Math.max(40, Math.min(70, parseInt(buttonSettings.buttonSize) * 0.6)) + '%';
@@ -795,6 +1412,16 @@ function updateButtonStyle() {
   const bottomColor = validateColor(buttonSettings.bottomButtonColor);
   topButton.style.backgroundColor = topColor;
   bottomButton.style.backgroundColor = bottomColor;
+  if (progressButton) {
+    progressButton.style.backgroundColor = getProgressColor();
+  }
+
+  const iconColor = getActiveIconColor();
+  topButton.style.color = iconColor;
+  bottomButton.style.color = iconColor;
+  if (progressButton) {
+    progressButton.style.color = iconColor;
+  }
   
   // 动态应用间距到容器
   const buttonContainer = getButtonContainer();
@@ -806,6 +1433,9 @@ function updateButtonStyle() {
   const opacity = buttonSettings.opacity / 100;
   topButton.style.opacity = opacity;
   bottomButton.style.opacity = opacity;
+  if (progressButton) {
+    progressButton.style.opacity = opacity;
+  }
   
   // 更新悬停效果颜色 - 使用用户设置的颜色
   const styleElement = root.getElementById(DYNAMIC_STYLE_ID);
@@ -822,8 +1452,12 @@ function updateButtonStyle() {
     .psm-scroll-bottom:hover {
       background-color: ${adjustColorBrightness(bottomColor, -10)};
     }
+    .psm-progress-button:hover {
+      background-color: ${adjustColorBrightness(getProgressColor(), -25)};
+    }
   `;
   root.appendChild(newStyle);
+  updateProgressBar();
 }
 
 // 调整颜色亮度
@@ -838,11 +1472,18 @@ function adjustColorBrightness(color, percent) {
 
 // 初始化按钮
 function initializeButton() {
+  if (!hasLoadedExtensionEnabledState || !isExtensionEnabled) {
+    return;
+  }
+
   currentScrollContainer = resolveScrollContainer();
   const buttonCreated = createScrollButton();
 
   if (buttonCreated) {
+    fullscreenManager.buttonContainer = getButtonContainer();
     updateButtonStyle();
+    ensureProgressControls();
+    fullscreenManager.handleFullscreenChange();
 
     if (!spaDetectionState.isInitialized) {
       spaDetectionState.isInitialized = true;
@@ -929,6 +1570,7 @@ function detectAndUpdateScrollContainer() {
       // 重新绑定点击事件
       newTopButton.addEventListener('click', scrollToTop);
       newBottomButton.addEventListener('click', scrollToBottom);
+      applyButtonIcons();
 
       // 重新设置悬停隐藏功能 - 先重置初始化状态
       const buttonContainer = getButtonContainer();
@@ -943,6 +1585,10 @@ function detectAndUpdateScrollContainer() {
         setupHoverHideFunctionality(buttonContainer, newTopButton, newBottomButton);
       }
     }
+  }
+
+  if (advancedSettings.progressBar.enabled) {
+    bindProgressToContainer(newContainer || resolveScrollContainer());
   }
 
   if (spaDetectionState.retryTimer) {
@@ -974,6 +1620,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateButtonPosition();
     updateButtonVisibility();
     updateButtonStyle();
+  } else if (message.action === 'updateAdvancedSettings') {
+    advancedSettings = mergeAdvancedSettings(message.settings);
+    applyAdvancedSettings();
   }
 });
 
@@ -988,6 +1637,10 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateButtonVisibility();
     updateButtonStyle();
   }
+  if (namespace === 'sync' && changes.advancedSettings) {
+    advancedSettings = mergeAdvancedSettings(changes.advancedSettings.newValue);
+    applyAdvancedSettings();
+  }
   if (namespace === 'local' && changes.enableStates) {
     var newStates = normalizeEnableStates(changes.enableStates.newValue);
     var newEnabled = newStates[currentHostname] !== false;
@@ -1001,6 +1654,8 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
       } else {
         removeButton();
       }
+    } else if (!newEnabled) {
+      removeButton();
     }
   }
 });
@@ -1034,6 +1689,16 @@ const fullscreenManager = {
       } else {
         // 退出全屏模式，显示按钮
         this.buttonContainer.classList.remove('psm-fullscreen-hidden');
+      }
+    }
+
+    const root = getScrollRoot();
+    const horizontalProgress = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
+    if (horizontalProgress) {
+      if (this.isFullscreen) {
+        horizontalProgress.classList.add('psm-fullscreen-hidden');
+      } else {
+        horizontalProgress.classList.remove('psm-fullscreen-hidden');
       }
     }
   },
@@ -1080,7 +1745,7 @@ if (document.readyState === 'loading') {
 // 备选：监听 window load 事件，处理资源加载完成后的初始化
 window.addEventListener('load', () => {
   // 如果按钮仍未创建，尝试重新初始化
-  if (isExtensionEnabled && !document.getElementById(HOST_ID)) {
+  if (hasLoadedExtensionEnabledState && isExtensionEnabled && !document.getElementById(HOST_ID)) {
     console.log('[Page Scroll Master] Retrying initialization after window load');
     initializeButton();
   }

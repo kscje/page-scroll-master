@@ -49,7 +49,7 @@ class IconManager {
       path: this.defaultIcons
     });
     chrome.action.setTitle({
-      title: chrome.i18n.getMessage('extensionName') || 'Page Scroll Master'
+      title: chrome.i18n.getMessage('extensionName') || 'Smart Scroll Navigator'
     });
   }
 
@@ -72,7 +72,7 @@ class IconManager {
       path: this.activeIcons
     });
     chrome.action.setTitle({
-      title: `${chrome.i18n.getMessage('extensionName') || 'Page Scroll Master'} - Active`
+      title: `${chrome.i18n.getMessage('extensionName') || 'Smart Scroll Navigator'} - Active`
     });
   }
 
@@ -85,7 +85,7 @@ class IconManager {
       path: this.disabledIcons
     });
     chrome.action.setTitle({
-      title: `${chrome.i18n.getMessage('extensionName') || 'Page Scroll Master'} - Disabled`
+      title: `${chrome.i18n.getMessage('extensionName') || 'Smart Scroll Navigator'} - Disabled`
     });
   }
 

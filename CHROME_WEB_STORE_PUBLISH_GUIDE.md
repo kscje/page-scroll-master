@@ -21,8 +21,8 @@
 ```json
 {
   "manifest_version": 3,
-  "name": "One Click Top & Bottom – Fast Page Scroll",
-  "version": "1.7.0",
+  "name": "Smart Scroll Navigator – Top, Bottom & Progress",
+  "version": "1.8.0",
   "description": "一键滚动到页面顶部及底部的浏览器插件",
   "icons": {
     "16": "icons/icon16.png",
@@ -35,7 +35,7 @@
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
     },
-    "default_title": "One Click Top & Bottom – Fast Page Scroll",
+    "default_title": "Smart Scroll Navigator – Top, Bottom & Progress",
     "default_popup": "popup.html"
   },
   "permissions": ["storage", "activeTab"],
@@ -81,7 +81,7 @@
 - [ ] 核心功能正常工作（滚动到顶部/底部）
 - [ ] 快捷键功能正常（Windows/Linux/Mac）
 - [ ] 自定义设置保存和加载
-- [ ] 多语言支持（中文/英文）
+- [ ] 多语言支持（中文/英文/西班牙语/日语）
 - [ ] 跨平台快捷键命名
 - [ ] 鼠标悬停+快捷键隐藏功能
 - [ ] 按钮样式自定义
@@ -198,7 +198,7 @@ cd /Users/gemingming/AI_Program/Page Scroll Master
 
 **详细描述模板**：
 ```markdown
-# One Click Top & Bottom – Fast Page Scroll
+# Smart Scroll Navigator – Top, Bottom & Progress
 
 一个功能完整的Chrome浏览器插件，实现通过鼠标点击按钮即可一键滚动到页面顶部及底部的功能，支持丰富的自定义选项和跨平台体验。
 
@@ -224,7 +224,7 @@ cd /Users/gemingming/AI_Program/Page Scroll Master
 
 ### 跨平台支持
 - 跨平台快捷键命名
-- 多语言支持（中文/英文）
+- 多语言支持（中文/英文/西班牙语/日语）
 - 响应式设计，适配不同浏览器和设备
 
 ## 使用方法
@@ -260,7 +260,7 @@ cd /Users/gemingming/AI_Program/Page Scroll Master
 
 ## 支持
 
-如有任何问题或建议，请联系：kscj.e@live.com
+如有任何问题或建议，请联系：kscj.ty@gmail.com
 ```
 
 ## 6. 审核流程
@@ -431,10 +431,10 @@ cd /Users/gemingming/AI_Program/Page Scroll Master
 5. **耐心等待**：审核过程需要时间
 6. **持续维护**：响应反馈和更新功能
 
-通过遵循本指南的步骤和最佳实践，您的 One Click Top & Bottom – Fast Page Scroll 插件将有很大机会成功发布到 Chrome Web Store 并获得用户的认可。
+通过遵循本指南的步骤和最佳实践，您的 Smart Scroll Navigator – Top, Bottom & Progress 插件将有很大机会成功发布到 Chrome Web Store 并获得用户的认可。
 
 ---
 
 **发布时间**：2026-05-09
-**版本**：1.7.0
+**版本**：1.8.0
 **状态**：准备就绪

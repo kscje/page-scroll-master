@@ -1,10 +1,10 @@
-# Privacy Policy for Page Scroll Master
+# Privacy Policy for Smart Scroll Navigator
 
 **Last Updated**: April 7, 2026
 
 ## Data Collection
 
-Page Scroll Master does **NOT** collect, store, or transmit any personal information, browsing history, page content, or any other user data to external servers or third parties.
+Smart Scroll Navigator does **NOT** collect, store, or transmit any personal information, browsing history, page content, or any other user data to external servers or third parties.
 
 ## Local Storage
 
@@ -16,7 +16,7 @@ The extension requests broad host permissions (`<all_urls>`) exclusively for the
 
 ## Third-Party Services
 
-Page Scroll Master does not use any third-party analytics services, advertising networks, tracking pixels, or any other external services. There are no cookies, no trackers, and no external network requests.
+Smart Scroll Navigator does not use any third-party analytics services, advertising networks, tracking pixels, or any other external services. There are no cookies, no trackers, and no external network requests.
 
 ## Children's Privacy
 
@@ -28,4 +28,4 @@ If any changes are made to this privacy policy, they will be reflected in the up
 
 ## Contact
 
-If you have any questions about this privacy policy, please contact: **kscj.e@live.com**
+If you have any questions about this privacy policy, please contact: **kscj.ty@gmail.com**

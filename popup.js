@@ -17,14 +17,30 @@ var popupTranslations = {
   'en-US': {
     'popupSettings': 'Settings',
     'popupEnableToggle': 'Enable on this site'
+  },
+  'es-ES': {
+    'popupSettings': 'Configuracion',
+    'popupEnableToggle': 'Activar en este sitio'
+  },
+  'ja-JP': {
+    'popupSettings': '設定',
+    'popupEnableToggle': 'このサイトで有効'
   }
 };
+
+function normalizeLanguage(browserLang) {
+  var lang = (browserLang || '').toLowerCase();
+  if (lang.indexOf('zh') === 0) return 'zh-CN';
+  if (lang.indexOf('es') === 0) return 'es-ES';
+  if (lang.indexOf('ja') === 0) return 'ja-JP';
+  return 'en-US';
+}
 
 // 获取当前语言设置
 function getCurrentLanguage(callback) {
   function resolveFromBrowser() {
     var browserLang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'en-US';
-    callback(browserLang.indexOf('zh') === 0 ? 'zh-CN' : 'en-US');
+    callback(normalizeLanguage(browserLang));
   }
 
   if (!chrome.storage || !chrome.storage.sync || !chrome.storage.sync.get) {

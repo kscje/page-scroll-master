@@ -1,42 +1,42 @@
 {
   "extensionName": {
-    "message": "Smart Scroll Navigator – Top, Bottom & Progress",
-    "description": "插件名称"
+    "message": "Navegador Scroll Inteligente – Inicio, Final y Progreso",
+    "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Scroll to top or bottom, track page progress, and jump through long pages",
-    "description": "插件描述"
+    "message": "Ve al inicio o final, sigue el progreso y salta por paginas largas",
+    "description": "Extension description"
   },
   "commandScrollToTop": {
-    "message": "Scroll to the top of the page",
+    "message": "Desplazarse al inicio de la pagina",
     "description": "Command description"
   },
   "commandScrollToBottom": {
-    "message": "Scroll to the bottom of the page",
+    "message": "Desplazarse al final de la pagina",
     "description": "Command description"
   },
   "popupScrollTop": {
-    "message": "Scroll to Top",
+    "message": "Ir al inicio",
     "description": "Floating button tooltip"
   },
   "popupScrollBottom": {
-    "message": "Scroll to Bottom",
+    "message": "Ir al final",
     "description": "Floating button tooltip"
   },
   "popupSettings": {
-    "message": "Settings",
+    "message": "Configuracion",
     "description": "Popup settings button label"
   },
   "popupEnableToggle": {
-    "message": "Enable on this site",
+    "message": "Activar en este sitio",
     "description": "Popup enable toggle label"
   },
   "settingsEdgeDistance": {
-    "message": "Distance from Edge(px)",
+    "message": "Distancia al borde(px)",
     "description": "Settings page edge distance label"
   },
   "settingsEdgeDistanceError": {
-    "message": "Distance from edge must be between 0px and 200px",
+    "message": "La distancia al borde debe estar entre 0px y 200px",
     "description": "Edge distance input error message"
   }
 }
