@@ -6,10 +6,12 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
 
-const POPUP_SOURCE = fs.readFileSync('popup.js', 'utf8');
-const MANIFEST = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+const ROOT = path.join(__dirname, '..');
+const POPUP_SOURCE = fs.readFileSync(path.join(ROOT, 'popup.js'), 'utf8');
+const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
 const STATES_KEY = 'enableStates';
 
 let passCount = 0;

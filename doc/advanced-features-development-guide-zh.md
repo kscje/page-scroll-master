@@ -31,6 +31,18 @@ v2.0 聚焦长页面导航：
 - 页面标题大纲面板
 - 当前章节高亮
 
+### v2.1 Privacy-Friendly Usage Analytics Update
+
+v2.1 聚焦匿名使用统计和隐私合规披露，帮助评估功能优先级和默认值：
+
+- 设置页新增“发送匿名使用统计”开关，默认关闭
+- 统计核心设置分布和高级功能启用率
+- 按日聚合顶部、底部、进度跳转等操作次数
+- 明确禁止上传 URL、域名、页面标题、页面内容和站点级使用记录
+- 更新隐私政策、商店隐私实践和发布检查清单
+
+详细规格见 `doc/v2.1-usage-analytics-spec-zh.md`，实施步骤见 `doc/v2.1-usage-analytics-implementation-plan-zh.md`。
+
 ## 全局设计原则
 
 ### 默认不改变现有体验
@@ -88,10 +100,21 @@ advancedSettings: {
       bottomIconDataUrl: ''
     }
   },
-  readingPosition: {
+  readingTools: {
     enabled: false,
-    mode: 'manualPrompt',
-    retentionDays: 30
+    buttonPosition: 'pageBottom',
+    buttonColorMode: 'followProgressBar',
+    buttonCustomColor: '#4A9EDD',
+    features: {
+      scrollBookmarks: true,
+      outlineNavigation: false
+    }
+  },
+  scrollBookmarks: {
+    matchMode: 'exact',
+    perDomainLimit: 1,
+    globalLimit: 300,
+    restorePromptEnabled: true
   },
   outlineNavigation: {
     enabled: false,
@@ -587,6 +610,8 @@ function normalizeLanguage(browserLang) {
 
 ## v1.9 功能：滚动位置书签
 
+滚动位置书签的最终 V1.9 产品边界、数据结构、URL 归一化和恢复流程，见 `doc/v1.9-scroll-position-bookmarks-prd-zh.md`。下方内容仅保留为早期设计背景，开发时不应作为实现依据。
+
 ### 产品目标
 
 解决用户在长页面中找不到上次阅读位置的问题。
@@ -621,19 +646,26 @@ function normalizeLanguage(browserLang) {
 ```text
 高级功能
 ────────────────────────
-[ ] 启用滚动位置书签
+[ ] 显示阅读工具按钮
 
-保存方式：
-(•) 仅记录点击顶部/底部前的位置
-( ) 自动记住每个页面的阅读位置
+功能：
+[x] 滚动位置书签
+[ ] 智能段落跳转（v2.0）
 
-恢复方式：
-(•) 显示恢复提示
-( ) 自动恢复
-( ) 仅手动恢复
+阅读工具按钮位置：
+( ) 页面顶部
+(•) 页面底部
+( ) 上/下按钮之间
 
-保留记录：
-[ 30 天 ]
+阅读工具按钮颜色：
+(•) 跟随阅读进度条
+( ) 跟随顶部按钮
+( ) 跟随底部按钮
+( ) 自定义颜色
+
+每个站点保留：
+(•) 最新 1 条
+( ) 最近 3 条
 ```
 
 ### 存储建议
@@ -843,7 +875,7 @@ Page URL: 用户勾选后才附带
 
 ### 推荐入口
 
-不要常驻显示目录。开启后在按钮组底部显示一个小菜单点，或通过长按按钮呼出。
+不要常驻显示目录面板。开启后复用 v1.9 引入的「阅读工具按钮」，点击后在同一个菜单中显示目录和段落跳转能力。
 
 ```text
 ┌──────┐
@@ -854,7 +886,7 @@ Page URL: 用户勾选后才附带
 │  ▼   │
 └──────┘
 
-  ⋯   ← 目录菜单
+  🔖   ← 阅读工具按钮
 ```
 
 点击后展开：
@@ -897,8 +929,7 @@ Page URL: 用户勾选后才附带
 [ ] 带 id 的区块
 
 显示方式：
-(•) 点击菜单按钮后显示
-( ) 长按顶部/底部按钮显示
+(•) 点击阅读工具按钮后显示
 
 最大目录项：
 [ 30 ]

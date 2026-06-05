@@ -15,6 +15,10 @@ const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
 const DYNAMIC_STYLE_ID = 'page-scroll-master-dynamic-styles';
 const HORIZONTAL_PROGRESS_ID = 'page-scroll-master-horizontal-progress';
+const READING_TOOL_CONTAINER_ID = 'page-scroll-master-reading-tool';
+const READING_TOOL_MENU_ID = 'page-scroll-master-reading-menu';
+const READING_TOOL_TOAST_ID = 'page-scroll-master-reading-toast';
+const BOOKMARKS_STORAGE_KEY = 'bookmarks';
 const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to Top';
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
 const DEFAULT_ADVANCED_SETTINGS = {
@@ -39,6 +43,22 @@ const DEFAULT_ADVANCED_SETTINGS = {
       topIconDataUrl: '',
       bottomIconDataUrl: ''
     }
+  },
+  readingTools: {
+    enabled: false,
+    buttonPosition: 'pageBottom',
+    buttonColorMode: 'followProgressBar',
+    buttonCustomColor: DEFAULT_BUTTON_COLOR,
+    features: {
+      scrollBookmarks: true,
+      outlineNavigation: false
+    }
+  },
+  scrollBookmarks: {
+    matchMode: 'exact',
+    perDomainLimit: 1,
+    globalLimit: 300,
+    restorePromptEnabled: true
   }
 };
 
@@ -84,6 +104,7 @@ let readingEstimateCache = {
   textLength: 0,
   seconds: 0
 };
+let restorePromptShownForKey = '';
 
 const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
 
@@ -116,6 +137,15 @@ function mergeAdvancedSettings(savedSettings) {
   merged.iconCustomization.enabled = true;
   merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
   merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, DEFAULT_ICON_COLOR);
+  merged.readingTools.buttonPosition = normalizeReadingToolPosition(merged.readingTools.buttonPosition);
+  merged.readingTools.buttonColorMode = normalizeReadingToolColorMode(merged.readingTools.buttonColorMode);
+  merged.readingTools.buttonCustomColor = validateHexColor(merged.readingTools.buttonCustomColor, DEFAULT_BUTTON_COLOR);
+  merged.readingTools.features.scrollBookmarks = merged.readingTools.features.scrollBookmarks !== false;
+  merged.readingTools.features.outlineNavigation = false;
+  merged.scrollBookmarks.matchMode = 'exact';
+  merged.scrollBookmarks.perDomainLimit = normalizePerDomainLimit(merged.scrollBookmarks.perDomainLimit);
+  merged.scrollBookmarks.globalLimit = clampNumber(merged.scrollBookmarks.globalLimit, 1, 300, 300);
+  merged.scrollBookmarks.restorePromptEnabled = merged.scrollBookmarks.restorePromptEnabled !== false;
   return merged;
 }
 
@@ -164,6 +194,22 @@ function normalizeIconSet(value) {
   return ['defaultArrow', 'triangle', 'chevron', 'doubleArrow'].includes(value)
     ? value
     : 'defaultArrow';
+}
+
+function normalizeReadingToolPosition(value) {
+  return ['pageTop', 'pageBottom', 'betweenScrollButtons'].includes(value)
+    ? value
+    : 'pageBottom';
+}
+
+function normalizeReadingToolColorMode(value) {
+  return ['followTopButton', 'followBottomButton', 'followProgressBar', 'custom'].includes(value)
+    ? value
+    : 'followProgressBar';
+}
+
+function normalizePerDomainLimit(value) {
+  return Number(value) === 3 ? 3 : 1;
 }
 
 function isRootScrollElement(element) {
@@ -319,14 +365,15 @@ function getButtonContainer() {
 function getButtonElements() {
   const root = getScrollRoot();
   if (!root) {
-    return { root: null, topButton: null, progressButton: null, bottomButton: null };
+    return { root: null, topButton: null, progressButton: null, bottomButton: null, readingToolButton: null };
   }
 
   return {
     root,
     topButton: root.querySelector('.psm-scroll-top'),
     progressButton: root.querySelector('.psm-progress-button'),
-    bottomButton: root.querySelector('.psm-scroll-bottom')
+    bottomButton: root.querySelector('.psm-scroll-bottom'),
+    readingToolButton: root.querySelector('.psm-reading-tool-button')
   };
 }
 
@@ -431,6 +478,10 @@ function getIconSvg(direction, iconSet) {
   return isTop ? set.top : set.bottom;
 }
 
+function getReadingToolIconSvg() {
+  return '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5z"/></svg>';
+}
+
 function getActiveIconSet() {
   return normalizeIconSet(advancedSettings.iconCustomization.iconSet);
 }
@@ -440,11 +491,14 @@ function getActiveIconColor() {
 }
 
 function applyButtonIcons() {
-  const { topButton, bottomButton } = getButtonElements();
+  const { topButton, bottomButton, readingToolButton } = getButtonElements();
   if (!topButton || !bottomButton) return;
   const iconSet = getActiveIconSet();
   topButton.innerHTML = getIconSvg('top', iconSet);
   bottomButton.innerHTML = getIconSvg('bottom', iconSet);
+  if (readingToolButton) {
+    readingToolButton.innerHTML = getReadingToolIconSvg();
+  }
 }
 
 function getProgressColor() {
@@ -456,6 +510,109 @@ function getProgressColor() {
     return validateHexColor(progressSettings.customColor, DEFAULT_BUTTON_COLOR);
   }
   return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
+}
+
+function isReadingToolEnabled() {
+  const tools = advancedSettings.readingTools;
+  return Boolean(
+    tools.enabled &&
+    (tools.features.scrollBookmarks || tools.features.outlineNavigation)
+  );
+}
+
+function getReadingToolColor() {
+  const tools = advancedSettings.readingTools;
+  if (tools.buttonColorMode === 'followBottomButton') {
+    return validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
+  }
+  if (tools.buttonColorMode === 'custom') {
+    return validateHexColor(tools.buttonCustomColor, DEFAULT_BUTTON_COLOR);
+  }
+  if (tools.buttonColorMode === 'followProgressBar' && advancedSettings.progressBar.enabled) {
+    return getProgressColor();
+  }
+  return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
+}
+
+function createReadingToolButton() {
+  const button = document.createElement('button');
+  button.className = 'psm-scroll-button psm-reading-tool-button';
+  button.type = 'button';
+  button.title = '阅读工具';
+  button.setAttribute('aria-label', '阅读工具');
+  button.innerHTML = getReadingToolIconSvg();
+  button.addEventListener('click', handleReadingToolClick);
+  return button;
+}
+
+function getReadingToolMenu(root) {
+  if (!root) return null;
+  let menu = root.getElementById(READING_TOOL_MENU_ID);
+  if (menu) return menu;
+
+  menu = document.createElement('div');
+  menu.id = READING_TOOL_MENU_ID;
+  menu.className = 'psm-reading-menu';
+  menu.innerHTML = '<button type="button" data-action="save-bookmark">保存当前位置</button><button type="button" data-action="manage-bookmarks">查看已保存位置</button>';
+  menu.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const action = event.target && event.target.getAttribute ? event.target.getAttribute('data-action') : '';
+    if (action === 'save-bookmark') {
+      hideReadingToolMenu();
+      saveScrollBookmark();
+    } else if (action === 'manage-bookmarks') {
+      hideReadingToolMenu();
+      if (chrome.runtime && chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage();
+      }
+    }
+  });
+  root.appendChild(menu);
+  return menu;
+}
+
+function positionReadingToolMenu(button, menu) {
+  if (!button || !menu || typeof button.getBoundingClientRect !== 'function') return;
+  const rect = button.getBoundingClientRect();
+  const width = 168;
+  const spacing = Math.max(8, Number(buttonSettings.buttonSpacing) || 8);
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const opensLeft = buttonSettings.horizontalPosition !== 'left';
+  let left = opensLeft ? rect.left - width - spacing : rect.right + spacing;
+
+  if (left < 8) left = Math.min(rect.left, 8);
+  if (viewportWidth && left + width > viewportWidth - 8) left = Math.max(8, viewportWidth - width - 8);
+
+  const menuHeight = 92;
+  let top = rect.top + (rect.height / 2) - (menuHeight / 2);
+  if (top < 8) top = 8;
+  if (viewportHeight && top + menuHeight > viewportHeight - 8) top = Math.max(8, viewportHeight - menuHeight - 8);
+
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+}
+
+function handleReadingToolClick(event) {
+  event.stopPropagation();
+  const { root, readingToolButton } = getButtonElements();
+  const menu = getReadingToolMenu(root);
+  if (!menu || !readingToolButton) return;
+  const willOpen = !menu.classList.contains('psm-open');
+  if (willOpen) {
+    menu.classList.add('psm-open');
+    positionReadingToolMenu(readingToolButton, menu);
+  } else {
+    hideReadingToolMenu();
+  }
+}
+
+function hideReadingToolMenu() {
+  const root = getScrollRoot();
+  const menu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
+  if (menu) {
+    menu.classList.remove('psm-open');
+  }
 }
 
 function getScrollProgress(container) {
@@ -709,6 +866,73 @@ function ensureProgressControls() {
   updateProgressBar();
 }
 
+function removeReadingToolControls() {
+  const { root, readingToolButton } = getButtonElements();
+  if (readingToolButton) {
+    readingToolButton.remove();
+  }
+  const standalone = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
+  if (standalone) {
+    standalone.remove();
+  }
+  const menu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
+  if (menu) {
+    menu.remove();
+  }
+}
+
+function getOrCreateReadingToolButton() {
+  const { root, readingToolButton } = getButtonElements();
+  if (!root) return null;
+  return readingToolButton || createReadingToolButton();
+}
+
+function getOrCreateReadingToolContainer(root) {
+  if (!root) return null;
+  let container = root.getElementById(READING_TOOL_CONTAINER_ID);
+  if (container) return container;
+  container = document.createElement('div');
+  container.id = READING_TOOL_CONTAINER_ID;
+  container.className = 'psm-reading-tool-container';
+  root.appendChild(container);
+  return container;
+}
+
+function ensureReadingToolControls() {
+  const { root, bottomButton } = getButtonElements();
+  if (!root || !bottomButton) return;
+
+  if (!isReadingToolEnabled()) {
+    removeReadingToolControls();
+    return;
+  }
+
+  const button = getOrCreateReadingToolButton();
+  if (!button) return;
+
+  const standalone = getOrCreateReadingToolContainer(root);
+  const position = advancedSettings.readingTools.buttonPosition;
+  if (position === 'betweenScrollButtons') {
+    if (standalone) {
+      standalone.remove();
+    }
+    if (button.parentNode !== bottomButton.parentNode) {
+      bottomButton.parentNode.insertBefore(button, bottomButton);
+    } else if (button.nextSibling !== bottomButton) {
+      button.parentNode.insertBefore(button, bottomButton);
+    }
+  } else if (standalone) {
+    if (button.parentNode !== standalone) {
+      standalone.appendChild(button);
+    }
+  }
+
+  getReadingToolMenu(root);
+  updateReadingToolPosition();
+  updateButtonStyle();
+  checkRestorePrompt();
+}
+
 function updateHorizontalProgressBar(progress) {
   const root = getScrollRoot();
   const bar = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
@@ -777,10 +1001,246 @@ function updateProgressBar() {
   }
 }
 
+function normalizeBookmarkUrl(rawUrl) {
+  const parsed = new URL(rawUrl);
+  const trackingKeys = new Set(['fbclid', 'gclid', 'mc_cid', 'mc_eid']);
+  const remaining = [];
+
+  parsed.searchParams.forEach((value, key) => {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey.startsWith('utm_') || trackingKeys.has(lowerKey)) {
+      return;
+    }
+    remaining.push([key, value]);
+  });
+
+  const query = new URLSearchParams();
+  remaining.forEach(([key, value]) => query.append(key, value));
+  const queryText = query.toString();
+  return `${parsed.origin}${parsed.pathname}${queryText ? `?${queryText}` : ''}${parsed.hash || ''}`;
+}
+
+function getCurrentBookmarkKey() {
+  try {
+    return `exact:${normalizeBookmarkUrl(window.location.href)}`;
+  } catch (err) {
+    return '';
+  }
+}
+
+function getElementSelector(element) {
+  if (!element || isRootScrollElement(element)) return '';
+  if (element.id) return `#${element.id}`;
+  const tagName = element.tagName ? element.tagName.toLowerCase() : '';
+  if (!tagName) return '';
+  if (element.className && typeof element.className === 'string') {
+    const firstClass = element.className.split(/\s+/).filter(Boolean)[0];
+    if (firstClass) return `${tagName}.${firstClass}`;
+  }
+  return tagName;
+}
+
+function getElementDomPath(element) {
+  if (!element || isRootScrollElement(element)) return '';
+  const parts = [];
+  let current = element;
+  while (current && current !== document.body && current.nodeType !== 9 && parts.length < 6) {
+    const tagName = current.tagName ? current.tagName.toLowerCase() : '';
+    if (!tagName) break;
+    const id = current.id ? `#${current.id}` : '';
+    parts.unshift(`${tagName}${id}`);
+    current = current.parentElement;
+  }
+  if (document.body) {
+    parts.unshift('body');
+  }
+  return parts.join(' > ');
+}
+
+function getContainerSnapshot(container) {
+  const computedStyle = !isRootScrollElement(container) && window.getComputedStyle
+    ? window.getComputedStyle(container)
+    : null;
+  return {
+    isScrollingElement: isRootScrollElement(container),
+    tagName: container && container.tagName ? container.tagName : '',
+    overflowY: computedStyle ? computedStyle.overflowY : '',
+    selector: getElementSelector(container),
+    domPath: getElementDomPath(container),
+    scrollHeight: container && container.scrollHeight ? container.scrollHeight : document.documentElement.scrollHeight || 0,
+    clientHeight: container && container.clientHeight ? container.clientHeight : window.innerHeight || document.documentElement.clientHeight || 0
+  };
+}
+
+function normalizeBookmarks(bookmarks) {
+  return bookmarks && typeof bookmarks === 'object' && !Array.isArray(bookmarks) ? bookmarks : {};
+}
+
+function enforceBookmarkLimits(bookmarks, activeKey) {
+  const nextBookmarks = { ...normalizeBookmarks(bookmarks) };
+  const domainLimit = advancedSettings.scrollBookmarks.perDomainLimit;
+  const globalLimit = advancedSettings.scrollBookmarks.globalLimit;
+  const entries = Object.entries(nextBookmarks);
+  const byDomain = new Map();
+
+  entries.forEach(([key, bookmark]) => {
+    const domain = bookmark && bookmark.domain ? bookmark.domain : '';
+    if (!domain) return;
+    if (!byDomain.has(domain)) {
+      byDomain.set(domain, []);
+    }
+    byDomain.get(domain).push([key, bookmark]);
+  });
+
+  byDomain.forEach((domainEntries) => {
+    domainEntries
+      .sort((a, b) => (b[1].savedAt || 0) - (a[1].savedAt || 0))
+      .slice(domainLimit)
+      .forEach(([key]) => {
+        if (key !== activeKey) {
+          delete nextBookmarks[key];
+        }
+      });
+  });
+
+  Object.entries(nextBookmarks)
+    .sort((a, b) => (b[1].savedAt || 0) - (a[1].savedAt || 0))
+    .slice(globalLimit)
+    .forEach(([key]) => {
+      if (key !== activeKey) {
+        delete nextBookmarks[key];
+      }
+    });
+
+  return nextBookmarks;
+}
+
+function saveScrollBookmark() {
+  if (!advancedSettings.readingTools.enabled || !advancedSettings.readingTools.features.scrollBookmarks) {
+    return;
+  }
+
+  let parsedUrl;
+  let normalizedUrl;
+  try {
+    parsedUrl = new URL(window.location.href);
+    normalizedUrl = normalizeBookmarkUrl(window.location.href);
+  } catch (err) {
+    showReadingToast('当前页面无法保存位置');
+    return;
+  }
+
+  const container = resolveScrollContainer();
+  const range = getElementScrollRange(container);
+  const scrollPct = getScrollProgress(container);
+  if (range <= 1 || scrollPct <= 0) {
+    showReadingToast('当前页面还没有可保存的阅读位置');
+    return;
+  }
+
+  const key = `${advancedSettings.scrollBookmarks.matchMode}:${normalizedUrl}`;
+  chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
+    const previous = bookmarks[key];
+    const roundedPct = Math.round(scrollPct * 100);
+    bookmarks[key] = {
+      url: window.location.href,
+      normalizedUrl,
+      hash: parsedUrl.hash || '',
+      matchMode: 'exact',
+      domain: parsedUrl.hostname,
+      pathname: parsedUrl.pathname,
+      title: document.title || parsedUrl.hostname,
+      scrollPct,
+      scrollY: getScrollTop(container),
+      savedAt: Date.now(),
+      container: getContainerSnapshot(container)
+    };
+
+    const limitedBookmarks = enforceBookmarkLimits(bookmarks, key);
+    chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: limitedBookmarks }, () => {
+      if (previous) {
+        showReadingToast(`已更新位置到 ${roundedPct}%（原 ${Math.round((previous.scrollPct || 0) * 100)}%）`);
+      } else {
+        showReadingToast(`已保存当前位置 ${roundedPct}%`);
+      }
+    });
+  });
+}
+
+function showReadingToast(message, actions) {
+  const root = getScrollRoot();
+  if (!root) return;
+  let toast = root.getElementById(READING_TOOL_TOAST_ID);
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = READING_TOOL_TOAST_ID;
+    toast.className = 'psm-reading-toast';
+    root.appendChild(toast);
+  }
+
+  const buttons = (actions || []).map((action, index) => `<button type="button" data-action-index="${index}">${action.label}</button>`).join('');
+  toast.innerHTML = `<span></span>${buttons}`;
+  const text = toast.querySelector('span');
+  if (text) text.textContent = message;
+  toast.querySelectorAll('button').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const index = Number(button.getAttribute('data-action-index'));
+      if (actions[index] && typeof actions[index].handler === 'function') {
+        actions[index].handler();
+      }
+      toast.classList.remove('psm-open');
+    });
+  });
+  toast.classList.add('psm-open');
+
+  if (!actions || actions.length === 0) {
+    setTimeout(() => {
+      toast.classList.remove('psm-open');
+    }, 2200);
+  }
+}
+
+function checkRestorePrompt() {
+  if (!advancedSettings.readingTools.enabled ||
+      !advancedSettings.readingTools.features.scrollBookmarks ||
+      !advancedSettings.scrollBookmarks.restorePromptEnabled) {
+    return;
+  }
+
+  const key = getCurrentBookmarkKey();
+  if (!key || restorePromptShownForKey === key) return;
+
+  chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
+    const bookmark = bookmarks[key];
+    if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
+      return;
+    }
+    restorePromptShownForKey = key;
+    const percent = Math.round(clamp(bookmark.scrollPct, 0, 1) * 100);
+    showReadingToast(`从大约 ${percent}% 处继续？`, [
+      {
+        label: '继续',
+        handler: () => {
+          const container = resolveScrollContainer();
+          smoothScrollTo(container, getElementScrollRange(container) * clamp(bookmark.scrollPct, 0, 1));
+        }
+      },
+      {
+        label: '忽略',
+        handler: () => {}
+      }
+    ]);
+  });
+}
+
 function applyAdvancedSettings() {
   advancedSettings = mergeAdvancedSettings(advancedSettings);
   applyButtonIcons();
   ensureProgressControls();
+  ensureReadingToolControls();
   updateButtonStyle();
 }
 
@@ -829,6 +1289,9 @@ function createScrollButton() {
   if (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton') {
     buttonContainer.appendChild(createVerticalProgressButton());
   }
+  if (isReadingToolEnabled() && advancedSettings.readingTools.buttonPosition === 'betweenScrollButtons') {
+    buttonContainer.appendChild(createReadingToolButton());
+  }
   buttonContainer.appendChild(bottomButton);
 
   // 添加到页面，Shadow DOM 隔离扩展样式和网页样式
@@ -841,6 +1304,7 @@ function createScrollButton() {
   // 添加事件监听器
   topButton.addEventListener('click', scrollToTop);
   bottomButton.addEventListener('click', scrollToBottom);
+  document.addEventListener('click', hideReadingToolMenu, true);
 
   // 添加鼠标悬停+快捷键隐藏功能
   setupHoverHideFunctionality(buttonContainer, topButton, bottomButton);
@@ -850,6 +1314,7 @@ function createScrollButton() {
 
   // 应用位置设置
   updateButtonPosition();
+  ensureReadingToolControls();
 
   // 应用显示/隐藏设置
   updateButtonVisibility();
@@ -1041,6 +1506,94 @@ function addButtonStyles(root) {
       margin-top: 0;
       margin-bottom: 3px;
     }
+
+    .psm-reading-tool-container {
+      position: fixed;
+      z-index: 9999;
+      display: flex;
+      padding: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .psm-reading-menu {
+      position: fixed;
+      z-index: 10000;
+      display: none;
+      width: 168px;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(17, 24, 39, 0.96);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+      font: 500 13px/1.35 Arial, sans-serif;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    .psm-reading-menu.psm-open {
+      display: block;
+    }
+
+    .psm-reading-menu button {
+      width: 100%;
+      border: 0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .psm-reading-menu button:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .psm-reading-toast {
+      position: fixed;
+      z-index: 10001;
+      right: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: min(360px, calc(100vw - 32px));
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(17, 24, 39, 0.94);
+      color: white;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+      font: 500 13px/1.35 Arial, sans-serif;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      box-sizing: border-box;
+    }
+
+    .psm-reading-toast.psm-open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .psm-reading-toast span {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .psm-reading-toast button {
+      border: 0;
+      border-radius: 6px;
+      padding: 5px 8px;
+      margin: 0;
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      font: 700 12px/1 Arial, sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+    }
     
     .psm-scroll-button:hover {
       transform: scale(1.1);
@@ -1073,7 +1626,10 @@ function addButtonStyles(root) {
       transition: opacity 0.2s ease, transform 0.2s ease !important;
     }
 
-    .psm-horizontal-progress.psm-fullscreen-hidden {
+    .psm-horizontal-progress.psm-fullscreen-hidden,
+    .psm-reading-tool-container.psm-fullscreen-hidden,
+    .psm-reading-menu.psm-fullscreen-hidden,
+    .psm-reading-toast.psm-fullscreen-hidden {
       opacity: 0 !important;
       pointer-events: none !important;
     }
@@ -1344,17 +1900,73 @@ function updateButtonPosition() {
     buttonContainer.style.bottom = 'auto';
     buttonContainer.style.transform = 'translateY(-50%)';
   }
+
+  updateReadingToolPosition();
+}
+
+function getMainButtonGroupHeight() {
+  const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
+  const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
+  const hasVerticalProgress = advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton';
+  const progressHeight = hasVerticalProgress
+    ? clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT)
+    : 0;
+  return hasVerticalProgress
+    ? (buttonSize * 2) + progressHeight + (spacing * 2)
+    : (buttonSize * 2) + spacing;
+}
+
+function updateReadingToolPosition() {
+  const root = getScrollRoot();
+  const standalone = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
+  if (!standalone) return;
+
+  const edgeDistance = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 8;
+  const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
+  const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
+  const position = advancedSettings.readingTools.buttonPosition;
+
+  standalone.style.left = buttonSettings.horizontalPosition === 'left' ? edgeDistance + 'px' : 'auto';
+  standalone.style.right = buttonSettings.horizontalPosition === 'left' ? 'auto' : edgeDistance + 'px';
+  standalone.style.transform = 'none';
+  standalone.style.top = 'auto';
+  standalone.style.bottom = 'auto';
+  standalone.style.display = isReadingToolEnabled() && position !== 'betweenScrollButtons' ? 'flex' : 'none';
+
+  if (position === 'pageTop') {
+    const offset = buttonSettings.verticalAlignment === 'top'
+      ? edgeDistance + getMainButtonGroupHeight() + spacing
+      : edgeDistance;
+    standalone.style.top = offset + 'px';
+  } else {
+    const offset = buttonSettings.verticalAlignment === 'bottom'
+      ? edgeDistance + getMainButtonGroupHeight() + spacing
+      : edgeDistance;
+    standalone.style.bottom = offset + 'px';
+  }
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const requestedOffset = parseFloat(position === 'pageTop' ? standalone.style.top : standalone.style.bottom) || 0;
+  standalone.style.visibility = viewportHeight && requestedOffset + buttonSize > viewportHeight ? 'hidden' : 'visible';
 }
 
 // 更新按钮可见性
 function updateButtonVisibility() {
   const buttonContainer = getButtonContainer();
   if (!buttonContainer) return;
+  const root = getScrollRoot();
+  const readingToolContainer = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
   
   if (buttonSettings.showButton) {
     buttonContainer.style.display = 'flex';
+    if (readingToolContainer && advancedSettings.readingTools.buttonPosition !== 'betweenScrollButtons' && isReadingToolEnabled()) {
+      readingToolContainer.style.display = 'flex';
+    }
   } else {
     buttonContainer.style.display = 'none';
+    if (readingToolContainer) {
+      readingToolContainer.style.display = 'none';
+    }
   }
 }
 
@@ -1371,7 +1983,7 @@ function validateColor(color) {
 
 // 更新按钮样式
 function updateButtonStyle() {
-  const { root, topButton, progressButton, bottomButton } = getButtonElements();
+  const { root, topButton, progressButton, bottomButton, readingToolButton } = getButtonElements();
   if (!topButton || !bottomButton) return;
   
   // 更新按钮尺寸
@@ -1384,20 +1996,29 @@ function updateButtonStyle() {
     progressButton.style.width = size;
     progressButton.style.height = clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT) + 'px';
   }
+  if (readingToolButton) {
+    readingToolButton.style.width = size;
+    readingToolButton.style.height = size;
+  }
   
   // 更新按钮形状
   const shape = buttonSettings.buttonShape || 'round';
   const borderRadius = shape === 'square' ? '4px' : '50%';
+  const progressBorderRadius = shape === 'square' ? '4px' : '999px';
   topButton.style.borderRadius = borderRadius;
   bottomButton.style.borderRadius = borderRadius;
   if (progressButton) {
-    progressButton.style.borderRadius = borderRadius;
+    progressButton.style.borderRadius = progressBorderRadius;
+  }
+  if (readingToolButton) {
+    readingToolButton.style.borderRadius = borderRadius;
   }
   
   // 更新SVG图标大小（根据按钮尺寸自动调整）
   const iconSize = Math.max(40, Math.min(70, parseInt(buttonSettings.buttonSize) * 0.6)) + '%';
   const topIcon = topButton.querySelector('.scroll-icon');
   const bottomIcon = bottomButton.querySelector('.scroll-icon');
+  const readingToolIcon = readingToolButton ? readingToolButton.querySelector('.scroll-icon') : null;
   if (topIcon) {
     topIcon.style.width = iconSize;
     topIcon.style.height = iconSize;
@@ -1405,6 +2026,10 @@ function updateButtonStyle() {
   if (bottomIcon) {
     bottomIcon.style.width = iconSize;
     bottomIcon.style.height = iconSize;
+  }
+  if (readingToolIcon) {
+    readingToolIcon.style.width = iconSize;
+    readingToolIcon.style.height = iconSize;
   }
   
   // 更新按钮颜色 - 使用用户设置的颜色（带验证）
@@ -1415,12 +2040,18 @@ function updateButtonStyle() {
   if (progressButton) {
     progressButton.style.backgroundColor = getProgressColor();
   }
+  if (readingToolButton) {
+    readingToolButton.style.backgroundColor = getReadingToolColor();
+  }
 
   const iconColor = getActiveIconColor();
   topButton.style.color = iconColor;
   bottomButton.style.color = iconColor;
   if (progressButton) {
     progressButton.style.color = iconColor;
+  }
+  if (readingToolButton) {
+    readingToolButton.style.color = iconColor;
   }
   
   // 动态应用间距到容器
@@ -1435,6 +2066,9 @@ function updateButtonStyle() {
   bottomButton.style.opacity = opacity;
   if (progressButton) {
     progressButton.style.opacity = opacity;
+  }
+  if (readingToolButton) {
+    readingToolButton.style.opacity = opacity;
   }
   
   // 更新悬停效果颜色 - 使用用户设置的颜色
@@ -1455,9 +2089,13 @@ function updateButtonStyle() {
     .psm-progress-button:hover {
       background-color: ${adjustColorBrightness(getProgressColor(), -25)};
     }
+    .psm-reading-tool-button:hover {
+      background-color: ${adjustColorBrightness(getReadingToolColor(), -10)};
+    }
   `;
   root.appendChild(newStyle);
   updateProgressBar();
+  updateReadingToolPosition();
 }
 
 // 调整颜色亮度
@@ -1483,6 +2121,7 @@ function initializeButton() {
     fullscreenManager.buttonContainer = getButtonContainer();
     updateButtonStyle();
     ensureProgressControls();
+    ensureReadingToolControls();
     fullscreenManager.handleFullscreenChange();
 
     if (!spaDetectionState.isInitialized) {
@@ -1694,6 +2333,9 @@ const fullscreenManager = {
 
     const root = getScrollRoot();
     const horizontalProgress = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
+    const readingToolContainer = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
+    const readingToolMenu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
+    const readingToast = root ? root.getElementById(READING_TOOL_TOAST_ID) : null;
     if (horizontalProgress) {
       if (this.isFullscreen) {
         horizontalProgress.classList.add('psm-fullscreen-hidden');
@@ -1701,6 +2343,14 @@ const fullscreenManager = {
         horizontalProgress.classList.remove('psm-fullscreen-hidden');
       }
     }
+    [readingToolContainer, readingToolMenu, readingToast].forEach((element) => {
+      if (!element) return;
+      if (this.isFullscreen) {
+        element.classList.add('psm-fullscreen-hidden');
+      } else {
+        element.classList.remove('psm-fullscreen-hidden');
+      }
+    });
   },
   
   // 初始化全屏检测

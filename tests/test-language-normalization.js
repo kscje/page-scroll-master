@@ -1,5 +1,7 @@
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
+const ROOT = path.join(__dirname, '..');
 
 function createOptionsContext() {
   const sandbox = {
@@ -29,7 +31,7 @@ function createOptionsContext() {
   };
   sandbox.window.document = sandbox.document;
   vm.runInNewContext(
-    fs.readFileSync('options.js', 'utf8') + '\nthis.__translations = translations;',
+    fs.readFileSync(path.join(ROOT, 'options.js'), 'utf8') + '\nthis.__translations = translations;',
     sandbox,
     { filename: 'options.js' }
   );
@@ -64,7 +66,7 @@ function createPopupContext() {
       i18n: { getMessage() { return ''; } }
     }
   };
-  vm.runInNewContext(fs.readFileSync('popup.js', 'utf8'), sandbox, { filename: 'popup.js' });
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'popup.js'), 'utf8'), sandbox, { filename: 'popup.js' });
   return sandbox;
 }
 

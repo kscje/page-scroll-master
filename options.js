@@ -134,6 +134,28 @@ Object.assign(translations['zh-CN'], {
   'settings.progressShowPercentage': '显示百分比',
   'settings.progressShowRemainingTime': '显示剩余阅读时间',
   'settings.progressInfiniteNote': '无限滚动页面中进度可能随着内容加载而变化。',
+  'settings.readingTools': '阅读工具',
+  'settings.readingToolsEnabled': '启用阅读工具按钮',
+  'settings.readingToolsIntro': '阅读工具按钮默认关闭，启用后可手动保存当前阅读位置。',
+  'settings.readingToolPosition': '按钮位置',
+  'settings.readingToolPosition.pageTop': '页面顶部',
+  'settings.readingToolPosition.pageBottom': '页面底部',
+  'settings.readingToolPosition.betweenScrollButtons': '上/下按钮之间',
+  'settings.readingToolColorMode': '按钮颜色',
+  'settings.readingToolColorMode.followProgressBar': '跟随阅读进度条',
+  'settings.readingToolColorMode.followTopButton': '跟随顶部按钮',
+  'settings.readingToolColorMode.followBottomButton': '跟随底部按钮',
+  'settings.readingToolColorMode.custom': '自定义',
+  'settings.readingToolCustomColor': '自定义阅读工具颜色',
+  'settings.scrollBookmarksEnabled': '启用滚动位置书签',
+  'settings.scrollBookmarkPerDomainLimit': '每域名保留位置',
+  'settings.scrollBookmarkPerDomainLimit.one': '最近 1 条',
+  'settings.scrollBookmarkPerDomainLimit.three': '最近 3 条',
+  'settings.scrollBookmarkRestorePrompt': '打开页面时显示恢复提示',
+  'settings.savedScrollBookmarks': '已保存位置',
+  'settings.savedBookmarksEmpty': '暂无已保存的阅读位置。',
+  'settings.openBookmark': '打开',
+  'settings.deleteBookmark': '删除',
   'settings.iconSet': '图标样式',
   'settings.iconSet.defaultArrow': '默认箭头',
   'settings.iconSet.triangle': '三角形',
@@ -175,6 +197,28 @@ Object.assign(translations['en-US'], {
   'settings.progressShowPercentage': 'Show percentage',
   'settings.progressShowRemainingTime': 'Show remaining reading time',
   'settings.progressInfiniteNote': 'On infinite scrolling pages, progress may change as new content loads.',
+  'settings.readingTools': 'Reading Tools',
+  'settings.readingToolsEnabled': 'Enable reading tools button',
+  'settings.readingToolsIntro': 'The reading tools button is off by default. Turn it on to manually save reading positions.',
+  'settings.readingToolPosition': 'Button position',
+  'settings.readingToolPosition.pageTop': 'Page top',
+  'settings.readingToolPosition.pageBottom': 'Page bottom',
+  'settings.readingToolPosition.betweenScrollButtons': 'Between scroll buttons',
+  'settings.readingToolColorMode': 'Button color',
+  'settings.readingToolColorMode.followProgressBar': 'Follow page progress bar',
+  'settings.readingToolColorMode.followTopButton': 'Follow top button',
+  'settings.readingToolColorMode.followBottomButton': 'Follow bottom button',
+  'settings.readingToolColorMode.custom': 'Custom',
+  'settings.readingToolCustomColor': 'Custom reading tools color',
+  'settings.scrollBookmarksEnabled': 'Enable scroll position bookmarks',
+  'settings.scrollBookmarkPerDomainLimit': 'Saved positions per domain',
+  'settings.scrollBookmarkPerDomainLimit.one': 'Latest 1',
+  'settings.scrollBookmarkPerDomainLimit.three': 'Latest 3',
+  'settings.scrollBookmarkRestorePrompt': 'Show restore prompt when opening a page',
+  'settings.savedScrollBookmarks': 'Saved Positions',
+  'settings.savedBookmarksEmpty': 'No saved reading positions yet.',
+  'settings.openBookmark': 'Open',
+  'settings.deleteBookmark': 'Delete',
   'settings.iconSet': 'Icon style',
   'settings.iconSet.defaultArrow': 'Default arrow',
   'settings.iconSet.triangle': 'Triangle',
@@ -324,12 +368,29 @@ const DEFAULT_ADVANCED_SETTINGS = {
       topIconDataUrl: '',
       bottomIconDataUrl: ''
     }
+  },
+  readingTools: {
+    enabled: false,
+    buttonPosition: 'pageBottom',
+    buttonColorMode: 'followProgressBar',
+    buttonCustomColor: '#4A9EDD',
+    features: {
+      scrollBookmarks: true,
+      outlineNavigation: false
+    }
+  },
+  scrollBookmarks: {
+    matchMode: 'exact',
+    perDomainLimit: 1,
+    globalLimit: 300,
+    restorePromptEnabled: true
   }
 };
 
 let advancedSettingsState = mergeAdvancedSettings();
 let enableStates = {};
 let domainSearchText = '';
+let savedBookmarks = {};
 
 // 检测操作系统平台
 function detectPlatform() {
@@ -412,6 +473,22 @@ function normalizeIconSet(value) {
     : 'defaultArrow';
 }
 
+function normalizeReadingToolPosition(value) {
+  return ['pageTop', 'pageBottom', 'betweenScrollButtons'].includes(value)
+    ? value
+    : 'pageBottom';
+}
+
+function normalizeReadingToolColorMode(value) {
+  return ['followTopButton', 'followBottomButton', 'followProgressBar', 'custom'].includes(value)
+    ? value
+    : 'followProgressBar';
+}
+
+function normalizePerDomainLimit(value) {
+  return Number(value) === 3 ? 3 : 1;
+}
+
 function mergeAdvancedSettings(savedSettings) {
   const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4A9EDD');
@@ -420,6 +497,15 @@ function mergeAdvancedSettings(savedSettings) {
   merged.iconCustomization.enabled = true;
   merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
   merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, '#FFFFFF');
+  merged.readingTools.buttonPosition = normalizeReadingToolPosition(merged.readingTools.buttonPosition);
+  merged.readingTools.buttonColorMode = normalizeReadingToolColorMode(merged.readingTools.buttonColorMode);
+  merged.readingTools.buttonCustomColor = validateHexColor(merged.readingTools.buttonCustomColor, '#4A9EDD');
+  merged.readingTools.features.scrollBookmarks = merged.readingTools.features.scrollBookmarks !== false;
+  merged.readingTools.features.outlineNavigation = false;
+  merged.scrollBookmarks.matchMode = 'exact';
+  merged.scrollBookmarks.perDomainLimit = normalizePerDomainLimit(merged.scrollBookmarks.perDomainLimit);
+  merged.scrollBookmarks.globalLimit = clampNumber(merged.scrollBookmarks.globalLimit, 1, 300, 300);
+  merged.scrollBookmarks.restorePromptEnabled = merged.scrollBookmarks.restorePromptEnabled !== false;
   return merged;
 }
 
@@ -541,11 +627,30 @@ function getPreviewProgressColor(topButtonColor, bottomButtonColor) {
   return validateHexColor(topButtonColor, '#4A9EDD');
 }
 
+function getPreviewReadingToolColor(topButtonColor, bottomButtonColor, progressColor) {
+  const colorMode = document.getElementById('readingToolColorMode')?.value || 'followProgressBar';
+  if (colorMode === 'followBottomButton') {
+    return validateHexColor(bottomButtonColor, '#4A9EDD');
+  }
+  if (colorMode === 'custom') {
+    return validateHexColor(document.getElementById('readingToolCustomColor')?.value, '#4A9EDD');
+  }
+  if (colorMode === 'followProgressBar' && document.getElementById('progressBarEnabled')?.checked === true) {
+    return progressColor;
+  }
+  return validateHexColor(topButtonColor, '#4A9EDD');
+}
+
+function getReadingToolIconSvg() {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5z"/></svg>';
+}
+
 // 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
 function updatePreviewButtons() {
   const topButton = document.getElementById('previewTopButton');
   const bottomButton = document.getElementById('previewBottomButton');
   const progressButton = document.getElementById('previewProgressButton');
+  const readingToolButton = document.getElementById('previewReadingToolButton');
   const horizontalProgress = document.getElementById('previewHorizontalProgress');
   if (!topButton || !bottomButton) return;
   
@@ -567,6 +672,10 @@ function updatePreviewButtons() {
   const progressHorizontalPosition = document.getElementById('progressHorizontalPosition')?.value || 'top';
   const progressThickness = normalizeProgressThickness(document.getElementById('progressThickness')?.value);
   const progressColor = getPreviewProgressColor(topButtonColor, bottomButtonColor);
+  const readingToolEnabled = document.getElementById('readingToolsEnabled')?.checked === true &&
+    document.getElementById('scrollBookmarksEnabled')?.checked !== false;
+  const readingToolPosition = document.getElementById('readingToolPosition')?.value || 'pageBottom';
+  const readingToolColor = getPreviewReadingToolColor(topButtonColor, bottomButtonColor, progressColor);
   
   // 验证并调整按钮尺寸（允许10-120px范围）
   let displaySize = buttonSize;
@@ -627,13 +736,17 @@ function updatePreviewButtons() {
   const totalGroupHeight = isVerticalProgressPreview
     ? (displaySize * 2) + displayProgressHeight + (displaySpacing * 2)
     : (displaySize * 2) + displaySpacing;
+  const readingToolInGroup = readingToolEnabled && readingToolPosition === 'betweenScrollButtons';
+  const totalPreviewGroupHeight = readingToolInGroup
+    ? totalGroupHeight + displaySize + displaySpacing
+    : totalGroupHeight;
   
   // 顶部按钮位置计算
   let topButtonTop, topButtonBottom;
   if (verticalAlignment === 'center') {
     // 居中模式：按钮组整体居中，不使用transform避免弹跳
     // 计算从视口顶部到按钮组顶部的距离
-    const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
+    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
     topButtonTop = groupTopOffset;
     topButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
@@ -643,23 +756,23 @@ function updatePreviewButtons() {
     // bottom
     topButtonTop = 'auto';
     topButtonBottom = isVerticalProgressPreview
-      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
-      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`
+      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`;
   }
   
   // 底部按钮位置计算
   let bottomButtonTop, bottomButtonBottom;
   if (verticalAlignment === 'center') {
     // 居中模式：底部按钮在顶部按钮下方固定间距
-    const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
+    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
     bottomButtonTop = isVerticalProgressPreview
-      ? `calc(${groupTopOffset} + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
-      : `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
+      ? `calc(${groupTopOffset} + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`
+      : `calc(${groupTopOffset} + ${displaySize + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`;
     bottomButtonBottom = 'auto';
   } else if (verticalAlignment === 'top') {
     bottomButtonTop = isVerticalProgressPreview
-      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
-      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`
+      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`;
     bottomButtonBottom = 'auto';
   } else {
     // bottom
@@ -670,12 +783,39 @@ function updatePreviewButtons() {
   let progressButtonTop = 'auto';
   let progressButtonBottom = 'auto';
   if (verticalAlignment === 'center') {
-    const groupTopOffset = `calc(50% - ${totalGroupHeight / 2}px)`;
+    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
     progressButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
   } else if (verticalAlignment === 'top') {
     progressButtonTop = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
   } else {
-    progressButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+    progressButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (readingToolInGroup ? displaySize + displaySpacing : 0)}px)`;
+  }
+
+  let readingToolTop = 'auto';
+  let readingToolBottom = 'auto';
+  if (readingToolInGroup) {
+    if (verticalAlignment === 'center') {
+      const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
+      readingToolTop = isVerticalProgressPreview
+        ? `calc(${groupTopOffset} + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
+        : `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
+    } else if (verticalAlignment === 'top') {
+      readingToolTop = isVerticalProgressPreview
+        ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing}px)`
+        : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+    } else {
+      readingToolBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
+    }
+  } else if (readingToolPosition === 'pageTop') {
+    const offset = verticalAlignment === 'top'
+      ? displayEdgeDistance + totalGroupHeight + displaySpacing
+      : displayEdgeDistance;
+    readingToolTop = offset + 'px';
+  } else {
+    const offset = verticalAlignment === 'bottom'
+      ? displayEdgeDistance + totalGroupHeight + displaySpacing
+      : displayEdgeDistance;
+    readingToolBottom = offset + 'px';
   }
   
   // 使用 requestAnimationFrame 确保流畅更新，避免弹跳
@@ -760,6 +900,30 @@ function updatePreviewButtons() {
       }
     }
 
+    if (readingToolButton) {
+      readingToolButton.classList.toggle('hidden', !readingToolEnabled);
+      readingToolButton.innerHTML = getReadingToolIconSvg();
+      readingToolButton.style.display = readingToolEnabled ? 'flex' : 'none';
+      readingToolButton.style.width = size;
+      readingToolButton.style.height = size;
+      readingToolButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
+      readingToolButton.style.backgroundColor = readingToolColor;
+      readingToolButton.style.opacity = opacity;
+      readingToolButton.style.left = leftPos;
+      readingToolButton.style.right = rightPos;
+      readingToolButton.style.top = readingToolTop;
+      readingToolButton.style.bottom = readingToolBottom;
+      readingToolButton.style.transform = 'none';
+      readingToolButton.style.willChange = 'top, bottom, width, height';
+      readingToolButton.style.color = iconColor;
+      const readingIcon = readingToolButton.querySelector('svg');
+      if (readingIcon) {
+        readingIcon.style.width = iconSize;
+        readingIcon.style.height = iconSize;
+        readingIcon.style.display = 'block';
+      }
+    }
+
     if (horizontalProgress) {
       horizontalProgress.classList.toggle('hidden', !isHorizontalProgressPreview);
       horizontalProgress.classList.toggle('is-bottom', progressHorizontalPosition === 'bottom');
@@ -804,6 +968,13 @@ function updatePreviewButtons() {
       transform: scale(1.1) !important;
     }
     #previewBottomButton:active {
+      transform: scale(0.95) !important;
+    }
+    #previewReadingToolButton:hover {
+      background-color: ${adjustColorBrightness(readingToolColor, -10)} !important;
+      transform: scale(1.1) !important;
+    }
+    #previewReadingToolButton:active {
       transform: scale(0.95) !important;
     }
   `;
@@ -856,9 +1027,13 @@ function updateAdvancedVisibility() {
   const verticalSettings = document.getElementById('verticalProgressSettings');
   const horizontalSettings = document.getElementById('horizontalProgressSettings');
   const customColorSettings = document.getElementById('progressCustomColorContainer');
+  const readingToolsSettings = document.getElementById('readingToolsSettings');
+  const readingToolCustomColorSettings = document.getElementById('readingToolCustomColorContainer');
   const progressEnabled = document.getElementById('progressBarEnabled');
   const progressMode = document.getElementById('progressBarMode');
   const colorMode = document.getElementById('progressColorMode');
+  const readingToolsEnabled = document.getElementById('readingToolsEnabled');
+  const readingToolColorMode = document.getElementById('readingToolColorMode');
 
   if (progressSettings && progressEnabled) {
     progressSettings.style.display = progressEnabled.checked ? 'block' : 'none';
@@ -872,6 +1047,12 @@ function updateAdvancedVisibility() {
   if (customColorSettings && colorMode) {
     customColorSettings.style.display = colorMode.value === 'custom' ? 'block' : 'none';
   }
+  if (readingToolsSettings && readingToolsEnabled) {
+    readingToolsSettings.style.display = readingToolsEnabled.checked ? 'block' : 'none';
+  }
+  if (readingToolCustomColorSettings && readingToolColorMode) {
+    readingToolCustomColorSettings.style.display = readingToolColorMode.value === 'custom' ? 'block' : 'none';
+  }
 }
 
 function updateAdvancedPreviewControls() {
@@ -883,6 +1064,8 @@ function setAdvancedSettingsControls(settings) {
   advancedSettingsState = mergeAdvancedSettings(settings);
   const progress = advancedSettingsState.progressBar;
   const icons = advancedSettingsState.iconCustomization;
+  const readingTools = advancedSettingsState.readingTools;
+  const scrollBookmarks = advancedSettingsState.scrollBookmarks;
 
   document.getElementById('progressBarEnabled').checked = progress.enabled;
   document.getElementById('progressBarMode').value = progress.mode;
@@ -900,6 +1083,15 @@ function setAdvancedSettingsControls(settings) {
   document.getElementById('iconColor').value = icons.iconColor;
   document.getElementById('iconColorHex').value = icons.iconColor;
 
+  document.getElementById('readingToolsEnabled').checked = Boolean(readingTools.enabled);
+  document.getElementById('readingToolPosition').value = readingTools.buttonPosition;
+  document.getElementById('readingToolColorMode').value = readingTools.buttonColorMode;
+  document.getElementById('readingToolCustomColor').value = readingTools.buttonCustomColor;
+  document.getElementById('readingToolCustomColorHex').value = readingTools.buttonCustomColor;
+  document.getElementById('scrollBookmarksEnabled').checked = readingTools.features.scrollBookmarks !== false;
+  document.getElementById('scrollBookmarkPerDomainLimit').value = String(scrollBookmarks.perDomainLimit);
+  document.getElementById('scrollBookmarkRestorePrompt').checked = scrollBookmarks.restorePromptEnabled !== false;
+
   updateAdvancedVisibility();
   updatePreviewButtons();
 }
@@ -908,6 +1100,7 @@ function getAdvancedSettingsFromControls() {
   const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
   const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4A9EDD');
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
+  const readingToolCustomColor = validateHexColor(document.getElementById('readingToolCustomColor').value, '#4A9EDD');
 
   return mergeAdvancedSettings({
     progressBar: {
@@ -931,6 +1124,22 @@ function getAdvancedSettingsFromControls() {
         topIconDataUrl: '',
         bottomIconDataUrl: ''
       }
+    },
+    readingTools: {
+      enabled: document.getElementById('readingToolsEnabled').checked,
+      buttonPosition: normalizeReadingToolPosition(document.getElementById('readingToolPosition').value),
+      buttonColorMode: normalizeReadingToolColorMode(document.getElementById('readingToolColorMode').value),
+      buttonCustomColor: readingToolCustomColor,
+      features: {
+        scrollBookmarks: document.getElementById('scrollBookmarksEnabled').checked,
+        outlineNavigation: false
+      }
+    },
+    scrollBookmarks: {
+      matchMode: 'exact',
+      perDomainLimit: normalizePerDomainLimit(document.getElementById('scrollBookmarkPerDomainLimit').value),
+      globalLimit: 300,
+      restorePromptEnabled: document.getElementById('scrollBookmarkRestorePrompt').checked
     }
   });
 }
@@ -1057,6 +1266,97 @@ function loadEnableStates() {
   });
 }
 
+function normalizeBookmarks(bookmarks) {
+  return bookmarks && typeof bookmarks === 'object' && !Array.isArray(bookmarks) ? bookmarks : {};
+}
+
+function formatBookmarkDate(timestamp) {
+  if (!timestamp) return '';
+  try {
+    return new Date(timestamp).toLocaleString();
+  } catch (err) {
+    return '';
+  }
+}
+
+function renderSavedBookmarksList() {
+  const list = document.getElementById('savedBookmarksList');
+  const empty = document.getElementById('savedBookmarksEmpty');
+  if (!list || !empty) return;
+  list.innerHTML = '';
+
+  const lang = document.getElementById('languageSelector')?.value === 'auto'
+    ? normalizeLanguage(navigator.language || navigator.userLanguage)
+    : document.getElementById('languageSelector')?.value || 'en-US';
+  const entries = Object.entries(savedBookmarks)
+    .sort((a, b) => (b[1].savedAt || 0) - (a[1].savedAt || 0));
+
+  empty.style.display = entries.length === 0 ? 'block' : 'none';
+  entries.forEach(([key, bookmark]) => {
+    const row = document.createElement('div');
+    row.className = 'bookmark-row';
+
+    const info = document.createElement('div');
+    info.className = 'bookmark-info';
+
+    const title = document.createElement('div');
+    title.className = 'bookmark-title';
+    title.textContent = bookmark.title || bookmark.domain || bookmark.normalizedUrl || key;
+
+    const meta = document.createElement('div');
+    meta.className = 'bookmark-meta';
+    const percent = Math.round((Number(bookmark.scrollPct) || 0) * 100);
+    meta.textContent = `${bookmark.domain || ''} · ${percent}% · ${formatBookmarkDate(bookmark.savedAt)}`;
+
+    const url = document.createElement('div');
+    url.className = 'bookmark-url';
+    url.textContent = bookmark.normalizedUrl || bookmark.url || '';
+
+    info.appendChild(title);
+    info.appendChild(meta);
+    info.appendChild(url);
+
+    const actions = document.createElement('div');
+    actions.className = 'bookmark-actions';
+
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.textContent = translations[lang]?.['settings.openBookmark'] || 'Open';
+    openButton.addEventListener('click', () => {
+      if (chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: bookmark.url || bookmark.normalizedUrl });
+      }
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.textContent = translations[lang]?.['settings.deleteBookmark'] || 'Delete';
+    deleteButton.addEventListener('click', () => removeSavedBookmark(key));
+
+    actions.appendChild(openButton);
+    actions.appendChild(deleteButton);
+    row.appendChild(info);
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
+
+function loadSavedBookmarks() {
+  chrome.storage.local.get(['bookmarks'], (result) => {
+    savedBookmarks = normalizeBookmarks(result.bookmarks);
+    renderSavedBookmarksList();
+  });
+}
+
+function removeSavedBookmark(key) {
+  const nextBookmarks = { ...savedBookmarks };
+  delete nextBookmarks[key];
+  chrome.storage.local.set({ bookmarks: nextBookmarks }, () => {
+    savedBookmarks = nextBookmarks;
+    renderSavedBookmarksList();
+  });
+}
+
 function setupTabs() {
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabPanels = document.querySelectorAll('.tab-panel');
@@ -1126,6 +1426,7 @@ function loadSettings() {
     getCurrentLanguage().then(lang => {
       applyTranslation(lang);
       renderEnableStatesList();
+      renderSavedBookmarksList();
     });
   });
 }
@@ -1231,6 +1532,7 @@ function init() {
   setManifestVersion();
   loadSettings();
   loadEnableStates();
+  loadSavedBookmarks();
   
   // 更新快捷键显示（根据操作系统平台）
   updateShortcutKeyDisplay();
@@ -1276,6 +1578,10 @@ function init() {
   document.getElementById('progressVerticalHeight').addEventListener('input', updatePreviewButtons);
   document.getElementById('progressColorMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressShowPercentage').addEventListener('change', updatePreviewButtons);
+  document.getElementById('readingToolsEnabled').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('readingToolPosition').addEventListener('change', updatePreviewButtons);
+  document.getElementById('readingToolColorMode').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('scrollBookmarksEnabled').addEventListener('change', updatePreviewButtons);
 
   document.getElementById('progressCustomColor').addEventListener('input', (e) => {
     document.getElementById('progressCustomColorHex').value = e.target.value;
@@ -1285,6 +1591,18 @@ function init() {
     const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
     if (colorRegex.test(e.target.value)) {
       document.getElementById('progressCustomColor').value = e.target.value;
+      updatePreviewButtons();
+    }
+  });
+
+  document.getElementById('readingToolCustomColor').addEventListener('input', (e) => {
+    document.getElementById('readingToolCustomColorHex').value = e.target.value;
+    updatePreviewButtons();
+  });
+  document.getElementById('readingToolCustomColorHex').addEventListener('input', (e) => {
+    const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (colorRegex.test(e.target.value)) {
+      document.getElementById('readingToolCustomColor').value = e.target.value;
       updatePreviewButtons();
     }
   });
@@ -1504,10 +1822,12 @@ function init() {
       getCurrentLanguage().then(detectedLang => {
         applyTranslation(detectedLang);
         renderEnableStatesList();
+        renderSavedBookmarksList();
       });
     } else {
       applyTranslation(lang);
       renderEnableStatesList();
+      renderSavedBookmarksList();
     }
   });
   

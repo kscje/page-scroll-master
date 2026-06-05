@@ -8,9 +8,11 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
 
-const OPTIONS_SOURCE_PATH = process.env.OPTIONS_SOURCE || 'options.js';
+const ROOT = path.join(__dirname, '..');
+const OPTIONS_SOURCE_PATH = process.env.OPTIONS_SOURCE || path.join(ROOT, 'options.js');
 const OPTIONS_SOURCE = fs.readFileSync(OPTIONS_SOURCE_PATH, 'utf8');
 
 let passCount = 0;
@@ -38,6 +40,16 @@ function createElement(id, options = {}) {
     listeners: {},
     children: options.children || [],
     className: options.className || '',
+    _innerHTML: '',
+    set innerHTML(value) {
+      this._innerHTML = value;
+      if (value === '') {
+        this.children = [];
+      }
+    },
+    get innerHTML() {
+      return this._innerHTML;
+    },
     classList: {
       contains(className) {
         return classNames.has(className);
@@ -106,7 +118,7 @@ function createOption(value, textContent) {
   });
 }
 
-function createOptionsPage(initialSyncData = {}) {
+function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
   const appendedHeadElements = [];
   const elements = {
     scrollSpeed: createElement('scrollSpeed', { value: '1000' }),
@@ -156,6 +168,18 @@ function createOptionsPage(initialSyncData = {}) {
     progressClickToJump: createElement('progressClickToJump', { checked: true }),
     progressShowPercentage: createElement('progressShowPercentage', { checked: true }),
     progressShowRemainingTime: createElement('progressShowRemainingTime'),
+    readingToolsEnabled: createElement('readingToolsEnabled'),
+    readingToolsSettings: createElement('readingToolsSettings'),
+    readingToolPosition: createElement('readingToolPosition', { value: 'pageBottom' }),
+    readingToolColorMode: createElement('readingToolColorMode', { value: 'followProgressBar' }),
+    readingToolCustomColorContainer: createElement('readingToolCustomColorContainer'),
+    readingToolCustomColor: createElement('readingToolCustomColor', { value: '#4A9EDD' }),
+    readingToolCustomColorHex: createElement('readingToolCustomColorHex', { value: '#4A9EDD' }),
+    scrollBookmarksEnabled: createElement('scrollBookmarksEnabled', { checked: true }),
+    scrollBookmarkPerDomainLimit: createElement('scrollBookmarkPerDomainLimit', { value: '1' }),
+    scrollBookmarkRestorePrompt: createElement('scrollBookmarkRestorePrompt', { checked: true }),
+    savedBookmarksList: createElement('savedBookmarksList'),
+    savedBookmarksEmpty: createElement('savedBookmarksEmpty'),
     iconCustomizationSettings: createElement('iconCustomizationSettings'),
     iconSet: createElement('iconSet', { value: 'defaultArrow' }),
     iconColor: createElement('iconColor', { value: '#FFFFFF' }),
@@ -180,6 +204,9 @@ function createOptionsPage(initialSyncData = {}) {
         createElement('previewProgressLabel', { className: 'preview-progress-label' })
       ]
     }),
+    previewReadingToolButton: createElement('previewReadingToolButton', {
+      className: 'preview-scroll-button hidden'
+    }),
     previewBottomButton: createElement('previewBottomButton', {
       children: [createElement('bottomSvg', { attributes: { tagName: 'svg' } })]
     }),
@@ -196,7 +223,7 @@ function createOptionsPage(initialSyncData = {}) {
   elements.previewBottomButton.children[0].tagName = 'svg';
 
   const syncData = JSON.parse(JSON.stringify(initialSyncData));
-  const localData = {};
+  const localData = JSON.parse(JSON.stringify(initialLocalData));
   const sentMessages = [];
   const runtime = { lastError: null };
 
@@ -297,6 +324,8 @@ function createOptionsPage(initialSyncData = {}) {
           sentMessages.push({ tabId, message });
           runtime.lastError = null;
           if (callback) callback();
+        },
+        create() {
         }
       },
       runtime
@@ -359,6 +388,11 @@ console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.progressBarEnabled.checked = true;
 page.elements.progressBarMode.value = 'horizontalBar';
 page.elements.progressThickness.value = '12';
+page.elements.readingToolsEnabled.checked = true;
+page.elements.readingToolPosition.value = 'betweenScrollButtons';
+page.elements.readingToolColorMode.value = 'custom';
+page.elements.readingToolCustomColor.value = '#778899';
+page.elements.scrollBookmarkPerDomainLimit.value = '3';
 page.elements.iconSet.value = 'doubleArrow';
 page.elements.iconColor.value = '#123456';
 page.elements.saveButton.dispatch('click');
@@ -368,6 +402,11 @@ assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge dis
 assert(page.syncData.advancedSettings.progressBar.enabled === true, 'save persists progress bar enabled state');
 assert(page.syncData.advancedSettings.progressBar.mode === 'horizontalBar', 'save persists progress bar mode');
 assert(page.syncData.advancedSettings.progressBar.thickness === 12, 'save persists progress bar thickness');
+assert(page.syncData.advancedSettings.readingTools.enabled === true, 'save persists reading tools enabled state');
+assert(page.syncData.advancedSettings.readingTools.buttonPosition === 'betweenScrollButtons', 'save persists reading tool position');
+assert(page.syncData.advancedSettings.readingTools.buttonColorMode === 'custom', 'save persists reading tool color mode');
+assert(page.syncData.advancedSettings.readingTools.buttonCustomColor === '#778899', 'save persists reading tool custom color');
+assert(page.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3, 'save persists scroll bookmark per-domain limit');
 assert(page.syncData.advancedSettings.iconCustomization.iconSet === 'doubleArrow', 'save persists icon set');
 assert(page.syncData.advancedSettings.iconCustomization.iconColor === '#123456', 'save persists icon color');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateSpeed' && entry.message.speed === 250), 'save sends updateSpeed message');
@@ -428,6 +467,57 @@ assert(page4.elements.previewHorizontalProgress.style.display === 'block', 'hori
 page4.elements.progressHorizontalPosition.value = 'bottom';
 page4.elements.progressHorizontalPosition.dispatch('change');
 assert(page4.elements.previewHorizontalProgress.style.bottom === '0', 'horizontal progress preview follows bottom position');
+
+console.log('\nTest 8: Reading tools preview is hidden by default and follows button geometry when enabled');
+let page5 = createOptionsPage();
+assert(page5.elements.previewReadingToolButton.style.display === 'none', 'reading tool preview is hidden by default');
+page5.elements.readingToolsEnabled.checked = true;
+page5.elements.readingToolPosition.value = 'pageBottom';
+page5.elements.readingToolColorMode.value = 'followTopButton';
+page5.elements.readingToolsEnabled.dispatch('change');
+assert(page5.elements.previewReadingToolButton.style.display === 'flex', 'reading tool preview is shown when enabled');
+assert(page5.elements.previewReadingToolButton.style.backgroundColor === '#4A9EDD', 'reading tool preview falls back to top button color');
+assert(page5.elements.previewReadingToolButton.style.bottom === '8px', 'page-bottom reading tool preview uses edge distance when scroll buttons are centered');
+page5.elements.verticalAlignment.value = 'bottom';
+page5.elements.verticalAlignment.dispatch('change');
+assert(page5.elements.previewReadingToolButton.style.bottom === '104px', 'page-bottom reading tool preview avoids bottom-aligned scroll buttons');
+page5.elements.verticalAlignment.value = 'center';
+page5.elements.verticalAlignment.dispatch('change');
+page5.elements.readingToolPosition.value = 'betweenScrollButtons';
+page5.elements.readingToolPosition.dispatch('change');
+assert(page5.elements.previewReadingToolButton.style.top.includes('calc(50%'), 'between-buttons reading tool preview joins centered button group');
+
+console.log('\nTest 9: Saved scroll bookmarks render and can be deleted');
+let page6 = createOptionsPage(
+  { language: 'en-US' },
+  {
+    bookmarks: {
+      'exact:https://example.test/a': {
+        title: 'Article A',
+        domain: 'example.test',
+        normalizedUrl: 'https://example.test/a',
+        url: 'https://example.test/a',
+        scrollPct: 0.62,
+        savedAt: 1000
+      },
+      'exact:https://example.test/b': {
+        title: 'Article B',
+        domain: 'example.test',
+        normalizedUrl: 'https://example.test/b',
+        url: 'https://example.test/b',
+        scrollPct: 0.34,
+        savedAt: 2000
+      }
+    }
+  }
+);
+assert(page6.elements.savedBookmarksEmpty.style.display === 'none', 'saved bookmarks empty state hides when bookmarks exist');
+assert(page6.elements.savedBookmarksList.children.length === 2, 'saved bookmarks list renders stored entries');
+assert(page6.elements.savedBookmarksList.children[0].children[0].children[0].textContent === 'Article B', 'saved bookmarks list sorts newest first');
+const deleteButton = page6.elements.savedBookmarksList.children[0].children[1].children[1];
+deleteButton.dispatch('click');
+assert(!page6.localData.bookmarks['exact:https://example.test/b'], 'delete removes the selected saved bookmark from storage');
+assert(page6.elements.savedBookmarksList.children.length === 1, 'saved bookmarks list rerenders after deletion');
 
 console.log('\n=== Test summary ===');
 console.log(`Passed: ${passCount}`);

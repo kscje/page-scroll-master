@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const ROOT = path.join(__dirname, '..');
 
 function createContext() {
   let syncGetCallback = null;
@@ -66,7 +67,7 @@ function createContext() {
   sandbox.document.scrollingElement = sandbox.document.documentElement;
 
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, 'content.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8'), sandbox);
 
   sandbox.initializeButton = () => {
     initializeCalls += 1;

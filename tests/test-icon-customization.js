@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(__dirname, 'content.js');
+const ROOT = path.join(__dirname, '..');
+const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(ROOT, 'content.js');
 
 function createContext() {
   const sandbox = {

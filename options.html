@@ -283,6 +283,40 @@
       color: var(--text);
     }
 
+    .bookmark-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .bookmark-info {
+      min-width: 0;
+    }
+
+    .bookmark-title {
+      font-weight: 700;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .bookmark-meta,
+    .bookmark-url {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .bookmark-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .domain-error {
       display: none;
       color: var(--danger);
@@ -433,6 +467,14 @@
       .inline-control {
         align-items: stretch;
         flex-direction: column;
+      }
+
+      .bookmark-row {
+        grid-template-columns: 1fr;
+      }
+
+      .bookmark-actions {
+        justify-content: flex-start;
       }
     }
     
@@ -728,6 +770,63 @@
             </div>
           </div>
         </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.readingTools">阅读工具</h3>
+
+          <div class="checkbox-container">
+            <input type="checkbox" id="readingToolsEnabled">
+            <label for="readingToolsEnabled" data-i18n="settings.readingToolsEnabled">启用阅读工具按钮</label>
+          </div>
+
+          <div id="readingToolsSettings" class="sub-setting">
+            <label for="readingToolPosition" data-i18n="settings.readingToolPosition">按钮位置</label>
+            <select id="readingToolPosition">
+              <option value="pageTop" data-i18n="settings.readingToolPosition.pageTop">页面顶部</option>
+              <option value="pageBottom" selected data-i18n="settings.readingToolPosition.pageBottom">页面底部</option>
+              <option value="betweenScrollButtons" data-i18n="settings.readingToolPosition.betweenScrollButtons">上/下按钮之间</option>
+            </select>
+
+            <label for="readingToolColorMode" data-i18n="settings.readingToolColorMode">按钮颜色</label>
+            <select id="readingToolColorMode">
+              <option value="followProgressBar" selected data-i18n="settings.readingToolColorMode.followProgressBar">跟随阅读进度条</option>
+              <option value="followTopButton" data-i18n="settings.readingToolColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followBottomButton" data-i18n="settings.readingToolColorMode.followBottomButton">跟随底部按钮</option>
+              <option value="custom" data-i18n="settings.readingToolColorMode.custom">自定义</option>
+            </select>
+
+            <div id="readingToolCustomColorContainer">
+              <label data-i18n="settings.readingToolCustomColor">自定义阅读工具颜色</label>
+              <div class="color-input-container">
+                <input type="color" id="readingToolCustomColor" value="#4A9EDD">
+                <input type="text" id="readingToolCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+              </div>
+            </div>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="scrollBookmarksEnabled" checked>
+              <label for="scrollBookmarksEnabled" data-i18n="settings.scrollBookmarksEnabled">启用滚动位置书签</label>
+            </div>
+
+            <label for="scrollBookmarkPerDomainLimit" data-i18n="settings.scrollBookmarkPerDomainLimit">每域名保留位置</label>
+            <select id="scrollBookmarkPerDomainLimit">
+              <option value="1" selected data-i18n="settings.scrollBookmarkPerDomainLimit.one">最近 1 条</option>
+              <option value="3" data-i18n="settings.scrollBookmarkPerDomainLimit.three">最近 3 条</option>
+            </select>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="scrollBookmarkRestorePrompt" checked>
+              <label for="scrollBookmarkRestorePrompt" data-i18n="settings.scrollBookmarkRestorePrompt">打开页面时显示恢复提示</label>
+            </div>
+            <p class="muted-note" data-i18n="settings.readingToolsIntro">阅读工具按钮默认关闭，启用后可手动保存当前阅读位置。</p>
+          </div>
+        </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.savedScrollBookmarks">已保存位置</h3>
+          <div id="savedBookmarksList"></div>
+          <p id="savedBookmarksEmpty" class="muted-note" data-i18n="settings.savedBookmarksEmpty">暂无已保存的阅读位置。</p>
+        </div>
       </section>
 
       <section class="tab-panel" data-tab-panel="advanced">
@@ -864,6 +963,7 @@
     <span class="preview-progress-fill"></span>
     <span class="preview-progress-label"></span>
   </button>
+  <button id="previewReadingToolButton" class="preview-scroll-button hidden" title="阅读工具" aria-label="阅读工具"></button>
   <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">
     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 5v14M5 12l7 7 7-7"/>

@@ -5,6 +5,7 @@ const { execFileSync, execSync } = require('child_process');
 const ROOT = __dirname;
 const BUILD_DIR = path.join(ROOT, 'dist', 'build');
 const PACKAGE_DIR = path.join(ROOT, 'dist');
+const TEST_DIR = path.join(ROOT, 'tests');
 
 const MANIFEST = require('./manifest.json');
 
@@ -377,43 +378,43 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-toggle-state.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-toggle-state.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-content-enable-state.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-content-enable-state.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-scroll-container-detection.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-scroll-container-detection.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-spa-loading.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-spa-loading.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-options-page.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-options-page.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-progress-bar.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-progress-bar.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-icon-customization.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-icon-customization.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-domain-management.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-domain-management.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-language-normalization.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-language-normalization.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-options-page.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-options-page.js')], {
     cwd: ROOT,
     env: {
       ...process.env,
@@ -421,7 +422,7 @@ function runRegressionTests() {
     },
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-progress-bar.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-progress-bar.js')], {
     cwd: ROOT,
     env: {
       ...process.env,
@@ -429,7 +430,7 @@ function runRegressionTests() {
     },
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(ROOT, 'test-icon-customization.js')], {
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-icon-customization.js')], {
     cwd: ROOT,
     env: {
       ...process.env,

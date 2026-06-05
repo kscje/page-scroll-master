@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(__dirname, 'content.js');
+const ROOT = path.join(__dirname, '..');
+const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(ROOT, 'content.js');
 
 class FakeElement {
   constructor(tagName, options = {}) {
@@ -47,6 +48,22 @@ class FakeElement {
   set innerHTML(value) {
     this._innerHTML = value;
     this.children = [];
+    if (value.includes('<span')) {
+      this.appendChild(new FakeElement('span'));
+    }
+    const buttonPattern = /<button([^>]*)>([^<]*)<\/button>/g;
+    let buttonMatch = buttonPattern.exec(value);
+    while (buttonMatch) {
+      const attributes = buttonMatch[1] || '';
+      const button = new FakeElement('button');
+      const actionMatch = attributes.match(/data-action="([^"]+)"/);
+      const actionIndexMatch = attributes.match(/data-action-index="([^"]+)"/);
+      if (actionMatch) button.setAttribute('data-action', actionMatch[1]);
+      if (actionIndexMatch) button.setAttribute('data-action-index', actionIndexMatch[1]);
+      button.textContent = buttonMatch[2] || '';
+      this.appendChild(button);
+      buttonMatch = buttonPattern.exec(value);
+    }
     if (value.includes('scroll-icon')) {
       this.appendChild(new FakeElement('svg', { className: 'scroll-icon' }));
     }
@@ -82,6 +99,7 @@ class FakeElement {
 
   insertBefore(child, reference) {
     child.parentNode = this;
+    this.children = this.children.filter((existing) => existing !== child);
     const index = this.children.indexOf(reference);
     if (index === -1) {
       this.children.push(child);
@@ -182,6 +200,7 @@ class FakeElement {
 }
 
 function createContext(syncData = {}) {
+  const localData = { enableStates: {} };
   const documentElement = new FakeElement('html', {
     scrollHeight: 2000,
     clientHeight: 800,
@@ -224,7 +243,10 @@ function createContext(syncData = {}) {
       innerWidth: 1000,
       innerHeight: 800,
       pageYOffset: 0,
-      location: { hostname: 'example.test' },
+      location: {
+        href: 'https://example.test/docs?page=1&utm_source=newsletter&ref=keep#section',
+        hostname: 'example.test'
+      },
       scrollTo(x, y) {
         this.pageYOffset = y;
         documentElement.scrollTop = y;
@@ -255,7 +277,15 @@ function createContext(syncData = {}) {
         },
         local: {
           get(keys, callback) {
-            callback({ enableStates: {} });
+            const result = {};
+            keys.forEach((key) => {
+              if (localData[key] !== undefined) result[key] = localData[key];
+            });
+            callback(result);
+          },
+          set(data, callback) {
+            Object.assign(localData, JSON.parse(JSON.stringify(data)));
+            if (callback) callback();
           }
         },
         onChanged: { addListener() {} }
@@ -279,12 +309,14 @@ function createContext(syncData = {}) {
     clearTimeout() {},
     console,
     URL,
+    URLSearchParams,
     Set,
     Number
   };
 
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(CONTENT_SOURCE_PATH, 'utf8'), sandbox);
+  sandbox.__localData = localData;
   return sandbox;
 }
 
@@ -353,6 +385,8 @@ function testEnabledProgressDomModes() {
   let root = sandbox.getScrollRoot();
   assert(Boolean(root.querySelector('.psm-progress-button')), 'vertical mode creates progress button');
   assert(root.querySelectorAll('.psm-scroll-button').length === 3, 'vertical mode inserts third button');
+  assert(root.querySelector('.psm-scroll-top').style.borderRadius === '50%', 'round top button keeps circular radius');
+  assert(root.querySelector('.psm-progress-button').style.borderRadius === '999px', 'round vertical progress button uses pill radius');
 
   sandbox = createContext({
     advancedSettings: {
@@ -365,6 +399,95 @@ function testEnabledProgressDomModes() {
   sandbox.updateHorizontalProgressBar(0.4);
   assert(bottomHorizontalBar.classList.contains('psm-is-bottom'), 'bottom horizontal mode positions label above the bar');
   assert(!root.querySelector('.psm-progress-button'), 'horizontal mode does not create vertical progress button');
+}
+
+function testReadingToolsDomAndBookmarks() {
+  let sandbox = createContext({
+    advancedSettings: {
+      readingTools: { enabled: true, buttonPosition: 'pageBottom', buttonColorMode: 'followTopButton' }
+    }
+  });
+  let root = sandbox.getScrollRoot();
+  const standalone = root.getElementById('page-scroll-master-reading-tool');
+  assert(Boolean(standalone), 'enabled reading tools create a standalone container');
+  assert(Boolean(root.querySelector('.psm-reading-tool-button')), 'enabled reading tools create the reading tool button');
+  assert(root.querySelectorAll('.psm-scroll-button').length === 3, 'standalone reading tool adds one button without progress');
+  assert(root.querySelector('.psm-reading-tool-button').style.backgroundColor === '#4A9EDD', 'reading tool follows top button color');
+  assert(standalone.style.bottom === '8px', 'page-bottom reading tool uses edge distance when scroll buttons are centered');
+
+  sandbox = createContext({
+    buttonSettings: { verticalAlignment: 'top' },
+    advancedSettings: {
+      readingTools: { enabled: true, buttonPosition: 'pageTop' }
+    }
+  });
+  root = sandbox.getScrollRoot();
+  assert(root.getElementById('page-scroll-master-reading-tool').style.top === '104px', 'page-top reading tool avoids top-aligned scroll buttons on the same side');
+
+  sandbox = createContext({
+    advancedSettings: {
+      progressBar: { enabled: true, mode: 'verticalButton' },
+      readingTools: { enabled: true, buttonPosition: 'betweenScrollButtons' }
+    }
+  });
+  root = sandbox.getScrollRoot();
+  const classOrder = root.getElementById('page-scroll-master-button').children.map((child) => child.className);
+  assert(classOrder[0].includes('psm-scroll-top'), 'between mode keeps top button first');
+  assert(classOrder[1].includes('psm-progress-button'), 'between mode keeps vertical progress below top button');
+  assert(classOrder[2].includes('psm-reading-tool-button'), 'between mode places reading tool below vertical progress');
+  assert(classOrder[3].includes('psm-scroll-bottom'), 'between mode keeps bottom button last');
+
+  const normalized = sandbox.normalizeBookmarkUrl('https://example.test/docs?utm_source=x&page=1&fbclid=y&source=keep#part');
+  assert(normalized === 'https://example.test/docs?page=1&source=keep#part', 'bookmark URL normalization only removes explicit tracking params and keeps source/hash');
+
+  sandbox.document.documentElement.scrollTop = 600;
+  sandbox.window.pageYOffset = 600;
+  sandbox.saveScrollBookmark();
+  const saved = sandbox.__localData.bookmarks;
+  const keys = Object.keys(saved || {});
+  assert(keys.length === 1, 'saving current position writes one bookmark');
+  assert(keys[0] === 'exact:https://example.test/docs?page=1&ref=keep#section', 'bookmark key keeps non-tracking params and hash');
+  assert(saved[keys[0]].scrollPct === 0.5, 'saved bookmark stores scroll percentage');
+}
+
+function testReadingToolMenuSaveAndRestorePrompt() {
+  const sandbox = createContext({
+    advancedSettings: {
+      readingTools: { enabled: true, buttonPosition: 'pageBottom' },
+      scrollBookmarks: { restorePromptEnabled: true }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const button = root.querySelector('.psm-reading-tool-button');
+  button.rect = { left: 940, top: 700, width: 40, height: 40, right: 980, bottom: 740 };
+
+  sandbox.document.documentElement.scrollTop = 360;
+  sandbox.window.pageYOffset = 360;
+  sandbox.handleReadingToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-reading-menu');
+  const saveButton = menu.children.find((child) => child.getAttribute('data-action') === 'save-bookmark');
+  menu.listeners.click[0]({ stopPropagation() {}, target: saveButton });
+  assert(Object.keys(sandbox.__localData.bookmarks || {}).length === 1, 'reading tool menu save action stores the current position');
+
+  sandbox.document.documentElement.scrollTop = 0;
+  sandbox.window.pageYOffset = 0;
+  const key = 'exact:https://example.test/docs?page=1&ref=keep#section';
+  sandbox.__localData.bookmarks = {
+    [key]: {
+      normalizedUrl: 'https://example.test/docs?page=1&ref=keep#section',
+      domain: 'example.test',
+      scrollPct: 0.25,
+      savedAt: Date.now()
+    }
+  };
+
+  sandbox.checkRestorePrompt();
+  const toast = root.getElementById('page-scroll-master-reading-toast');
+  assert(toast.classList.contains('psm-open'), 'restore prompt shows a toast when a matching bookmark exists');
+  assert(sandbox.window.pageYOffset === 0, 'restore prompt does not scroll before the user chooses continue');
+  const continueButton = toast.children.find((child) => child.getAttribute('data-action-index') === '0');
+  continueButton.listeners.click[0]({ stopPropagation() {} });
+  assert(sandbox.window.pageYOffset === 300, 'clicking continue restores by saved percentage');
 }
 
 function testProgressHoverPreview() {
@@ -441,6 +564,8 @@ testDefaultCreatesOnlyTwoButtons();
 testAdvancedSettingsMergeAndProgressMath();
 testProgressClickRatios();
 testEnabledProgressDomModes();
+testReadingToolsDomAndBookmarks();
+testReadingToolMenuSaveAndRestorePrompt();
 testProgressHoverPreview();
 testRemainingReadingTimeLabels();
 

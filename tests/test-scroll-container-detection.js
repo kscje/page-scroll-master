@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const ROOT = path.join(__dirname, '..');
 
 class FakeElement {
   constructor(tagName, options = {}) {
@@ -96,7 +97,7 @@ function createContext(elements, options = {}) {
   };
 
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, 'content.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8'), sandbox);
   return sandbox;
 }
 

@@ -1,5 +1,7 @@
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
+const ROOT = path.join(__dirname, '..');
 
 function createContext() {
   const localData = {};
@@ -51,7 +53,7 @@ function createContext() {
     }
   };
   sandbox.window.document = sandbox.document;
-  vm.runInNewContext(fs.readFileSync('options.js', 'utf8'), sandbox, { filename: 'options.js' });
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'options.js'), 'utf8'), sandbox, { filename: 'options.js' });
   return { sandbox, localData };
 }
 
