@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Topo, fim e progresso",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Role até o topo ou fim, acompanhe o progresso e navegue por páginas longas",
+    "description": "Extension description"
+  },
+  "commandScrollToTop": {
+    "message": "Rolar para o topo da página",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "Rolar para o fim da página",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "Rolar para o topo",
+    "description": "Floating button tooltip"
+  },
+  "popupScrollBottom": {
+    "message": "Rolar para o fim",
+    "description": "Floating button tooltip"
+  },
+  "popupSettings": {
+    "message": "Configurações",
+    "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "Ativar neste site",
+    "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "Distância da borda(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "A distância da borda deve ficar entre 0px e 200px",
+    "description": "Edge distance input error message"
+  }
+}

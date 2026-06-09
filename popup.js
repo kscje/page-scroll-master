@@ -25,14 +25,45 @@ var popupTranslations = {
   'ja-JP': {
     'popupSettings': '設定',
     'popupEnableToggle': 'このサイトで有効'
+  },
+  'de-DE': {
+    'popupSettings': 'Einstellungen',
+    'popupEnableToggle': 'Auf dieser Website aktivieren'
+  },
+  'fr-FR': {
+    'popupSettings': 'Paramètres',
+    'popupEnableToggle': 'Activer sur ce site'
+  },
+  'pt-BR': {
+    'popupSettings': 'Configurações',
+    'popupEnableToggle': 'Ativar neste site'
+  },
+  'zh-TW': {
+    'popupSettings': '設定',
+    'popupEnableToggle': '在此網站啟用'
+  },
+  'ko-KR': {
+    'popupSettings': '설정',
+    'popupEnableToggle': '이 사이트에서 사용'
+  },
+  'it-IT': {
+    'popupSettings': 'Impostazioni',
+    'popupEnableToggle': 'Attiva su questo sito'
   }
 };
 
 function normalizeLanguage(browserLang) {
   var lang = (browserLang || '').toLowerCase();
+  if (lang === 'zh-tw' || lang === 'zh-hk' || lang.indexOf('zh-hant') === 0) return 'zh-TW';
   if (lang.indexOf('zh') === 0) return 'zh-CN';
+  if (lang.indexOf('en') === 0) return 'en-US';
   if (lang.indexOf('es') === 0) return 'es-ES';
   if (lang.indexOf('ja') === 0) return 'ja-JP';
+  if (lang.indexOf('de') === 0) return 'de-DE';
+  if (lang.indexOf('fr') === 0) return 'fr-FR';
+  if (lang.indexOf('pt') === 0) return 'pt-BR';
+  if (lang.indexOf('ko') === 0) return 'ko-KR';
+  if (lang.indexOf('it') === 0) return 'it-IT';
   return 'en-US';
 }
 

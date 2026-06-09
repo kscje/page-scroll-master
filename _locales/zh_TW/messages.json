@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "智慧頁面捲動導覽器：頂部/底部、進度與跳轉",
+    "description": "插件名稱"
+  },
+  "extensionDescription": {
+    "message": "一鍵跳轉頁面頂部或底部，顯示閱讀進度，並支援長頁面快速定位",
+    "description": "插件描述"
+  },
+  "commandScrollToTop": {
+    "message": "捲動到頁面頂部",
+    "description": "快捷鍵命令描述"
+  },
+  "commandScrollToBottom": {
+    "message": "捲動到頁面底部",
+    "description": "快捷鍵命令描述"
+  },
+  "popupScrollTop": {
+    "message": "捲動到頂部",
+    "description": "浮動按鈕提示"
+  },
+  "popupScrollBottom": {
+    "message": "捲動到底部",
+    "description": "浮動按鈕提示"
+  },
+  "popupSettings": {
+    "message": "設定",
+    "description": "彈窗設定按鈕標籤"
+  },
+  "popupEnableToggle": {
+    "message": "在此網站啟用",
+    "description": "彈窗啟用開關標籤"
+  },
+  "settingsEdgeDistance": {
+    "message": "邊緣距離(px)",
+    "description": "設定頁邊緣距離標籤"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "邊緣距離必須介於0px至200px之間",
+    "description": "邊緣距離輸入錯誤提示"
+  }
+}

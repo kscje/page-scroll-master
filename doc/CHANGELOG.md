@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-07
+
+### Added
+- ✅ 新增智能段落跳转，默认关闭，开启后通过独立目录按钮展示页面目录、上一段、下一段和当前章节高亮
+- ✅ 新增主要滚动容器内的目录解析，默认收录 `h1/h2`，可选 `h3` 和带 `id` 的区块
+- ✅ 新增语义噪声、可见性、短标题和相邻重复标题过滤，减少导航、页脚、侧栏和隐藏内容误收
+- ✅ 新增目录点击跳转和相邻段落跳转，兼容根页面和自定义滚动容器坐标体系
+- ✅ 新增 SPA 路由变化、动态 DOM 变化和目录设置变化后的目录快照失效与重建
+- ✅ 新增智能段落跳转设置项：目录来源、最大目录项、短标题过滤和当前章节高亮
+- ✅ 新增智能段落跳转回归测试，覆盖解析、过滤、截断、跳转、边界状态、设置刷新和生命周期
+
+### Changed
+- ✅ 滚动位置书签和智能段落跳转拆分为两个独立高级功能模块，各自拥有独立按钮、菜单和设置项
+- ✅ 滚动位置书签新增页面再次打开时的加载方式，可选择自动加载到最新书签位置、仅提示恢复或手动加载
+- ✅ 滚动位置书签菜单移除“查看已保存位置”，每域名保留数量新增“最近 2 条”
+- ✅ 滚动位置书签和智能段落跳转的按钮颜色移除“跟随页面进度条”，默认改为跟随顶部按钮
+- ✅ 隐私文档补充说明：目录标题和页面结构只在当前页面内存中处理，不写入存储，也不发送到远程服务
+
+### Fixed
+- ✅ 修复重新打开已保存页面后缺少手动恢复入口的问题，书签菜单现可直接加载当前页面的已保存位置
+- ✅ 修复设置页“已保存位置”点击打开后停留在页面顶部的问题，新标签页会自动加载所选记录的保存位置
+
+## [1.9.0] - 2026-06-05
+
+### Added
+- ✅ 新增滚动位置书签按钮，默认关闭，开启后可手动保存当前滚动位置
+- ✅ 新增滚动位置书签：再次打开同一页面时显示恢复提示，不自动跳转
+- ✅ 新增已保存位置管理列表，支持打开和删除保存的阅读位置
+- ✅ 新增滚动位置存储上限：默认每域名最近 1 条，可选最近 3 条，全局最多 300 条
+- ✅ 新增德语、法语、葡萄牙语、繁体中文、韩语和意大利语界面支持
+- ✅ 自动语言检测扩展到 `zh-HK`、`zh-Hant`、`de*`、`fr*`、`pt*`、`ko*` 和 `it*`
+- ✅ 新增 6 个 Chrome locale 文件，并补充 locale key 对齐测试
+
 ## [1.8.0] - 2026-05-31
 
 ### Added
@@ -140,6 +173,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.0.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.0.0
+[1.9.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.9.0
 [1.8.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.8.0
 [1.7.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.7.0
 [1.6.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.6.0

@@ -15,10 +15,22 @@ const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
 const DYNAMIC_STYLE_ID = 'page-scroll-master-dynamic-styles';
 const HORIZONTAL_PROGRESS_ID = 'page-scroll-master-horizontal-progress';
-const READING_TOOL_CONTAINER_ID = 'page-scroll-master-reading-tool';
-const READING_TOOL_MENU_ID = 'page-scroll-master-reading-menu';
-const READING_TOOL_TOAST_ID = 'page-scroll-master-reading-toast';
+const BOOKMARK_TOOL_CONTAINER_ID = 'page-scroll-master-bookmark-tool';
+const OUTLINE_TOOL_CONTAINER_ID = 'page-scroll-master-outline-tool';
+const BOOKMARK_MENU_ID = 'page-scroll-master-bookmark-menu';
+const OUTLINE_MENU_ID = 'page-scroll-master-outline-menu';
+const BOOKMARK_TOAST_ID = 'page-scroll-master-bookmark-toast';
 const BOOKMARKS_STORAGE_KEY = 'bookmarks';
+const PENDING_BOOKMARK_RESTORE_STORAGE_KEY = 'pendingScrollBookmarkRestore';
+const PENDING_BOOKMARK_RESTORE_MAX_AGE = 2 * 60 * 1000;
+const PENDING_BOOKMARK_RESTORE_RETRY_DELAY = 250;
+const PENDING_BOOKMARK_RESTORE_MAX_RETRIES = 20;
+let outlineHighlightScrollTarget = null;
+let outlineHighlightUpdateFrame = null;
+let outlineHighlightMenu = null;
+let outlineHighlightModel = null;
+let outlineSnapshotGeneration = 0;
+let outlineLastKnownUrl = window.location.href;
 const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to Top';
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
 const DEFAULT_ADVANCED_SETTINGS = {
@@ -44,21 +56,30 @@ const DEFAULT_ADVANCED_SETTINGS = {
       bottomIconDataUrl: ''
     }
   },
-  readingTools: {
+  scrollBookmarks: {
     enabled: false,
     buttonPosition: 'pageBottom',
-    buttonColorMode: 'followProgressBar',
+    buttonColorMode: 'followTopButton',
     buttonCustomColor: DEFAULT_BUTTON_COLOR,
-    features: {
-      scrollBookmarks: true,
-      outlineNavigation: false
-    }
-  },
-  scrollBookmarks: {
     matchMode: 'exact',
     perDomainLimit: 1,
     globalLimit: 300,
-    restorePromptEnabled: true
+    restoreMode: 'prompt'
+  },
+  outlineNavigation: {
+    enabled: false,
+    buttonPosition: 'pageBottom',
+    buttonColorMode: 'followTopButton',
+    buttonCustomColor: DEFAULT_BUTTON_COLOR,
+    sources: {
+      h1: true,
+      h2: true,
+      h3: false,
+      idBlocks: false
+    },
+    maxItems: 30,
+    filterShortHeadings: true,
+    highlightCurrentSection: true
   }
 };
 
@@ -104,9 +125,23 @@ let readingEstimateCache = {
   textLength: 0,
   seconds: 0
 };
+let bookmarkRestoreCheckedForKey = '';
 let restorePromptShownForKey = '';
+let pendingBookmarkRestoreKeyInProgress = '';
 
 const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
+const OUTLINE_METADATA_TAGS = new Set([
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'figcaption',
+  'blockquote',
+  'cite'
+]);
 
 function isPlainObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value);
@@ -131,21 +166,91 @@ function deepMergeDefaults(defaults, saved) {
 
 function mergeAdvancedSettings(savedSettings) {
   const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
+  const savedOutline = isPlainObject(savedSettings) && isPlainObject(savedSettings.outlineNavigation)
+    ? savedSettings.outlineNavigation
+    : {};
+  const savedScrollBookmarks = isPlainObject(savedSettings) && isPlainObject(savedSettings.scrollBookmarks)
+    ? savedSettings.scrollBookmarks
+    : {};
+  const savedReadingTools = isPlainObject(savedSettings) && isPlainObject(savedSettings.readingTools)
+    ? savedSettings.readingTools
+    : {};
+  const savedFeatures = isPlainObject(savedSettings) &&
+    isPlainObject(savedSettings.readingTools) &&
+    isPlainObject(savedSettings.readingTools.features)
+    ? savedSettings.readingTools.features
+    : {};
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, DEFAULT_BUTTON_COLOR);
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT);
   merged.iconCustomization.enabled = true;
   merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
   merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, DEFAULT_ICON_COLOR);
-  merged.readingTools.buttonPosition = normalizeReadingToolPosition(merged.readingTools.buttonPosition);
-  merged.readingTools.buttonColorMode = normalizeReadingToolColorMode(merged.readingTools.buttonColorMode);
-  merged.readingTools.buttonCustomColor = validateHexColor(merged.readingTools.buttonCustomColor, DEFAULT_BUTTON_COLOR);
-  merged.readingTools.features.scrollBookmarks = merged.readingTools.features.scrollBookmarks !== false;
-  merged.readingTools.features.outlineNavigation = false;
+  const legacyBookmarkEnabled = savedReadingTools.enabled === true && savedFeatures.scrollBookmarks !== false;
+  const bookmarkEnabled = typeof savedScrollBookmarks.enabled === 'boolean'
+    ? savedScrollBookmarks.enabled
+    : legacyBookmarkEnabled;
+  const outlineEnabled = typeof savedOutline.enabled === 'boolean'
+    ? savedOutline.enabled
+    : savedFeatures.outlineNavigation === true;
+  merged.scrollBookmarks.enabled = bookmarkEnabled;
+  merged.scrollBookmarks.buttonPosition = normalizeFeatureButtonPosition(
+    savedScrollBookmarks.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.scrollBookmarks.buttonPosition
+  );
+  merged.scrollBookmarks.buttonColorMode = normalizeFeatureButtonColorMode(
+    savedScrollBookmarks.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.scrollBookmarks.buttonColorMode
+  );
+  merged.scrollBookmarks.buttonCustomColor = validateHexColor(
+    savedScrollBookmarks.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.scrollBookmarks.buttonCustomColor,
+    DEFAULT_BUTTON_COLOR
+  );
+  merged.outlineNavigation.enabled = outlineEnabled;
+  merged.outlineNavigation.buttonPosition = normalizeFeatureButtonPosition(
+    savedOutline.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.outlineNavigation.buttonPosition
+  );
+  merged.outlineNavigation.buttonColorMode = normalizeFeatureButtonColorMode(
+    savedOutline.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.outlineNavigation.buttonColorMode
+  );
+  merged.outlineNavigation.buttonCustomColor = validateHexColor(
+    savedOutline.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.outlineNavigation.buttonCustomColor,
+    DEFAULT_BUTTON_COLOR
+  );
+  merged.outlineNavigation.sources.h1 = normalizeBoolean(
+    merged.outlineNavigation.sources.h1,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.sources.h1
+  );
+  merged.outlineNavigation.sources.h2 = normalizeBoolean(
+    merged.outlineNavigation.sources.h2,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.sources.h2
+  );
+  merged.outlineNavigation.sources.h3 = normalizeBoolean(
+    merged.outlineNavigation.sources.h3,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.sources.h3
+  );
+  merged.outlineNavigation.sources.idBlocks = normalizeBoolean(
+    merged.outlineNavigation.sources.idBlocks,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.sources.idBlocks
+  );
+  if (!Object.values(merged.outlineNavigation.sources).some(Boolean)) {
+    merged.outlineNavigation.sources.h1 = true;
+    merged.outlineNavigation.sources.h2 = true;
+  }
+  merged.outlineNavigation.maxItems = normalizeOutlineMaxItems(merged.outlineNavigation.maxItems);
+  merged.outlineNavigation.filterShortHeadings = normalizeBoolean(
+    merged.outlineNavigation.filterShortHeadings,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.filterShortHeadings
+  );
+  merged.outlineNavigation.highlightCurrentSection = normalizeBoolean(
+    merged.outlineNavigation.highlightCurrentSection,
+    DEFAULT_ADVANCED_SETTINGS.outlineNavigation.highlightCurrentSection
+  );
   merged.scrollBookmarks.matchMode = 'exact';
   merged.scrollBookmarks.perDomainLimit = normalizePerDomainLimit(merged.scrollBookmarks.perDomainLimit);
   merged.scrollBookmarks.globalLimit = clampNumber(merged.scrollBookmarks.globalLimit, 1, 300, 300);
-  merged.scrollBookmarks.restorePromptEnabled = merged.scrollBookmarks.restorePromptEnabled !== false;
+  merged.scrollBookmarks.restoreMode = normalizeBookmarkRestoreMode(
+    savedScrollBookmarks.restoreMode,
+    savedScrollBookmarks.restorePromptEnabled
+  );
   return merged;
 }
 
@@ -157,6 +262,16 @@ function clampNumber(value, min, max, fallback) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return clamp(number, min, max);
+}
+
+function normalizeBoolean(value, fallback) {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function normalizeOutlineMaxItems(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULT_ADVANCED_SETTINGS.outlineNavigation.maxItems;
+  return clamp(Math.round(number), 10, 50);
 }
 
 function validateHexColor(color, fallback) {
@@ -203,13 +318,29 @@ function normalizeReadingToolPosition(value) {
 }
 
 function normalizeReadingToolColorMode(value) {
-  return ['followTopButton', 'followBottomButton', 'followProgressBar', 'custom'].includes(value)
+  return ['followTopButton', 'followBottomButton', 'custom'].includes(value)
     ? value
-    : 'followProgressBar';
+    : 'followTopButton';
+}
+
+function normalizeFeatureButtonPosition(value) {
+  return normalizeReadingToolPosition(value);
+}
+
+function normalizeFeatureButtonColorMode(value) {
+  return normalizeReadingToolColorMode(value);
 }
 
 function normalizePerDomainLimit(value) {
-  return Number(value) === 3 ? 3 : 1;
+  const limit = Number(value);
+  return [1, 2, 3].includes(limit) ? limit : 1;
+}
+
+function normalizeBookmarkRestoreMode(value, legacyRestorePromptEnabled) {
+  if (['auto', 'prompt', 'manual'].includes(value)) {
+    return value;
+  }
+  return legacyRestorePromptEnabled === false ? 'manual' : 'prompt';
 }
 
 function isRootScrollElement(element) {
@@ -328,6 +459,220 @@ function resolveScrollContainer() {
   return currentScrollContainer || document.scrollingElement || document.documentElement;
 }
 
+function getOutlineScanRoot(container) {
+  if (!container) return null;
+  if (isRootScrollElement(container)) {
+    const pageRoot = document.body || document.documentElement;
+    if (!pageRoot || typeof pageRoot.querySelectorAll !== 'function') {
+      return pageRoot;
+    }
+    const contentRoots = Array.from(pageRoot.querySelectorAll('main, [role="main"], article'));
+    return contentRoots.find((element) => element.tagName && element.tagName.toLowerCase() === 'main') ||
+      contentRoots.find((element) => element.getAttribute && element.getAttribute('role') === 'main') ||
+      contentRoots.find((element) => element.tagName && element.tagName.toLowerCase() === 'article') ||
+      pageRoot;
+  }
+  return container;
+}
+
+function getOutlineCandidateSelector(sources) {
+  const selectors = [];
+  if (sources.h1) selectors.push('h1');
+  if (sources.h2) selectors.push('h2');
+  if (sources.h3) selectors.push('h3');
+  if (sources.idBlocks) selectors.push('[id]:not(h1):not(h2):not(h3)');
+  return selectors.join(', ');
+}
+
+function getOutlineItemLevel(element) {
+  const tagName = element && element.tagName ? element.tagName.toLowerCase() : '';
+  if (/^h[1-3]$/.test(tagName)) {
+    return Number(tagName.slice(1));
+  }
+  return 0;
+}
+
+function getOutlineItemText(element) {
+  if (!element) return '';
+  return (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function isOutlineSemanticNoise(element, scanRoot) {
+  let current = element;
+  while (current && current !== scanRoot) {
+    const tagName = current.tagName ? current.tagName.toLowerCase() : '';
+    const role = current.getAttribute ? (current.getAttribute('role') || '').toLowerCase() : '';
+    if (
+      ['nav', 'footer', 'aside', 'header'].includes(tagName) ||
+      ['banner', 'navigation', 'complementary'].includes(role) ||
+      OUTLINE_METADATA_TAGS.has(tagName)
+    ) {
+      return true;
+    }
+    if (tagName === 'li') {
+      let sectionRoot = element.parentElement;
+      let hasSectionRoot = false;
+      while (sectionRoot && sectionRoot !== current) {
+        const sectionTag = sectionRoot.tagName ? sectionRoot.tagName.toLowerCase() : '';
+        if (['article', 'section', 'main'].includes(sectionTag)) {
+          hasSectionRoot = true;
+          break;
+        }
+        sectionRoot = sectionRoot.parentElement;
+      }
+      if (!hasSectionRoot) return true;
+    }
+    current = current.parentElement;
+  }
+  return false;
+}
+
+function hasOutlineLayout(element) {
+  if (!element) return false;
+  if (typeof element.getClientRects === 'function' && element.getClientRects().length > 0) {
+    return true;
+  }
+  if (typeof element.getBoundingClientRect === 'function') {
+    const rect = element.getBoundingClientRect();
+    if (rect && (rect.width > 0 || rect.height > 0)) {
+      return true;
+    }
+  }
+  return element.offsetParent !== null && element.offsetParent !== undefined;
+}
+
+function isOutlineElementVisible(element, scanRoot) {
+  if (!element || element.isConnected === false || !hasOutlineLayout(element)) {
+    return false;
+  }
+
+  let current = element;
+  while (current) {
+    if (current.isConnected === false) return false;
+    if (typeof window.getComputedStyle === 'function') {
+      const style = window.getComputedStyle(current);
+      if (style && (style.display === 'none' || style.visibility === 'hidden')) {
+        return false;
+      }
+    }
+    if (current === scanRoot) break;
+    current = current.parentElement;
+  }
+  return true;
+}
+
+function isOutlineTextReadable(text, filterShortHeadings) {
+  if (!text) return false;
+  const meaningfulCharacters = text.match(/[\p{L}\p{N}]/gu) || [];
+  if (meaningfulCharacters.length === 0) return false;
+  const normalizedText = text.trim();
+  const compactText = normalizedText.replace(/\s+/g, '');
+  if (!/\p{L}/u.test(normalizedText)) return false;
+  if (/^(?:isbn(?:-1[03])?|issn|oclc|doi|ssrn)\b/i.test(normalizedText)) return false;
+  if (/^10\.\d{4,9}\/\S+$/i.test(compactText)) return false;
+  if (/^(?:97[89][-\s]?)?(?:\d[-\s]?){9}[\dX]$/i.test(normalizedText)) return false;
+  if (!filterShortHeadings) return true;
+  return meaningfulCharacters.length >= 2;
+}
+
+function areOutlineCandidatesNear(first, second) {
+  if (
+    !first ||
+    !second ||
+    typeof first.getBoundingClientRect !== 'function' ||
+    typeof second.getBoundingClientRect !== 'function'
+  ) {
+    return false;
+  }
+  const firstRect = first.getBoundingClientRect();
+  const secondRect = second.getBoundingClientRect();
+  if (!firstRect || !secondRect) return false;
+  return Math.abs((secondRect.top || 0) - (firstRect.top || 0)) <= 8;
+}
+
+function createOutlineItemId(element, order, usedIds) {
+  const elementId = element && element.getAttribute ? (element.getAttribute('id') || '').trim() : '';
+  const baseId = elementId || `psm-outline-item-${order + 1}`;
+  let itemId = baseId;
+  let suffix = 2;
+
+  while (usedIds.has(itemId)) {
+    itemId = `${baseId}-${suffix}`;
+    suffix++;
+  }
+  usedIds.add(itemId);
+  return itemId;
+}
+
+function buildOutlineSnapshot(outlineSettings = advancedSettings.outlineNavigation, container = null) {
+  if (!outlineSettings || outlineSettings.enabled !== true) {
+    return {
+      items: [],
+      allItems: [],
+      totalCount: 0,
+      truncated: false,
+      container: null,
+      generation: outlineSnapshotGeneration
+    };
+  }
+
+  const settings = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS.outlineNavigation, outlineSettings);
+  const scrollContainer = container || resolveScrollContainer();
+  const scanRoot = getOutlineScanRoot(scrollContainer);
+  const selector = getOutlineCandidateSelector(settings.sources);
+  if (!scanRoot || !selector || typeof scanRoot.querySelectorAll !== 'function') {
+    return {
+      items: [],
+      allItems: [],
+      totalCount: 0,
+      truncated: false,
+      container: scrollContainer,
+      generation: outlineSnapshotGeneration
+    };
+  }
+
+  const candidates = Array.from(scanRoot.querySelectorAll(selector));
+  const allItems = [];
+  const usedIds = new Set();
+
+  candidates.forEach((element) => {
+    const text = getOutlineItemText(element);
+    if (
+      isOutlineSemanticNoise(element, scanRoot) ||
+      !isOutlineElementVisible(element, scanRoot) ||
+      !isOutlineTextReadable(text, settings.filterShortHeadings)
+    ) {
+      return;
+    }
+    const previousItem = allItems[allItems.length - 1];
+    if (
+      previousItem &&
+      previousItem.text === text &&
+      areOutlineCandidatesNear(previousItem.element, element)
+    ) {
+      return;
+    }
+    const order = allItems.length;
+    allItems.push({
+      id: createOutlineItemId(element, order, usedIds),
+      text,
+      level: getOutlineItemLevel(element),
+      element,
+      order
+    });
+  });
+
+  const maxItems = normalizeOutlineMaxItems(settings.maxItems);
+  return {
+    items: allItems.slice(0, maxItems),
+    allItems,
+    totalCount: allItems.length,
+    truncated: allItems.length > maxItems,
+    container: scrollContainer,
+    generation: outlineSnapshotGeneration
+  };
+}
+
 function getScrollTop(container) {
   if (isRootScrollElement(container)) {
     return window.pageYOffset ||
@@ -352,6 +697,223 @@ function setScrollTop(container, top) {
   container.scrollTop = top;
 }
 
+function getOutlineTargetScrollTop(element, container, offset = 16) {
+  if (
+    !element ||
+    !container ||
+    element.isConnected === false ||
+    typeof element.getBoundingClientRect !== 'function'
+  ) {
+    return null;
+  }
+
+  const targetRect = element.getBoundingClientRect();
+  if (isRootScrollElement(container)) {
+    return getScrollTop(container) + targetRect.top - offset;
+  }
+  if (typeof container.getBoundingClientRect !== 'function') {
+    return null;
+  }
+
+  const containerRect = container.getBoundingClientRect();
+  return getScrollTop(container) + targetRect.top - containerRect.top - offset;
+}
+
+function scrollToOutlineItem(element, container, options = {}) {
+  const targetTop = getOutlineTargetScrollTop(element, container);
+  if (targetTop === null) return false;
+  if (!options.keepMenuOpen) {
+    hideReadingToolMenu();
+  }
+  smoothScrollTo(container, targetTop);
+  return true;
+}
+
+function getOutlineReadingAnchorTop(container) {
+  if (!container) return 0;
+  const viewportHeight = isRootScrollElement(container)
+    ? (window.innerHeight || document.documentElement.clientHeight || container.clientHeight || 0)
+    : (container.clientHeight || 0);
+  return getScrollTop(container) + (viewportHeight * 0.3);
+}
+
+function getOutlineItemTop(item, container) {
+  if (!item || !item.element) return null;
+  return getOutlineTargetScrollTop(item.element, container, 0);
+}
+
+function getOutlineAdjacentTargets(snapshot) {
+  const items = snapshot && Array.isArray(snapshot.allItems) ? snapshot.allItems : snapshot.items || [];
+  const container = snapshot ? snapshot.container : null;
+  if (!items.length || !container) {
+    return {
+      previous: null,
+      next: null
+    };
+  }
+
+  const anchorTop = getOutlineReadingAnchorTop(container);
+  const positionedItems = items
+    .map((item) => ({
+      item,
+      top: getOutlineItemTop(item, container)
+    }))
+    .filter((entry) => entry.top !== null);
+  let currentPosition = -1;
+  let nextPosition = -1;
+
+  for (let position = 0; position < positionedItems.length; position++) {
+    if (positionedItems[position].top <= anchorTop) {
+      currentPosition = position;
+    } else {
+      nextPosition = position;
+      break;
+    }
+  }
+
+  return {
+    previous: currentPosition > 0 ? positionedItems[currentPosition - 1].item : null,
+    next: nextPosition !== -1 ? positionedItems[nextPosition].item : null
+  };
+}
+
+function getOutlineCurrentItem(snapshot) {
+  const items = snapshot && Array.isArray(snapshot.allItems) ? snapshot.allItems : snapshot.items || [];
+  const container = snapshot ? snapshot.container : null;
+  if (!items.length || !container) return null;
+
+  const anchorTop = getOutlineReadingAnchorTop(container);
+  let currentItem = null;
+  for (let index = 0; index < items.length; index++) {
+    const itemTop = getOutlineItemTop(items[index], container);
+    if (itemTop === null) continue;
+    if (itemTop <= anchorTop) {
+      currentItem = items[index];
+    } else {
+      break;
+    }
+  }
+  return currentItem;
+}
+
+function invalidateOutlineSnapshot() {
+  outlineSnapshotGeneration++;
+  outlineHighlightModel = null;
+  const root = getScrollRoot();
+  const menus = root
+    ? [root.getElementById(OUTLINE_MENU_ID), root.getElementById('page-scroll-master-reading-menu')].filter(Boolean)
+    : [];
+  menus.forEach((menu) => {
+    if (!menu.__psmMenuModel) return;
+    setOutlineMenuCurrentItem(menu, '');
+    menu.__psmMenuModel.outlineSnapshot = null;
+    menu.__psmMenuModel.outlineHighlightEnabled = false;
+  });
+  unbindOutlineHighlightUpdates();
+}
+
+function handleOutlineRouteChange() {
+  if (window.location.href === outlineLastKnownUrl) return false;
+  outlineLastKnownUrl = window.location.href;
+  bookmarkRestoreCheckedForKey = '';
+  restorePromptShownForKey = '';
+  pendingBookmarkRestoreKeyInProgress = '';
+  invalidateOutlineSnapshot();
+  hideReadingToolMenu();
+  checkPendingScrollBookmarkRestore((handled) => {
+    if (!handled) {
+      checkBookmarkRestoreOnOpen();
+    }
+  });
+  return true;
+}
+
+function refreshOpenOutlineMenu() {
+  const { root, outlineButton } = getButtonElements();
+  const menus = root
+    ? [root.getElementById(OUTLINE_MENU_ID), root.getElementById('page-scroll-master-reading-menu')].filter(Boolean)
+    : [];
+  const openMenus = menus.filter((menu) => menu.classList.contains('psm-open'));
+  if (!openMenus.length) return false;
+
+  openMenus.forEach((menu) => {
+    const model = getOutlineMenuModel({ resolveOutline: true });
+    renderReadingToolMenu(menu, { model });
+    if (!hasReadingToolMenuContent(model)) {
+      hideReadingToolMenu();
+      return;
+    }
+    positionReadingToolMenu(outlineButton, menu, model);
+    bindOutlineHighlightUpdates(menu, model);
+  });
+  return true;
+}
+
+function handleOutlineDomChange() {
+  if (!advancedSettings.outlineNavigation.enabled) return false;
+  invalidateOutlineSnapshot();
+  return refreshOpenOutlineMenu();
+}
+
+function getOutlineSettingsSignature(settings) {
+  const outline = settings && settings.outlineNavigation ? settings.outlineNavigation : {};
+  const sources = outline.sources || {};
+  return [
+    outline.enabled === true ? '1' : '0',
+    sources.h1 === true ? '1' : '0',
+    sources.h2 === true ? '1' : '0',
+    sources.h3 === true ? '1' : '0',
+    sources.idBlocks === true ? '1' : '0',
+    String(outline.maxItems),
+    outline.filterShortHeadings === true ? '1' : '0',
+    outline.highlightCurrentSection === true ? '1' : '0'
+  ].join('|');
+}
+
+function haveOutlineSettingsChanged(previousSettings, nextSettings) {
+  return getOutlineSettingsSignature(previousSettings) !== getOutlineSettingsSignature(nextSettings);
+}
+
+function handleOutlineSettingsChange(previousSettings, nextSettings) {
+  if (!haveOutlineSettingsChanged(previousSettings, nextSettings)) return false;
+  invalidateOutlineSnapshot();
+  return refreshOpenOutlineMenu();
+}
+
+function applyAdvancedSettingsUpdate(nextSettings) {
+  const previousSettings = advancedSettings;
+  advancedSettings = mergeAdvancedSettings(nextSettings);
+  applyAdvancedSettings();
+  handleOutlineSettingsChange(previousSettings, advancedSettings);
+}
+
+function setupOutlineRouteChangeDetection() {
+  if (setupOutlineRouteChangeDetection.initialized) return;
+  setupOutlineRouteChangeDetection.initialized = true;
+  outlineLastKnownUrl = window.location.href;
+
+  const dispatchRouteCheck = () => {
+    setTimeout(handleOutlineRouteChange, 0);
+  };
+
+  ['pushState', 'replaceState'].forEach((methodName) => {
+    if (!window.history || typeof window.history[methodName] !== 'function') return;
+    const original = window.history[methodName];
+    if (original.__psmOutlineWrapped) return;
+    const wrapped = function (...args) {
+      const result = original.apply(this, args);
+      dispatchRouteCheck();
+      return result;
+    };
+    wrapped.__psmOutlineWrapped = true;
+    wrapped.__psmOutlineOriginal = original;
+    window.history[methodName] = wrapped;
+  });
+
+  window.addEventListener('popstate', handleOutlineRouteChange);
+  window.addEventListener('hashchange', handleOutlineRouteChange);
+}
+
 function getScrollRoot() {
   const host = document.getElementById(HOST_ID);
   return host ? host.shadowRoot : null;
@@ -365,7 +927,14 @@ function getButtonContainer() {
 function getButtonElements() {
   const root = getScrollRoot();
   if (!root) {
-    return { root: null, topButton: null, progressButton: null, bottomButton: null, readingToolButton: null };
+    return {
+      root: null,
+      topButton: null,
+      progressButton: null,
+      bottomButton: null,
+      bookmarkButton: null,
+      outlineButton: null
+    };
   }
 
   return {
@@ -373,7 +942,8 @@ function getButtonElements() {
     topButton: root.querySelector('.psm-scroll-top'),
     progressButton: root.querySelector('.psm-progress-button'),
     bottomButton: root.querySelector('.psm-scroll-bottom'),
-    readingToolButton: root.querySelector('.psm-reading-tool-button')
+    bookmarkButton: root.querySelector('.psm-bookmark-tool-button'),
+    outlineButton: root.querySelector('.psm-outline-tool-button')
   };
 }
 
@@ -478,8 +1048,12 @@ function getIconSvg(direction, iconSet) {
   return isTop ? set.top : set.bottom;
 }
 
-function getReadingToolIconSvg() {
+function getBookmarkIconSvg() {
   return '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5V21l-6-3.5L6 21V4.5z"/></svg>';
+}
+
+function getOutlineIconSvg() {
+  return '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
 }
 
 function getActiveIconSet() {
@@ -490,15 +1064,35 @@ function getActiveIconColor() {
   return validateHexColor(advancedSettings.iconCustomization.iconColor, DEFAULT_ICON_COLOR);
 }
 
+function getIconSizePercent() {
+  return Math.max(40, Math.min(70, parseInt(buttonSettings.buttonSize, 10) * 0.6)) + '%';
+}
+
+function applyIconSizing() {
+  const { topButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  const iconSize = getIconSizePercent();
+  [topButton, bottomButton, bookmarkButton, outlineButton].forEach((button) => {
+    if (!button) return;
+    const icon = button.querySelector('.scroll-icon');
+    if (!icon) return;
+    icon.style.width = iconSize;
+    icon.style.height = iconSize;
+  });
+}
+
 function applyButtonIcons() {
-  const { topButton, bottomButton, readingToolButton } = getButtonElements();
+  const { topButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
   if (!topButton || !bottomButton) return;
   const iconSet = getActiveIconSet();
   topButton.innerHTML = getIconSvg('top', iconSet);
   bottomButton.innerHTML = getIconSvg('bottom', iconSet);
-  if (readingToolButton) {
-    readingToolButton.innerHTML = getReadingToolIconSvg();
+  if (bookmarkButton) {
+    bookmarkButton.innerHTML = getBookmarkIconSvg();
   }
+  if (outlineButton) {
+    outlineButton.innerHTML = getOutlineIconSvg();
+  }
+  applyIconSizing();
 }
 
 function getProgressColor() {
@@ -512,69 +1106,478 @@ function getProgressColor() {
   return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
 }
 
-function isReadingToolEnabled() {
-  const tools = advancedSettings.readingTools;
-  return Boolean(
-    tools.enabled &&
-    (tools.features.scrollBookmarks || tools.features.outlineNavigation)
-  );
+function isScrollBookmarkToolEnabled() {
+  return Boolean(advancedSettings.scrollBookmarks.enabled && hasReadingToolMenuContent(getScrollBookmarkMenuModel()));
 }
 
-function getReadingToolColor() {
-  const tools = advancedSettings.readingTools;
-  if (tools.buttonColorMode === 'followBottomButton') {
+function isOutlineToolEnabled() {
+  return Boolean(advancedSettings.outlineNavigation.enabled && hasReadingToolMenuContent(getOutlineMenuModel()));
+}
+
+function getFeatureToolColor(settings) {
+  if (settings.buttonColorMode === 'followBottomButton') {
     return validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
   }
-  if (tools.buttonColorMode === 'custom') {
-    return validateHexColor(tools.buttonCustomColor, DEFAULT_BUTTON_COLOR);
-  }
-  if (tools.buttonColorMode === 'followProgressBar' && advancedSettings.progressBar.enabled) {
-    return getProgressColor();
+  if (settings.buttonColorMode === 'custom') {
+    return validateHexColor(settings.buttonCustomColor, DEFAULT_BUTTON_COLOR);
   }
   return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
 }
 
-function createReadingToolButton() {
+function getBookmarkToolColor() {
+  return getFeatureToolColor(advancedSettings.scrollBookmarks);
+}
+
+function getOutlineToolColor() {
+  return getFeatureToolColor(advancedSettings.outlineNavigation);
+}
+
+function createFeatureToolButton({ className, title, iconSvg, handler }) {
   const button = document.createElement('button');
-  button.className = 'psm-scroll-button psm-reading-tool-button';
+  button.className = `psm-scroll-button psm-feature-tool-button ${className}`;
   button.type = 'button';
-  button.title = '阅读工具';
-  button.setAttribute('aria-label', '阅读工具');
-  button.innerHTML = getReadingToolIconSvg();
-  button.addEventListener('click', handleReadingToolClick);
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.innerHTML = iconSvg;
+  button.addEventListener('click', handler);
   return button;
 }
 
-function getReadingToolMenu(root) {
+function createBookmarkToolButton() {
+  return createFeatureToolButton({
+    className: 'psm-bookmark-tool-button',
+    title: '滚动位置书签',
+    iconSvg: getBookmarkIconSvg(),
+    handler: handleBookmarkToolClick
+  });
+}
+
+function createOutlineToolButton() {
+  return createFeatureToolButton({
+    className: 'psm-outline-tool-button',
+    title: '智能段落跳转',
+    iconSvg: getOutlineIconSvg(),
+    handler: handleOutlineToolClick
+  });
+}
+
+const readingToolMenuContributors = [];
+
+function registerReadingToolMenuContributor(contributor) {
+  if (typeof contributor === 'function' && !readingToolMenuContributors.includes(contributor)) {
+    readingToolMenuContributors.push(contributor);
+  }
+}
+
+function getScrollBookmarkMenuContribution() {
+  if (!advancedSettings.scrollBookmarks.enabled) {
+    return null;
+  }
+  return {
+    fixedActions: [
+      {
+        action: 'save-bookmark',
+        label: '保存当前位置',
+        handler: () => {
+          hideReadingToolMenu();
+          saveScrollBookmark();
+        }
+      },
+      {
+        action: 'restore-bookmark',
+        label: '加载已保存位置',
+        handler: () => {
+          hideReadingToolMenu();
+          restoreCurrentScrollBookmark();
+        }
+      }
+    ]
+  };
+}
+
+registerReadingToolMenuContributor(getScrollBookmarkMenuContribution);
+
+function getOutlineMenuContribution(options = {}) {
+  if (!advancedSettings.outlineNavigation.enabled) {
+    return null;
+  }
+  if (!options.resolveOutline) {
+    return { outlineEnabled: true };
+  }
+
+  const snapshot = buildOutlineSnapshot();
+  const adjacentTargets = getOutlineAdjacentTargets(snapshot);
+  const currentItem = advancedSettings.outlineNavigation.highlightCurrentSection
+    ? getOutlineCurrentItem(snapshot)
+    : null;
+  const snapshotItems = Array.isArray(snapshot.allItems) ? snapshot.allItems : snapshot.items;
+  const outlineItems = [
+    {
+      kind: 'outline-heading',
+      label: '页面目录'
+    }
+  ];
+
+  if (snapshotItems.length === 0) {
+    outlineItems.push({
+      kind: 'outline-status',
+      label: '未检测到可跳转标题'
+    });
+  } else {
+    snapshotItems.forEach((item) => {
+      outlineItems.push({
+        kind: 'outline-item',
+        action: `outline-jump-${item.order}`,
+        label: item.text,
+        title: item.text,
+        outlineId: item.id,
+        order: item.order,
+        level: item.level,
+        current: Boolean(currentItem && currentItem.id === item.id),
+        handler: () => {
+          scrollToOutlineItem(item.element, snapshot.container, { keepMenuOpen: true });
+        }
+      });
+    });
+  }
+
+  return {
+    outlineEnabled: true,
+    outlineSnapshot: snapshot,
+    outlineHighlightEnabled: advancedSettings.outlineNavigation.highlightCurrentSection,
+    outlineBatchSize: normalizeOutlineMaxItems(advancedSettings.outlineNavigation.maxItems),
+    outlineVisibleCount: Math.min(
+      normalizeOutlineMaxItems(advancedSettings.outlineNavigation.maxItems),
+      snapshotItems.length
+    ),
+    fixedActions: [
+      {
+        action: 'outline-previous',
+        label: '上一段',
+        disabled: !adjacentTargets.previous,
+        handler: () => {
+          scrollToOutlineItem(adjacentTargets.previous.element, snapshot.container);
+        }
+      },
+      {
+        action: 'outline-next',
+        label: '下一段',
+        disabled: !adjacentTargets.next,
+        handler: () => {
+          scrollToOutlineItem(adjacentTargets.next.element, snapshot.container);
+        }
+      }
+    ],
+    outlineItems
+  };
+}
+
+registerReadingToolMenuContributor(getOutlineMenuContribution);
+
+function createEmptyReadingToolMenuModel() {
+  return {
+    fixedActions: [],
+    outlineItems: [],
+    outlineEnabled: false,
+    outlineSnapshot: null,
+    outlineHighlightEnabled: false,
+    outlineBatchSize: DEFAULT_ADVANCED_SETTINGS.outlineNavigation.maxItems,
+    outlineVisibleCount: 0
+  };
+}
+
+function getMenuModelFromContributors(contributors, options = {}) {
+  return contributors.reduce((model, contributor) => {
+    const contribution = contributor(options);
+    if (!contribution) return model;
+    if (Array.isArray(contribution.fixedActions)) {
+      model.fixedActions.push(...contribution.fixedActions);
+    }
+    if (Array.isArray(contribution.outlineItems)) {
+      model.outlineItems.push(...contribution.outlineItems);
+    }
+    if (contribution.outlineEnabled) {
+      model.outlineEnabled = true;
+    }
+    if (contribution.outlineSnapshot) {
+      model.outlineSnapshot = contribution.outlineSnapshot;
+    }
+    if (contribution.outlineHighlightEnabled) {
+      model.outlineHighlightEnabled = true;
+    }
+    if (Number.isInteger(contribution.outlineBatchSize)) {
+      model.outlineBatchSize = contribution.outlineBatchSize;
+    }
+    if (Number.isInteger(contribution.outlineVisibleCount)) {
+      model.outlineVisibleCount = contribution.outlineVisibleCount;
+    }
+    return model;
+  }, createEmptyReadingToolMenuModel());
+}
+
+function getScrollBookmarkMenuModel(options = {}) {
+  return getMenuModelFromContributors([getScrollBookmarkMenuContribution], options);
+}
+
+function getOutlineMenuModel(options = {}) {
+  return getMenuModelFromContributors([getOutlineMenuContribution], options);
+}
+
+function getReadingToolMenuModel(options = {}) {
+  return getMenuModelFromContributors(readingToolMenuContributors, options);
+}
+
+function hasReadingToolMenuContent(model) {
+  return Boolean(model && (model.fixedActions.length || model.outlineItems.length || model.outlineEnabled));
+}
+
+function createReadingToolMenuItem(item) {
+  if (item.kind === 'outline-heading' || item.kind === 'outline-status') {
+    const row = document.createElement('div');
+    row.className = `psm-reading-menu-${item.kind.replace('outline-', '')}`;
+    row.textContent = item.label;
+    if (item.title) {
+      row.title = item.title;
+    }
+    if (item.outlineId) {
+      row.setAttribute('data-outline-id', item.outlineId);
+    }
+    if (Number.isInteger(item.order)) {
+      row.setAttribute('data-outline-order', String(item.order));
+    }
+    if (item.kind === 'outline-heading') {
+      row.setAttribute('role', 'heading');
+      row.setAttribute('aria-level', '2');
+      const closeButton = document.createElement('button');
+      closeButton.type = 'button';
+      closeButton.className = 'psm-reading-menu-close';
+      closeButton.textContent = '×';
+      closeButton.title = '关闭目录';
+      closeButton.setAttribute('aria-label', '关闭目录');
+      closeButton.setAttribute('data-action', 'outline-close');
+      row.appendChild(closeButton);
+    }
+    return row;
+  }
+
+  const button = document.createElement('button');
+  if (item.kind === 'outline-item') {
+    button.className = item.current
+      ? 'psm-reading-menu-item psm-outline-current'
+      : 'psm-reading-menu-item';
+  } else if (item.kind === 'outline-load-more') {
+    button.className = 'psm-reading-menu-item psm-outline-load-more';
+  }
+  button.type = 'button';
+  button.textContent = item.label;
+  button.setAttribute('data-action', item.action);
+  if (item.title) {
+    button.title = item.title;
+  }
+  if (item.outlineId) {
+    button.setAttribute('data-outline-id', item.outlineId);
+  }
+  if (Number.isInteger(item.order)) {
+    button.setAttribute('data-outline-order', String(item.order));
+  }
+  if (Number.isInteger(item.level) && item.level >= 1 && item.level <= 3) {
+    button.setAttribute('data-outline-level', String(item.level));
+    button.classList.add(`psm-outline-level-${item.level}`);
+  }
+  if (item.current) {
+    button.setAttribute('aria-current', 'location');
+  }
+  if (item.disabled) {
+    button.disabled = true;
+    button.setAttribute('aria-disabled', 'true');
+  }
+  return button;
+}
+
+function getVisibleOutlineMenuItems(model) {
+  const headingItems = model.outlineItems.filter((item) => item.kind !== 'outline-item');
+  const outlineEntries = model.outlineItems.filter((item) => item.kind === 'outline-item');
+  const visibleCount = Math.min(model.outlineVisibleCount, outlineEntries.length);
+  const visibleItems = outlineEntries.slice(0, visibleCount);
+  const items = [...headingItems, ...visibleItems];
+  const remainingCount = outlineEntries.length - visibleCount;
+
+  if (remainingCount > 0) {
+    items.push({
+      kind: 'outline-load-more',
+      action: 'outline-load-more',
+      label: `加载更多（剩余 ${remainingCount} 项）`
+    });
+  }
+  return items;
+}
+
+function renderReadingToolMenu(menu, options = {}) {
+  const model = options.model || getReadingToolMenuModel(options);
+  if (!menu) return model;
+  const fixedSection = menu.querySelector('.psm-reading-menu-fixed');
+  const outlineSection = menu.querySelector('.psm-reading-menu-outline');
+
+  [fixedSection, outlineSection].forEach((section) => {
+    if (!section) return;
+    while (section.children.length) {
+      section.children[0].remove();
+    }
+  });
+
+  model.fixedActions.forEach((item) => {
+    fixedSection.appendChild(createReadingToolMenuItem(item));
+  });
+  getVisibleOutlineMenuItems(model).forEach((item) => {
+    outlineSection.appendChild(createReadingToolMenuItem(item));
+  });
+
+  menu.__psmMenuModel = model;
+  fixedSection.style.display = model.fixedActions.length ? 'block' : 'none';
+  outlineSection.style.display = model.outlineItems.length ? 'block' : 'none';
+  return model;
+}
+
+function setOutlineMenuCurrentItem(menu, currentId, options = {}) {
+  if (!menu) return;
+  const outlineSection = menu.querySelector('.psm-reading-menu-outline');
+  if (!outlineSection) return;
+  const buttons = Array.from(outlineSection.querySelectorAll('.psm-reading-menu-item'));
+  let currentButton = null;
+
+  buttons.forEach((button) => {
+    const isCurrent = Boolean(currentId && button.getAttribute('data-outline-id') === currentId);
+    button.classList.toggle('psm-outline-current', isCurrent);
+    if (isCurrent) {
+      button.setAttribute('aria-current', 'location');
+      currentButton = button;
+    } else if (button.removeAttribute) {
+      button.removeAttribute('aria-current');
+    }
+  });
+
+  if (options.scrollCurrentIntoView && currentButton && typeof currentButton.scrollIntoView === 'function') {
+    currentButton.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function updateOutlineCurrentHighlight(menu, model, options = {}) {
+  if (!menu || !model || !model.outlineHighlightEnabled || !model.outlineSnapshot) {
+    setOutlineMenuCurrentItem(menu, '');
+    return;
+  }
+  const currentItem = getOutlineCurrentItem(model.outlineSnapshot);
+  setOutlineMenuCurrentItem(menu, currentItem ? currentItem.id : '', options);
+}
+
+function requestOutlineHighlightUpdate() {
+  if (outlineHighlightUpdateFrame) return;
+  outlineHighlightUpdateFrame = requestAnimationFrame(() => {
+    outlineHighlightUpdateFrame = null;
+    if (
+      outlineHighlightMenu &&
+      outlineHighlightMenu.classList.contains('psm-open') &&
+      outlineHighlightModel
+    ) {
+      updateOutlineCurrentHighlight(outlineHighlightMenu, outlineHighlightModel);
+    }
+  });
+}
+
+function unbindOutlineHighlightUpdates() {
+  if (outlineHighlightScrollTarget) {
+    outlineHighlightScrollTarget.removeEventListener('scroll', requestOutlineHighlightUpdate);
+  }
+  if (outlineHighlightUpdateFrame) {
+    cancelAnimationFrame(outlineHighlightUpdateFrame);
+  }
+  outlineHighlightScrollTarget = null;
+  outlineHighlightUpdateFrame = null;
+  outlineHighlightMenu = null;
+  outlineHighlightModel = null;
+}
+
+function bindOutlineHighlightUpdates(menu, model) {
+  unbindOutlineHighlightUpdates();
+  if (!menu || !model || !model.outlineHighlightEnabled || !model.outlineSnapshot || !model.outlineSnapshot.container) {
+    updateOutlineCurrentHighlight(menu, model);
+    return;
+  }
+
+  outlineHighlightMenu = menu;
+  outlineHighlightModel = model;
+  outlineHighlightScrollTarget = getProgressEventTarget(model.outlineSnapshot.container);
+  outlineHighlightScrollTarget.addEventListener('scroll', requestOutlineHighlightUpdate, { passive: true });
+  updateOutlineCurrentHighlight(menu, model, { scrollCurrentIntoView: true });
+}
+
+function handleReadingToolMenuAction(action, model = getReadingToolMenuModel(), menu = null) {
+  if (action === 'outline-close') {
+    hideReadingToolMenu();
+    return;
+  }
+  if (action === 'outline-load-more' && menu && model) {
+    const outlineItemCount = model.outlineItems.filter((item) => item.kind === 'outline-item').length;
+    model.outlineVisibleCount = Math.min(
+      outlineItemCount,
+      model.outlineVisibleCount + model.outlineBatchSize
+    );
+    renderReadingToolMenu(menu, { model });
+    bindOutlineHighlightUpdates(menu, model);
+    return;
+  }
+  const item = [...model.fixedActions, ...model.outlineItems]
+    .find((candidate) => candidate.action === action);
+  if (item && !item.disabled && typeof item.handler === 'function') {
+    item.handler();
+  }
+}
+
+function getFeatureToolMenu(root, menuId, options = {}) {
   if (!root) return null;
-  let menu = root.getElementById(READING_TOOL_MENU_ID);
+  let menu = root.getElementById(menuId);
   if (menu) return menu;
 
   menu = document.createElement('div');
-  menu.id = READING_TOOL_MENU_ID;
-  menu.className = 'psm-reading-menu';
-  menu.innerHTML = '<button type="button" data-action="save-bookmark">保存当前位置</button><button type="button" data-action="manage-bookmarks">查看已保存位置</button>';
+  menu.id = menuId;
+  menu.className = `psm-reading-menu ${options.className || ''}`.trim();
+
+  const fixedSection = document.createElement('div');
+  fixedSection.className = 'psm-reading-menu-fixed';
+  fixedSection.setAttribute('data-menu-section', 'fixed-actions');
+  menu.appendChild(fixedSection);
+
+  const outlineSection = document.createElement('div');
+  outlineSection.className = 'psm-reading-menu-outline';
+  outlineSection.setAttribute('data-menu-section', 'outline-scroll');
+  menu.appendChild(outlineSection);
+
   menu.addEventListener('click', (event) => {
     event.stopPropagation();
     const action = event.target && event.target.getAttribute ? event.target.getAttribute('data-action') : '';
-    if (action === 'save-bookmark') {
-      hideReadingToolMenu();
-      saveScrollBookmark();
-    } else if (action === 'manage-bookmarks') {
-      hideReadingToolMenu();
-      if (chrome.runtime && chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage();
-      }
-    }
+    handleReadingToolMenuAction(action, menu.__psmMenuModel, menu);
   });
   root.appendChild(menu);
+  renderReadingToolMenu(menu, { model: createEmptyReadingToolMenuModel() });
   return menu;
 }
 
-function positionReadingToolMenu(button, menu) {
+function getBookmarkToolMenu(root) {
+  return getFeatureToolMenu(root, BOOKMARK_MENU_ID, { className: 'psm-bookmark-menu' });
+}
+
+function getOutlineToolMenu(root) {
+  return getFeatureToolMenu(root, OUTLINE_MENU_ID, { className: 'psm-outline-menu' });
+}
+
+function getReadingToolMenu(root) {
+  return getFeatureToolMenu(root, 'page-scroll-master-reading-menu', { className: 'psm-legacy-reading-menu' });
+}
+
+function positionReadingToolMenu(button, menu, model = getReadingToolMenuModel()) {
   if (!button || !menu || typeof button.getBoundingClientRect !== 'function') return;
   const rect = button.getBoundingClientRect();
-  const width = 168;
+  const width = 200;
   const spacing = Math.max(8, Number(buttonSettings.buttonSpacing) || 8);
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -584,7 +1587,17 @@ function positionReadingToolMenu(button, menu) {
   if (left < 8) left = Math.min(rect.left, 8);
   if (viewportWidth && left + width > viewportWidth - 8) left = Math.max(8, viewportWidth - width - 8);
 
-  const menuHeight = 92;
+  const measuredHeight = typeof menu.getBoundingClientRect === 'function'
+    ? menu.getBoundingClientRect().height
+    : 0;
+  const estimatedOutlineHeight = Math.min(
+    model.outlineItems.length * 36,
+    viewportHeight ? viewportHeight * 0.4 : 320
+  );
+  const menuHeight = measuredHeight || Math.max(
+    52,
+    12 + (model.fixedActions.length * 36) + estimatedOutlineHeight + (model.outlineItems.length ? 5 : 0)
+  );
   let top = rect.top + (rect.height / 2) - (menuHeight / 2);
   if (top < 8) top = 8;
   if (viewportHeight && top + menuHeight > viewportHeight - 8) top = Math.max(8, viewportHeight - menuHeight - 8);
@@ -593,15 +1606,65 @@ function positionReadingToolMenu(button, menu) {
   menu.style.top = `${top}px`;
 }
 
-function handleReadingToolClick(event) {
-  event.stopPropagation();
-  const { root, readingToolButton } = getButtonElements();
-  const menu = getReadingToolMenu(root);
-  if (!menu || !readingToolButton) return;
+function openFeatureToolMenu({ event, button, menu, model }) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  if (!menu || !button) return;
   const willOpen = !menu.classList.contains('psm-open');
   if (willOpen) {
+    hideReadingToolMenu();
+    renderReadingToolMenu(menu, { model });
+    if (!hasReadingToolMenuContent(model)) {
+      hideReadingToolMenu();
+      return;
+    }
     menu.classList.add('psm-open');
-    positionReadingToolMenu(readingToolButton, menu);
+    positionReadingToolMenu(button, menu, model);
+    bindOutlineHighlightUpdates(menu, model);
+  } else {
+    hideReadingToolMenu();
+  }
+}
+
+function handleBookmarkToolClick(event) {
+  const { root, bookmarkButton } = getButtonElements();
+  const menu = getBookmarkToolMenu(root);
+  openFeatureToolMenu({
+    event,
+    button: bookmarkButton,
+    menu,
+    model: getScrollBookmarkMenuModel({ resolveOutline: false })
+  });
+}
+
+function handleOutlineToolClick(event) {
+  const { root, outlineButton } = getButtonElements();
+  const menu = getOutlineToolMenu(root);
+  openFeatureToolMenu({
+    event,
+    button: outlineButton,
+    menu,
+    model: getOutlineMenuModel({ resolveOutline: true })
+  });
+}
+
+function handleReadingToolClick(event) {
+  event.stopPropagation();
+  const { root, bookmarkButton, outlineButton } = getButtonElements();
+  const anchorButton = bookmarkButton || outlineButton;
+  const menu = getReadingToolMenu(root);
+  if (!menu || !anchorButton) return;
+  const willOpen = !menu.classList.contains('psm-open');
+  if (willOpen) {
+    const model = renderReadingToolMenu(menu, { resolveOutline: true });
+    if (!hasReadingToolMenuContent(model)) {
+      hideReadingToolMenu();
+      return;
+    }
+    menu.classList.add('psm-open');
+    positionReadingToolMenu(anchorButton, menu, model);
+    bindOutlineHighlightUpdates(menu, model);
   } else {
     hideReadingToolMenu();
   }
@@ -609,10 +1672,14 @@ function handleReadingToolClick(event) {
 
 function hideReadingToolMenu() {
   const root = getScrollRoot();
-  const menu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
-  if (menu) {
-    menu.classList.remove('psm-open');
-  }
+  if (!root) return;
+  [BOOKMARK_MENU_ID, OUTLINE_MENU_ID, 'page-scroll-master-reading-menu'].forEach((menuId) => {
+    const menu = root.getElementById(menuId);
+    if (menu) {
+      menu.classList.remove('psm-open');
+    }
+  });
+  unbindOutlineHighlightUpdates();
 }
 
 function getScrollProgress(container) {
@@ -866,71 +1933,108 @@ function ensureProgressControls() {
   updateProgressBar();
 }
 
-function removeReadingToolControls() {
-  const { root, readingToolButton } = getButtonElements();
-  if (readingToolButton) {
-    readingToolButton.remove();
+function removeFeatureToolControls({ button, root, containerId, menuId }) {
+  if (button) {
+    button.remove();
   }
-  const standalone = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
+  const standalone = root ? root.getElementById(containerId) : null;
   if (standalone) {
     standalone.remove();
   }
-  const menu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
+  const menu = root ? root.getElementById(menuId) : null;
   if (menu) {
     menu.remove();
   }
 }
 
-function getOrCreateReadingToolButton() {
-  const { root, readingToolButton } = getButtonElements();
+function getOrCreateFeatureToolButton(root, existingButton, createButton) {
   if (!root) return null;
-  return readingToolButton || createReadingToolButton();
+  return existingButton || createButton();
 }
 
-function getOrCreateReadingToolContainer(root) {
+function getOrCreateFeatureToolContainer(root, containerId) {
   if (!root) return null;
-  let container = root.getElementById(READING_TOOL_CONTAINER_ID);
+  let container = root.getElementById(containerId);
   if (container) return container;
   container = document.createElement('div');
-  container.id = READING_TOOL_CONTAINER_ID;
-  container.className = 'psm-reading-tool-container';
+  container.id = containerId;
+  container.className = 'psm-feature-tool-container';
   root.appendChild(container);
   return container;
 }
 
-function ensureReadingToolControls() {
-  const { root, bottomButton } = getButtonElements();
+function ensureFeatureToolControls(config) {
+  const elements = getButtonElements();
+  const { root, bottomButton } = elements;
   if (!root || !bottomButton) return;
+  const button = elements[config.buttonKey];
 
-  if (!isReadingToolEnabled()) {
-    removeReadingToolControls();
+  if (!config.isEnabled()) {
+    removeFeatureToolControls({
+      button,
+      root,
+      containerId: config.containerId,
+      menuId: config.menuId
+    });
     return;
   }
 
-  const button = getOrCreateReadingToolButton();
-  if (!button) return;
+  const nextButton = getOrCreateFeatureToolButton(root, button, config.createButton);
+  if (!nextButton) return;
 
-  const standalone = getOrCreateReadingToolContainer(root);
-  const position = advancedSettings.readingTools.buttonPosition;
+  const standalone = getOrCreateFeatureToolContainer(root, config.containerId);
+  const position = config.settings().buttonPosition;
   if (position === 'betweenScrollButtons') {
     if (standalone) {
       standalone.remove();
     }
-    if (button.parentNode !== bottomButton.parentNode) {
-      bottomButton.parentNode.insertBefore(button, bottomButton);
-    } else if (button.nextSibling !== bottomButton) {
-      button.parentNode.insertBefore(button, bottomButton);
+    if (nextButton.parentNode !== bottomButton.parentNode) {
+      bottomButton.parentNode.insertBefore(nextButton, bottomButton);
     }
   } else if (standalone) {
-    if (button.parentNode !== standalone) {
-      standalone.appendChild(button);
+    if (nextButton.parentNode !== standalone) {
+      standalone.appendChild(nextButton);
     }
   }
 
-  getReadingToolMenu(root);
+  config.getMenu(root);
+}
+
+function ensureReadingToolControls() {
+  ensureFeatureToolControls({
+    buttonKey: 'bookmarkButton',
+    containerId: BOOKMARK_TOOL_CONTAINER_ID,
+    menuId: BOOKMARK_MENU_ID,
+    createButton: createBookmarkToolButton,
+    getMenu: getBookmarkToolMenu,
+    isEnabled: isScrollBookmarkToolEnabled,
+    settings: () => advancedSettings.scrollBookmarks
+  });
+  ensureFeatureToolControls({
+    buttonKey: 'outlineButton',
+    containerId: OUTLINE_TOOL_CONTAINER_ID,
+    menuId: OUTLINE_MENU_ID,
+    createButton: createOutlineToolButton,
+    getMenu: getOutlineToolMenu,
+    isEnabled: isOutlineToolEnabled,
+    settings: () => advancedSettings.outlineNavigation
+  });
+
+  const { bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  if (bottomButton && bookmarkButton && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons') {
+    bottomButton.parentNode.insertBefore(bookmarkButton, bottomButton);
+  }
+  if (bottomButton && outlineButton && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons') {
+    bottomButton.parentNode.insertBefore(outlineButton, bottomButton);
+  }
+
   updateReadingToolPosition();
   updateButtonStyle();
-  checkRestorePrompt();
+  checkPendingScrollBookmarkRestore((handled) => {
+    if (!handled) {
+      checkBookmarkRestoreOnOpen();
+    }
+  });
 }
 
 function updateHorizontalProgressBar(progress) {
@@ -1116,7 +2220,7 @@ function enforceBookmarkLimits(bookmarks, activeKey) {
 }
 
 function saveScrollBookmark() {
-  if (!advancedSettings.readingTools.enabled || !advancedSettings.readingTools.features.scrollBookmarks) {
+  if (!advancedSettings.scrollBookmarks.enabled) {
     return;
   }
 
@@ -1171,10 +2275,10 @@ function saveScrollBookmark() {
 function showReadingToast(message, actions) {
   const root = getScrollRoot();
   if (!root) return;
-  let toast = root.getElementById(READING_TOOL_TOAST_ID);
+  let toast = root.getElementById(BOOKMARK_TOAST_ID);
   if (!toast) {
     toast = document.createElement('div');
-    toast.id = READING_TOOL_TOAST_ID;
+    toast.id = BOOKMARK_TOAST_ID;
     toast.className = 'psm-reading-toast';
     root.appendChild(toast);
   }
@@ -1202,10 +2306,104 @@ function showReadingToast(message, actions) {
   }
 }
 
+function restoreCurrentScrollBookmark(options = {}) {
+  if (!advancedSettings.scrollBookmarks.enabled && options.force !== true) {
+    return;
+  }
+
+  const key = getCurrentBookmarkKey();
+  if (!key) {
+    if (options.showMissingMessage !== false) {
+      showReadingToast('当前页面没有可加载的已保存位置');
+    }
+    return;
+  }
+
+  chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
+    const bookmark = bookmarks[key];
+    if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
+      if (options.showMissingMessage !== false) {
+        showReadingToast('当前页面没有可加载的已保存位置');
+      }
+      return;
+    }
+
+    if (!restoreScrollBookmark(bookmark)) {
+      showReadingToast('当前页面暂时无法加载已保存位置');
+    }
+  });
+}
+
+function restoreScrollBookmark(bookmark) {
+  const container = resolveScrollContainer();
+  const range = getElementScrollRange(container);
+  if (range <= 1) return false;
+  smoothScrollTo(container, range * clamp(bookmark.scrollPct, 0, 1));
+  return true;
+}
+
+function clearPendingScrollBookmarkRestore(callback) {
+  chrome.storage.local.remove(PENDING_BOOKMARK_RESTORE_STORAGE_KEY, () => {
+    pendingBookmarkRestoreKeyInProgress = '';
+    if (typeof callback === 'function') callback();
+  });
+}
+
+function checkPendingScrollBookmarkRestore(callback) {
+  const key = getCurrentBookmarkKey();
+  if (!key) {
+    callback(false);
+    return;
+  }
+  if (pendingBookmarkRestoreKeyInProgress === key) {
+    callback(true);
+    return;
+  }
+
+  chrome.storage.local.get(
+    [PENDING_BOOKMARK_RESTORE_STORAGE_KEY, BOOKMARKS_STORAGE_KEY],
+    (result) => {
+      const request = result[PENDING_BOOKMARK_RESTORE_STORAGE_KEY];
+      const requestedAt = request && Number(request.requestedAt);
+      if (!request || request.key !== key) {
+        callback(false);
+        return;
+      }
+      if (!Number.isFinite(requestedAt) || Date.now() - requestedAt > PENDING_BOOKMARK_RESTORE_MAX_AGE) {
+        clearPendingScrollBookmarkRestore(() => callback(false));
+        return;
+      }
+
+      const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
+      const bookmark = bookmarks[key];
+      if (!bookmark || typeof bookmark.scrollPct !== 'number') {
+        clearPendingScrollBookmarkRestore(() => callback(false));
+        return;
+      }
+
+      pendingBookmarkRestoreKeyInProgress = key;
+      const attemptRestore = (attempt) => {
+        if (restoreScrollBookmark(bookmark)) {
+          restorePromptShownForKey = key;
+          clearPendingScrollBookmarkRestore(() => callback(true));
+          return;
+        }
+        if (attempt < PENDING_BOOKMARK_RESTORE_MAX_RETRIES) {
+          setTimeout(() => attemptRestore(attempt + 1), PENDING_BOOKMARK_RESTORE_RETRY_DELAY);
+          return;
+        }
+        pendingBookmarkRestoreKeyInProgress = '';
+        callback(true);
+      };
+      attemptRestore(0);
+    }
+  );
+}
+
 function checkRestorePrompt() {
-  if (!advancedSettings.readingTools.enabled ||
-      !advancedSettings.readingTools.features.scrollBookmarks ||
-      !advancedSettings.scrollBookmarks.restorePromptEnabled) {
+  if (!advancedSettings.scrollBookmarks.enabled ||
+      advancedSettings.scrollBookmarks.restoreMode !== 'prompt') {
     return;
   }
 
@@ -1218,14 +2416,14 @@ function checkRestorePrompt() {
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
       return;
     }
+    if (restorePromptShownForKey === key) return;
     restorePromptShownForKey = key;
     const percent = Math.round(clamp(bookmark.scrollPct, 0, 1) * 100);
     showReadingToast(`从大约 ${percent}% 处继续？`, [
       {
         label: '继续',
         handler: () => {
-          const container = resolveScrollContainer();
-          smoothScrollTo(container, getElementScrollRange(container) * clamp(bookmark.scrollPct, 0, 1));
+          restoreCurrentScrollBookmark({ showMissingMessage: false });
         }
       },
       {
@@ -1234,6 +2432,50 @@ function checkRestorePrompt() {
       }
     ]);
   });
+}
+
+function checkAutomaticBookmarkRestore() {
+  if (!advancedSettings.scrollBookmarks.enabled ||
+      advancedSettings.scrollBookmarks.restoreMode !== 'auto') {
+    return;
+  }
+
+  const key = getCurrentBookmarkKey();
+  if (!key || restorePromptShownForKey === key) return;
+
+  chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
+    const bookmark = bookmarks[key];
+    if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
+      return;
+    }
+
+    if (restorePromptShownForKey === key) return;
+    restorePromptShownForKey = key;
+    const attemptRestore = (attempt) => {
+      if (restoreScrollBookmark(bookmark)) {
+        return;
+      }
+      if (attempt < PENDING_BOOKMARK_RESTORE_MAX_RETRIES) {
+        setTimeout(() => attemptRestore(attempt + 1), PENDING_BOOKMARK_RESTORE_RETRY_DELAY);
+      }
+    };
+    attemptRestore(0);
+  });
+}
+
+function checkBookmarkRestoreOnOpen() {
+  const key = getCurrentBookmarkKey();
+  if (!key || bookmarkRestoreCheckedForKey === key) {
+    return;
+  }
+  bookmarkRestoreCheckedForKey = key;
+
+  if (advancedSettings.scrollBookmarks.restoreMode === 'auto') {
+    checkAutomaticBookmarkRestore();
+  } else if (advancedSettings.scrollBookmarks.restoreMode === 'prompt') {
+    checkRestorePrompt();
+  }
 }
 
 function applyAdvancedSettings() {
@@ -1289,8 +2531,11 @@ function createScrollButton() {
   if (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton') {
     buttonContainer.appendChild(createVerticalProgressButton());
   }
-  if (isReadingToolEnabled() && advancedSettings.readingTools.buttonPosition === 'betweenScrollButtons') {
-    buttonContainer.appendChild(createReadingToolButton());
+  if (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons') {
+    buttonContainer.appendChild(createBookmarkToolButton());
+  }
+  if (isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons') {
+    buttonContainer.appendChild(createOutlineToolButton());
   }
   buttonContainer.appendChild(bottomButton);
 
@@ -1327,6 +2572,7 @@ function removeButton() {
   const host = document.getElementById(HOST_ID);
   if (!host) return;
   unbindProgressContainer();
+  unbindOutlineHighlightUpdates();
 
   const root = host.shadowRoot;
   if (root) {
@@ -1359,6 +2605,8 @@ function addButtonStyles(root) {
     }
     
     .psm-scroll-button {
+      appearance: none;
+      -webkit-appearance: none;
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -1384,18 +2632,25 @@ function addButtonStyles(root) {
       min-height: unset;
       max-width: none;
       max-height: none;
+      box-sizing: border-box;
       padding: 0;
       margin: 0;
+      font: 400 16px/1 Arial, sans-serif;
       line-height: 1;
+      text-transform: none;
     }
     
     .psm-scroll-button .scroll-icon {
-      width: 60%;
-      height: 60%;
+      width: 40%;
+      height: 40%;
+      flex: 0 0 auto;
+      box-sizing: content-box;
       color: currentColor;
       stroke: currentColor;
       stroke-width: 3;
       display: block;
+      overflow: visible;
+      vertical-align: middle;
     }
 
     .psm-progress-button {
@@ -1507,7 +2762,7 @@ function addButtonStyles(root) {
       margin-bottom: 3px;
     }
 
-    .psm-reading-tool-container {
+    .psm-feature-tool-container {
       position: fixed;
       z-index: 9999;
       display: flex;
@@ -1519,7 +2774,7 @@ function addButtonStyles(root) {
       position: fixed;
       z-index: 10000;
       display: none;
-      width: 168px;
+      width: 200px;
       padding: 6px;
       border-radius: 8px;
       background: rgba(17, 24, 39, 0.96);
@@ -1531,6 +2786,20 @@ function addButtonStyles(root) {
 
     .psm-reading-menu.psm-open {
       display: block;
+    }
+
+    .psm-reading-menu-fixed,
+    .psm-reading-menu-outline {
+      display: block;
+    }
+
+    .psm-reading-menu-outline {
+      max-height: 40vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      margin-top: 4px;
+      padding-top: 4px;
     }
 
     .psm-reading-menu button {
@@ -1546,8 +2815,74 @@ function addButtonStyles(root) {
       cursor: pointer;
     }
 
-    .psm-reading-menu button:hover {
+    .psm-reading-menu button:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.12);
+    }
+
+    .psm-reading-menu button:disabled {
+      opacity: 0.42;
+      cursor: default;
+    }
+
+    .psm-reading-menu-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px 5px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .psm-reading-menu .psm-reading-menu-close {
+      flex: 0 0 auto;
+      width: 24px;
+      min-height: 24px;
+      padding: 0;
+      border-radius: 5px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 18px;
+      line-height: 24px;
+      text-align: center;
+    }
+
+    .psm-reading-menu-item {
+      overflow: hidden;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: white;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .psm-reading-menu-item.psm-outline-level-2 {
+      padding-left: 22px;
+    }
+
+    .psm-reading-menu-item.psm-outline-level-3 {
+      padding-left: 34px;
+    }
+
+    .psm-reading-menu-item.psm-outline-load-more {
+      margin-top: 3px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .psm-reading-menu-item.psm-outline-current {
+      background: rgba(74, 158, 221, 0.28);
+      box-shadow: inset 3px 0 0 currentColor;
+      font-weight: 700;
+    }
+
+    .psm-reading-menu-status {
+      padding: 7px 10px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 11px;
+      line-height: 1.45;
     }
 
     .psm-reading-toast {
@@ -1627,7 +2962,7 @@ function addButtonStyles(root) {
     }
 
     .psm-horizontal-progress.psm-fullscreen-hidden,
-    .psm-reading-tool-container.psm-fullscreen-hidden,
+    .psm-feature-tool-container.psm-fullscreen-hidden,
     .psm-reading-menu.psm-fullscreen-hidden,
     .psm-reading-toast.psm-fullscreen-hidden {
       opacity: 0 !important;
@@ -1908,46 +3243,60 @@ function getMainButtonGroupHeight() {
   const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
   const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
   const hasVerticalProgress = advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton';
+  const betweenFeatureCount = [
+    isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons',
+    isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons'
+  ].filter(Boolean).length;
   const progressHeight = hasVerticalProgress
     ? clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT)
     : 0;
-  return hasVerticalProgress
+  const baseHeight = hasVerticalProgress
     ? (buttonSize * 2) + progressHeight + (spacing * 2)
     : (buttonSize * 2) + spacing;
+  return baseHeight + (betweenFeatureCount * (buttonSize + spacing));
 }
 
 function updateReadingToolPosition() {
   const root = getScrollRoot();
-  const standalone = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
-  if (!standalone) return;
+  if (!root) return;
 
   const edgeDistance = buttonSettings.edgeDistance !== undefined ? buttonSettings.edgeDistance : 8;
   const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
   const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
-  const position = advancedSettings.readingTools.buttonPosition;
-
-  standalone.style.left = buttonSettings.horizontalPosition === 'left' ? edgeDistance + 'px' : 'auto';
-  standalone.style.right = buttonSettings.horizontalPosition === 'left' ? 'auto' : edgeDistance + 'px';
-  standalone.style.transform = 'none';
-  standalone.style.top = 'auto';
-  standalone.style.bottom = 'auto';
-  standalone.style.display = isReadingToolEnabled() && position !== 'betweenScrollButtons' ? 'flex' : 'none';
-
-  if (position === 'pageTop') {
-    const offset = buttonSettings.verticalAlignment === 'top'
-      ? edgeDistance + getMainButtonGroupHeight() + spacing
-      : edgeDistance;
-    standalone.style.top = offset + 'px';
-  } else {
-    const offset = buttonSettings.verticalAlignment === 'bottom'
-      ? edgeDistance + getMainButtonGroupHeight() + spacing
-      : edgeDistance;
-    standalone.style.bottom = offset + 'px';
-  }
-
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  const requestedOffset = parseFloat(position === 'pageTop' ? standalone.style.top : standalone.style.bottom) || 0;
-  standalone.style.visibility = viewportHeight && requestedOffset + buttonSize > viewportHeight ? 'hidden' : 'visible';
+  const tools = [
+    {
+      container: root.getElementById(BOOKMARK_TOOL_CONTAINER_ID),
+      enabled: isScrollBookmarkToolEnabled(),
+      settings: advancedSettings.scrollBookmarks
+    },
+    {
+      container: root.getElementById(OUTLINE_TOOL_CONTAINER_ID),
+      enabled: isOutlineToolEnabled(),
+      settings: advancedSettings.outlineNavigation
+    }
+  ];
+
+  ['pageTop', 'pageBottom'].forEach((position) => {
+    const positionedTools = tools.filter((tool) => tool.enabled && tool.settings.buttonPosition === position);
+    positionedTools.forEach((tool, index) => {
+      const standalone = tool.container;
+      if (!standalone) return;
+      const baseOffset = buttonSettings.verticalAlignment === (position === 'pageTop' ? 'top' : 'bottom')
+        ? edgeDistance + getMainButtonGroupHeight() + spacing
+        : edgeDistance;
+      const stackIndex = position === 'pageBottom' ? positionedTools.length - index - 1 : index;
+      const offset = baseOffset + (stackIndex * (buttonSize + spacing));
+
+      standalone.style.left = buttonSettings.horizontalPosition === 'left' ? edgeDistance + 'px' : 'auto';
+      standalone.style.right = buttonSettings.horizontalPosition === 'left' ? 'auto' : edgeDistance + 'px';
+      standalone.style.transform = 'none';
+      standalone.style.top = position === 'pageTop' ? offset + 'px' : 'auto';
+      standalone.style.bottom = position === 'pageBottom' ? offset + 'px' : 'auto';
+      standalone.style.display = buttonSettings.showButton ? 'flex' : 'none';
+      standalone.style.visibility = viewportHeight && offset + buttonSize > viewportHeight ? 'hidden' : 'visible';
+    });
+  });
 }
 
 // 更新按钮可见性
@@ -1955,18 +3304,18 @@ function updateButtonVisibility() {
   const buttonContainer = getButtonContainer();
   if (!buttonContainer) return;
   const root = getScrollRoot();
-  const readingToolContainer = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
+  const featureToolContainers = root
+    ? [root.getElementById(BOOKMARK_TOOL_CONTAINER_ID), root.getElementById(OUTLINE_TOOL_CONTAINER_ID)].filter(Boolean)
+    : [];
   
   if (buttonSettings.showButton) {
     buttonContainer.style.display = 'flex';
-    if (readingToolContainer && advancedSettings.readingTools.buttonPosition !== 'betweenScrollButtons' && isReadingToolEnabled()) {
-      readingToolContainer.style.display = 'flex';
-    }
+    updateReadingToolPosition();
   } else {
     buttonContainer.style.display = 'none';
-    if (readingToolContainer) {
-      readingToolContainer.style.display = 'none';
-    }
+    featureToolContainers.forEach((container) => {
+      container.style.display = 'none';
+    });
   }
 }
 
@@ -1983,8 +3332,9 @@ function validateColor(color) {
 
 // 更新按钮样式
 function updateButtonStyle() {
-  const { root, topButton, progressButton, bottomButton, readingToolButton } = getButtonElements();
+  const { root, topButton, progressButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
   if (!topButton || !bottomButton) return;
+  const featureButtons = [bookmarkButton, outlineButton].filter(Boolean);
   
   // 更新按钮尺寸
   const size = buttonSettings.buttonSize + buttonSettings.buttonSizeUnit;
@@ -1996,10 +3346,10 @@ function updateButtonStyle() {
     progressButton.style.width = size;
     progressButton.style.height = clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT) + 'px';
   }
-  if (readingToolButton) {
-    readingToolButton.style.width = size;
-    readingToolButton.style.height = size;
-  }
+  featureButtons.forEach((button) => {
+    button.style.width = size;
+    button.style.height = size;
+  });
   
   // 更新按钮形状
   const shape = buttonSettings.buttonShape || 'round';
@@ -2010,27 +3360,12 @@ function updateButtonStyle() {
   if (progressButton) {
     progressButton.style.borderRadius = progressBorderRadius;
   }
-  if (readingToolButton) {
-    readingToolButton.style.borderRadius = borderRadius;
-  }
+  featureButtons.forEach((button) => {
+    button.style.borderRadius = borderRadius;
+  });
   
   // 更新SVG图标大小（根据按钮尺寸自动调整）
-  const iconSize = Math.max(40, Math.min(70, parseInt(buttonSettings.buttonSize) * 0.6)) + '%';
-  const topIcon = topButton.querySelector('.scroll-icon');
-  const bottomIcon = bottomButton.querySelector('.scroll-icon');
-  const readingToolIcon = readingToolButton ? readingToolButton.querySelector('.scroll-icon') : null;
-  if (topIcon) {
-    topIcon.style.width = iconSize;
-    topIcon.style.height = iconSize;
-  }
-  if (bottomIcon) {
-    bottomIcon.style.width = iconSize;
-    bottomIcon.style.height = iconSize;
-  }
-  if (readingToolIcon) {
-    readingToolIcon.style.width = iconSize;
-    readingToolIcon.style.height = iconSize;
-  }
+  applyIconSizing();
   
   // 更新按钮颜色 - 使用用户设置的颜色（带验证）
   const topColor = validateColor(buttonSettings.topButtonColor);
@@ -2040,9 +3375,8 @@ function updateButtonStyle() {
   if (progressButton) {
     progressButton.style.backgroundColor = getProgressColor();
   }
-  if (readingToolButton) {
-    readingToolButton.style.backgroundColor = getReadingToolColor();
-  }
+  if (bookmarkButton) bookmarkButton.style.backgroundColor = getBookmarkToolColor();
+  if (outlineButton) outlineButton.style.backgroundColor = getOutlineToolColor();
 
   const iconColor = getActiveIconColor();
   topButton.style.color = iconColor;
@@ -2050,9 +3384,9 @@ function updateButtonStyle() {
   if (progressButton) {
     progressButton.style.color = iconColor;
   }
-  if (readingToolButton) {
-    readingToolButton.style.color = iconColor;
-  }
+  featureButtons.forEach((button) => {
+    button.style.color = iconColor;
+  });
   
   // 动态应用间距到容器
   const buttonContainer = getButtonContainer();
@@ -2067,9 +3401,9 @@ function updateButtonStyle() {
   if (progressButton) {
     progressButton.style.opacity = opacity;
   }
-  if (readingToolButton) {
-    readingToolButton.style.opacity = opacity;
-  }
+  featureButtons.forEach((button) => {
+    button.style.opacity = opacity;
+  });
   
   // 更新悬停效果颜色 - 使用用户设置的颜色
   const styleElement = root.getElementById(DYNAMIC_STYLE_ID);
@@ -2089,8 +3423,11 @@ function updateButtonStyle() {
     .psm-progress-button:hover {
       background-color: ${adjustColorBrightness(getProgressColor(), -25)};
     }
-    .psm-reading-tool-button:hover {
-      background-color: ${adjustColorBrightness(getReadingToolColor(), -10)};
+    .psm-bookmark-tool-button:hover {
+      background-color: ${adjustColorBrightness(getBookmarkToolColor(), -10)};
+    }
+    .psm-outline-tool-button:hover {
+      background-color: ${adjustColorBrightness(getOutlineToolColor(), -10)};
     }
   `;
   root.appendChild(newStyle);
@@ -2141,6 +3478,8 @@ function initializeButton() {
 
 // SPA 页面动态加载检测 - 解决首次加载时滚动容器未就绪的问题
 function setupSpaDetection() {
+  setupOutlineRouteChangeDetection();
+
   // 延迟检测，给 SPA 应用足够的渲染时间
   setTimeout(() => {
     detectAndUpdateScrollContainer();
@@ -2164,6 +3503,7 @@ function setupSpaDetection() {
       
       spaDetectionState.debounceTimer = setTimeout(() => {
         detectAndUpdateScrollContainer();
+        handleOutlineDomChange();
       }, SPA_DETECTION_CONFIG.mutationDebounceDelay);
     });
     
@@ -2260,8 +3600,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateButtonVisibility();
     updateButtonStyle();
   } else if (message.action === 'updateAdvancedSettings') {
-    advancedSettings = mergeAdvancedSettings(message.settings);
-    applyAdvancedSettings();
+    applyAdvancedSettingsUpdate(message.settings);
   }
 });
 
@@ -2277,8 +3616,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     updateButtonStyle();
   }
   if (namespace === 'sync' && changes.advancedSettings) {
-    advancedSettings = mergeAdvancedSettings(changes.advancedSettings.newValue);
-    applyAdvancedSettings();
+    applyAdvancedSettingsUpdate(changes.advancedSettings.newValue);
   }
   if (namespace === 'local' && changes.enableStates) {
     var newStates = normalizeEnableStates(changes.enableStates.newValue);
@@ -2333,9 +3671,15 @@ const fullscreenManager = {
 
     const root = getScrollRoot();
     const horizontalProgress = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
-    const readingToolContainer = root ? root.getElementById(READING_TOOL_CONTAINER_ID) : null;
-    const readingToolMenu = root ? root.getElementById(READING_TOOL_MENU_ID) : null;
-    const readingToast = root ? root.getElementById(READING_TOOL_TOAST_ID) : null;
+    const featureElements = root
+      ? [
+          root.getElementById(BOOKMARK_TOOL_CONTAINER_ID),
+          root.getElementById(OUTLINE_TOOL_CONTAINER_ID),
+          root.getElementById(BOOKMARK_MENU_ID),
+          root.getElementById(OUTLINE_MENU_ID),
+          root.getElementById(BOOKMARK_TOAST_ID)
+        ]
+      : [];
     if (horizontalProgress) {
       if (this.isFullscreen) {
         horizontalProgress.classList.add('psm-fullscreen-hidden');
@@ -2343,7 +3687,7 @@ const fullscreenManager = {
         horizontalProgress.classList.remove('psm-fullscreen-hidden');
       }
     }
-    [readingToolContainer, readingToolMenu, readingToast].forEach((element) => {
+    featureElements.forEach((element) => {
       if (!element) return;
       if (this.isFullscreen) {
         element.classList.add('psm-fullscreen-hidden');

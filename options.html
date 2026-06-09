@@ -262,6 +262,13 @@
       margin: 6px 0 10px;
     }
 
+    .validation-message {
+      display: none;
+      font-size: 12px;
+      color: #c2410c;
+      margin: -4px 0 10px;
+    }
+
     .domain-toolbar {
       display: flex;
       gap: 8px;
@@ -302,12 +309,29 @@
       overflow-wrap: anywhere;
     }
 
-    .bookmark-meta,
+    .bookmark-meta {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
     .bookmark-url {
       margin-top: 4px;
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
+    }
+
+    .saved-bookmarks-details > summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .saved-bookmarks-details[open] > summary {
+      margin-bottom: 8px;
     }
 
     .bookmark-actions {
@@ -642,11 +666,17 @@
         <div class="language-selector">
           <span class="language-icon">🌐</span>
           <select id="languageSelector">
-            <option value="auto">自动</option>
-            <option value="zh-CN">中文</option>
+            <option value="auto">自动检测</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="zh-TW">繁體中文</option>
             <option value="en-US">English</option>
             <option value="es-ES">Español</option>
             <option value="ja-JP">日本語</option>
+            <option value="de-DE">Deutsch</option>
+            <option value="fr-FR">Français</option>
+            <option value="pt-BR">Português</option>
+            <option value="ko-KR">한국어</option>
+            <option value="it-IT">Italiano</option>
           </select>
         </div>
         <button id="saveButton" data-i18n="settings.saveButton">保存</button>
@@ -771,62 +801,6 @@
           </div>
         </div>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.readingTools">阅读工具</h3>
-
-          <div class="checkbox-container">
-            <input type="checkbox" id="readingToolsEnabled">
-            <label for="readingToolsEnabled" data-i18n="settings.readingToolsEnabled">启用阅读工具按钮</label>
-          </div>
-
-          <div id="readingToolsSettings" class="sub-setting">
-            <label for="readingToolPosition" data-i18n="settings.readingToolPosition">按钮位置</label>
-            <select id="readingToolPosition">
-              <option value="pageTop" data-i18n="settings.readingToolPosition.pageTop">页面顶部</option>
-              <option value="pageBottom" selected data-i18n="settings.readingToolPosition.pageBottom">页面底部</option>
-              <option value="betweenScrollButtons" data-i18n="settings.readingToolPosition.betweenScrollButtons">上/下按钮之间</option>
-            </select>
-
-            <label for="readingToolColorMode" data-i18n="settings.readingToolColorMode">按钮颜色</label>
-            <select id="readingToolColorMode">
-              <option value="followProgressBar" selected data-i18n="settings.readingToolColorMode.followProgressBar">跟随阅读进度条</option>
-              <option value="followTopButton" data-i18n="settings.readingToolColorMode.followTopButton">跟随顶部按钮</option>
-              <option value="followBottomButton" data-i18n="settings.readingToolColorMode.followBottomButton">跟随底部按钮</option>
-              <option value="custom" data-i18n="settings.readingToolColorMode.custom">自定义</option>
-            </select>
-
-            <div id="readingToolCustomColorContainer">
-              <label data-i18n="settings.readingToolCustomColor">自定义阅读工具颜色</label>
-              <div class="color-input-container">
-                <input type="color" id="readingToolCustomColor" value="#4A9EDD">
-                <input type="text" id="readingToolCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
-              </div>
-            </div>
-
-            <div class="checkbox-container">
-              <input type="checkbox" id="scrollBookmarksEnabled" checked>
-              <label for="scrollBookmarksEnabled" data-i18n="settings.scrollBookmarksEnabled">启用滚动位置书签</label>
-            </div>
-
-            <label for="scrollBookmarkPerDomainLimit" data-i18n="settings.scrollBookmarkPerDomainLimit">每域名保留位置</label>
-            <select id="scrollBookmarkPerDomainLimit">
-              <option value="1" selected data-i18n="settings.scrollBookmarkPerDomainLimit.one">最近 1 条</option>
-              <option value="3" data-i18n="settings.scrollBookmarkPerDomainLimit.three">最近 3 条</option>
-            </select>
-
-            <div class="checkbox-container">
-              <input type="checkbox" id="scrollBookmarkRestorePrompt" checked>
-              <label for="scrollBookmarkRestorePrompt" data-i18n="settings.scrollBookmarkRestorePrompt">打开页面时显示恢复提示</label>
-            </div>
-            <p class="muted-note" data-i18n="settings.readingToolsIntro">阅读工具按钮默认关闭，启用后可手动保存当前阅读位置。</p>
-          </div>
-        </div>
-
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.savedScrollBookmarks">已保存位置</h3>
-          <div id="savedBookmarksList"></div>
-          <p id="savedBookmarksEmpty" class="muted-note" data-i18n="settings.savedBookmarksEmpty">暂无已保存的阅读位置。</p>
-        </div>
       </section>
 
       <section class="tab-panel" data-tab-panel="advanced">
@@ -904,6 +878,126 @@
             <p class="muted-note" data-i18n="settings.progressInfiniteNote">无限滚动页面中进度可能随着内容加载而变化。</p>
           </div>
         </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.scrollBookmarks">滚动位置书签</h3>
+
+          <div class="checkbox-container">
+            <input type="checkbox" id="scrollBookmarksEnabled">
+            <label for="scrollBookmarksEnabled" data-i18n="settings.scrollBookmarksEnabled">启用滚动位置书签</label>
+          </div>
+
+          <div id="scrollBookmarksSettings" class="sub-setting">
+            <label for="scrollBookmarkButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
+            <select id="scrollBookmarkButtonPosition">
+              <option value="pageTop" data-i18n="settings.featureButtonPosition.pageTop">页面顶部</option>
+              <option value="pageBottom" selected data-i18n="settings.featureButtonPosition.pageBottom">页面底部</option>
+              <option value="betweenScrollButtons" data-i18n="settings.featureButtonPosition.betweenScrollButtons">上/下按钮之间</option>
+            </select>
+
+            <label for="scrollBookmarkButtonColorMode" data-i18n="settings.featureButtonColorMode">按钮颜色</label>
+            <select id="scrollBookmarkButtonColorMode">
+              <option value="followTopButton" selected data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followBottomButton" data-i18n="settings.featureButtonColorMode.followBottomButton">跟随底部按钮</option>
+              <option value="custom" data-i18n="settings.featureButtonColorMode.custom">自定义</option>
+            </select>
+
+            <div id="scrollBookmarkButtonCustomColorContainer">
+              <label data-i18n="settings.scrollBookmarkButtonCustomColor">自定义书签按钮颜色</label>
+              <div class="color-input-container">
+                <input type="color" id="scrollBookmarkButtonCustomColor" value="#4A9EDD">
+                <input type="text" id="scrollBookmarkButtonCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+              </div>
+            </div>
+
+            <label for="scrollBookmarkPerDomainLimit" data-i18n="settings.scrollBookmarkPerDomainLimit">每域名保留位置</label>
+            <select id="scrollBookmarkPerDomainLimit">
+              <option value="1" selected data-i18n="settings.scrollBookmarkPerDomainLimit.one">最近 1 条</option>
+              <option value="2" data-i18n="settings.scrollBookmarkPerDomainLimit.two">最近 2 条</option>
+              <option value="3" data-i18n="settings.scrollBookmarkPerDomainLimit.three">最近 3 条</option>
+            </select>
+
+            <label for="scrollBookmarkRestoreMode" data-i18n="settings.scrollBookmarkRestoreMode">再次打开页面时</label>
+            <select id="scrollBookmarkRestoreMode">
+              <option value="auto" data-i18n="settings.scrollBookmarkRestoreMode.auto">自动加载到最新书签位置</option>
+              <option value="prompt" selected data-i18n="settings.scrollBookmarkRestoreMode.prompt">仅提示恢复到书签位置</option>
+              <option value="manual" data-i18n="settings.scrollBookmarkRestoreMode.manual">手动加载</option>
+            </select>
+            <p class="muted-note" data-i18n="settings.scrollBookmarksIntro">默认关闭。启用后可手动保存当前位置，并选择再次打开页面时的加载方式。</p>
+          </div>
+
+          <details class="sub-setting saved-bookmarks-details">
+            <summary data-i18n="settings.savedScrollBookmarks">已保存位置</summary>
+            <div id="savedBookmarksList"></div>
+            <p id="savedBookmarksEmpty" class="muted-note" data-i18n="settings.savedBookmarksEmpty">暂无已保存的阅读位置。</p>
+          </details>
+        </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.outlineNavigation">智能段落跳转</h3>
+
+          <div class="checkbox-container">
+            <input type="checkbox" id="outlineNavigationEnabled">
+            <label for="outlineNavigationEnabled" data-i18n="settings.outlineNavigationEnabled">启用智能段落跳转</label>
+          </div>
+
+          <div id="outlineNavigationSettings" class="sub-setting">
+            <label for="outlineButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
+            <select id="outlineButtonPosition">
+              <option value="pageTop" data-i18n="settings.featureButtonPosition.pageTop">页面顶部</option>
+              <option value="pageBottom" selected data-i18n="settings.featureButtonPosition.pageBottom">页面底部</option>
+              <option value="betweenScrollButtons" data-i18n="settings.featureButtonPosition.betweenScrollButtons">上/下按钮之间</option>
+            </select>
+
+            <label for="outlineButtonColorMode" data-i18n="settings.featureButtonColorMode">按钮颜色</label>
+            <select id="outlineButtonColorMode">
+              <option value="followTopButton" selected data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followBottomButton" data-i18n="settings.featureButtonColorMode.followBottomButton">跟随底部按钮</option>
+              <option value="custom" data-i18n="settings.featureButtonColorMode.custom">自定义</option>
+            </select>
+
+            <div id="outlineButtonCustomColorContainer">
+              <label data-i18n="settings.outlineButtonCustomColor">自定义段落跳转按钮颜色</label>
+              <div class="color-input-container">
+                <input type="color" id="outlineButtonCustomColor" value="#4A9EDD">
+                <input type="text" id="outlineButtonCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+              </div>
+            </div>
+
+            <label data-i18n="settings.outlineSources">目录来源</label>
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineSourceH1" checked>
+              <label for="outlineSourceH1" data-i18n="settings.outlineSourceH1">H1 来源</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineSourceH2" checked>
+              <label for="outlineSourceH2" data-i18n="settings.outlineSourceH2">H2 来源</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineSourceH3">
+              <label for="outlineSourceH3" data-i18n="settings.outlineSourceH3">H3 来源</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineSourceIdBlocks">
+              <label for="outlineSourceIdBlocks" data-i18n="settings.outlineSourceIdBlocks">带 id 的区块</label>
+            </div>
+            <p id="outlineSourcesResetNotice" class="validation-message" data-i18n="settings.outlineSourcesReset">至少保留一个目录来源，已恢复 H1 + H2。</p>
+
+            <label for="outlineMaxItems" data-i18n="settings.outlineMaxItems">每批加载目录项</label>
+            <input type="number" id="outlineMaxItems" min="10" max="50" step="1" value="30">
+            <p id="outlineMaxItemsError" class="validation-message" data-i18n="settings.outlineMaxItemsError">每批加载目录项必须在 10-50 之间。</p>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineFilterShortHeadings" checked>
+              <label for="outlineFilterShortHeadings" data-i18n="settings.outlineFilterShortHeadings">自动过滤过短标题</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="outlineHighlightCurrentSection" checked>
+              <label for="outlineHighlightCurrentSection" data-i18n="settings.outlineHighlightCurrentSection">当前章节高亮</label>
+            </div>
+            <p class="muted-note" data-i18n="settings.outlineNavigationIntro">默认关闭。启用后通过独立按钮打开页面目录并进行上一段、下一段跳转。</p>
+          </div>
+        </div>
       </section>
 
       <section class="tab-panel" data-tab-panel="domains">
@@ -944,7 +1038,7 @@
         <div class="setting-group about-card">
           <h3 data-i18n="settings.about">关于插件</h3>
           <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">1.8.0</span></p>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.0.0</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
@@ -963,7 +1057,8 @@
     <span class="preview-progress-fill"></span>
     <span class="preview-progress-label"></span>
   </button>
-  <button id="previewReadingToolButton" class="preview-scroll-button hidden" title="阅读工具" aria-label="阅读工具"></button>
+  <button id="previewBookmarkButton" class="preview-scroll-button hidden" title="滚动位置书签" aria-label="滚动位置书签"></button>
+  <button id="previewOutlineButton" class="preview-scroll-button hidden" title="智能段落跳转" aria-label="智能段落跳转"></button>
   <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">
     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 5v14M5 12l7 7 7-7"/>

@@ -1,6 +1,6 @@
 # Privacy Policy for Smart Scroll Navigator
 
-**Last Updated**: April 7, 2026
+**Last Updated**: June 7, 2026
 
 ## Data Collection
 
@@ -8,7 +8,11 @@ Smart Scroll Navigator does **NOT** collect, store, or transmit any personal inf
 
 ## Local Storage
 
-The extension uses Chrome's built-in storage API (`chrome.storage.sync`) solely to save your preferences—such as scroll speed, button position, colors, and opacity settings. This data is stored locally in your browser and synced across your Chrome-signed-in devices through Google's infrastructure. No settings data is ever transmitted to the extension developer.
+The extension uses Chrome's built-in storage API (`chrome.storage.sync`) solely to save your preferences—such as scroll speed, button position, colors, opacity settings, and reading tool settings. This data is stored locally in your browser and synced across your Chrome-signed-in devices through Google's infrastructure. No settings data is ever transmitted to the extension developer.
+
+The extension may also use `chrome.storage.local` to save per-site enable status and scroll position bookmarks when you choose to use those features. Scroll position bookmarks contain the page URL, approximate scroll progress, page title, and related scroll container metadata so the extension can offer to resume from that position later. This data stays in your browser and is not transmitted to the extension developer or any third party.
+
+When smart section navigation is enabled, the extension may read visible headings on the current page to build an in-memory page outline for navigation. This outline, including heading text and page structure, is not saved to Chrome storage and is not transmitted to the extension developer or any third party.
 
 ## Host Permissions
 

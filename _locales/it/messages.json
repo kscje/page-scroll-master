@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – In alto, in basso e progresso",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Scorri in alto o in basso, segui il progresso e naviga nelle pagine lunghe",
+    "description": "Extension description"
+  },
+  "commandScrollToTop": {
+    "message": "Scorri all’inizio della pagina",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "Scorri alla fine della pagina",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "Scorri in alto",
+    "description": "Floating button tooltip"
+  },
+  "popupScrollBottom": {
+    "message": "Scorri in basso",
+    "description": "Floating button tooltip"
+  },
+  "popupSettings": {
+    "message": "Impostazioni",
+    "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "Attiva su questo sito",
+    "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "Distanza dal bordo(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "La distanza dal bordo deve essere tra 0px e 200px",
+    "description": "Edge distance input error message"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Oben, Unten & Fortschritt",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Zum Seitenanfang oder -ende scrollen, Seitenfortschritt verfolgen und lange Seiten schnell durchsuchen",
+    "description": "Extension description"
+  },
+  "commandScrollToTop": {
+    "message": "Zum Anfang der Seite scrollen",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "Zum Ende der Seite scrollen",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "Nach oben scrollen",
+    "description": "Floating button tooltip"
+  },
+  "popupScrollBottom": {
+    "message": "Nach unten scrollen",
+    "description": "Floating button tooltip"
+  },
+  "popupSettings": {
+    "message": "Einstellungen",
+    "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "Auf dieser Website aktivieren",
+    "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "Abstand zum Rand(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "Der Abstand zum Rand muss zwischen 0px und 200px liegen",
+    "description": "Edge distance input error message"
+  }
+}

@@ -14,6 +14,7 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const OPTIONS_SOURCE_PATH = process.env.OPTIONS_SOURCE || path.join(ROOT, 'options.js');
 const OPTIONS_SOURCE = fs.readFileSync(OPTIONS_SOURCE_PATH, 'utf8');
+const OPTIONS_HTML = fs.readFileSync(path.join(ROOT, 'options.html'), 'utf8');
 
 let passCount = 0;
 let failCount = 0;
@@ -168,16 +169,31 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     progressClickToJump: createElement('progressClickToJump', { checked: true }),
     progressShowPercentage: createElement('progressShowPercentage', { checked: true }),
     progressShowRemainingTime: createElement('progressShowRemainingTime'),
-    readingToolsEnabled: createElement('readingToolsEnabled'),
-    readingToolsSettings: createElement('readingToolsSettings'),
-    readingToolPosition: createElement('readingToolPosition', { value: 'pageBottom' }),
-    readingToolColorMode: createElement('readingToolColorMode', { value: 'followProgressBar' }),
-    readingToolCustomColorContainer: createElement('readingToolCustomColorContainer'),
-    readingToolCustomColor: createElement('readingToolCustomColor', { value: '#4A9EDD' }),
-    readingToolCustomColorHex: createElement('readingToolCustomColorHex', { value: '#4A9EDD' }),
-    scrollBookmarksEnabled: createElement('scrollBookmarksEnabled', { checked: true }),
+    scrollBookmarksEnabled: createElement('scrollBookmarksEnabled'),
+    scrollBookmarksSettings: createElement('scrollBookmarksSettings'),
+    scrollBookmarkButtonPosition: createElement('scrollBookmarkButtonPosition', { value: 'pageBottom' }),
+    scrollBookmarkButtonColorMode: createElement('scrollBookmarkButtonColorMode', { value: 'followTopButton' }),
+    scrollBookmarkButtonCustomColorContainer: createElement('scrollBookmarkButtonCustomColorContainer'),
+    scrollBookmarkButtonCustomColor: createElement('scrollBookmarkButtonCustomColor', { value: '#4A9EDD' }),
+    scrollBookmarkButtonCustomColorHex: createElement('scrollBookmarkButtonCustomColorHex', { value: '#4A9EDD' }),
+    outlineNavigationEnabled: createElement('outlineNavigationEnabled'),
+    outlineNavigationSettings: createElement('outlineNavigationSettings'),
+    outlineButtonPosition: createElement('outlineButtonPosition', { value: 'pageBottom' }),
+    outlineButtonColorMode: createElement('outlineButtonColorMode', { value: 'followTopButton' }),
+    outlineButtonCustomColorContainer: createElement('outlineButtonCustomColorContainer'),
+    outlineButtonCustomColor: createElement('outlineButtonCustomColor', { value: '#4A9EDD' }),
+    outlineButtonCustomColorHex: createElement('outlineButtonCustomColorHex', { value: '#4A9EDD' }),
+    outlineSourceH1: createElement('outlineSourceH1', { checked: true }),
+    outlineSourceH2: createElement('outlineSourceH2', { checked: true }),
+    outlineSourceH3: createElement('outlineSourceH3'),
+    outlineSourceIdBlocks: createElement('outlineSourceIdBlocks'),
+    outlineSourcesResetNotice: createElement('outlineSourcesResetNotice'),
+    outlineMaxItems: createElement('outlineMaxItems', { value: '30' }),
+    outlineMaxItemsError: createElement('outlineMaxItemsError'),
+    outlineFilterShortHeadings: createElement('outlineFilterShortHeadings', { checked: true }),
+    outlineHighlightCurrentSection: createElement('outlineHighlightCurrentSection', { checked: true }),
     scrollBookmarkPerDomainLimit: createElement('scrollBookmarkPerDomainLimit', { value: '1' }),
-    scrollBookmarkRestorePrompt: createElement('scrollBookmarkRestorePrompt', { checked: true }),
+    scrollBookmarkRestoreMode: createElement('scrollBookmarkRestoreMode', { value: 'prompt' }),
     savedBookmarksList: createElement('savedBookmarksList'),
     savedBookmarksEmpty: createElement('savedBookmarksEmpty'),
     iconCustomizationSettings: createElement('iconCustomizationSettings'),
@@ -204,7 +220,10 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
         createElement('previewProgressLabel', { className: 'preview-progress-label' })
       ]
     }),
-    previewReadingToolButton: createElement('previewReadingToolButton', {
+    previewBookmarkButton: createElement('previewBookmarkButton', {
+      className: 'preview-scroll-button hidden'
+    }),
+    previewOutlineButton: createElement('previewOutlineButton', {
       className: 'preview-scroll-button hidden'
     }),
     previewBottomButton: createElement('previewBottomButton', {
@@ -225,6 +244,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
   const syncData = JSON.parse(JSON.stringify(initialSyncData));
   const localData = JSON.parse(JSON.stringify(initialLocalData));
   const sentMessages = [];
+  const createdTabs = [];
   const runtime = { lastError: null };
 
   const context = {
@@ -325,7 +345,8 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
           runtime.lastError = null;
           if (callback) callback();
         },
-        create() {
+        create(createProperties) {
+          createdTabs.push(createProperties);
         }
       },
       runtime
@@ -342,6 +363,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     syncData,
     localData,
     sentMessages,
+    createdTabs,
     appendedHeadElements
   };
 }
@@ -373,6 +395,31 @@ assert(page.elements.previewTopButton.style.opacity === 0.35, 'preview opacity i
 assert(page.elements.previewTopButton.style.left === '24px', 'preview horizontal edge distance is applied');
 assert(page.elements.previewBottomButton.style.bottom === '24px', 'preview vertical edge distance is applied');
 assert(page.elements.buttonShape.value === 'round', 'button shape defaults to round when not in storage');
+assert(page.elements.scrollBookmarksEnabled.checked === false, 'scroll bookmarks default to disabled');
+assert(page.elements.outlineNavigationEnabled.checked === false, 'outline navigation defaults to disabled');
+assert(page.elements.scrollBookmarkButtonColorMode.value === 'followTopButton', 'scroll bookmark color defaults to the top button');
+assert(page.elements.outlineButtonColorMode.value === 'followTopButton', 'outline color defaults to the top button');
+assert(page.elements.outlineSourceH1.checked === true && page.elements.outlineSourceH2.checked === true, 'old settings receive default H1 and H2 sources');
+assert(page.elements.outlineMaxItems.value === 30, 'old settings receive the default outline batch size');
+assert(page.elements.scrollBookmarkRestoreMode.value === 'prompt', 'scroll bookmark restore mode defaults to prompt');
+
+const legacyManualPage = createOptionsPage({
+  advancedSettings: {
+    scrollBookmarks: {
+      restorePromptEnabled: false
+    }
+  }
+});
+assert(legacyManualPage.elements.scrollBookmarkRestoreMode.value === 'manual', 'disabled legacy restore prompts load as manual mode');
+const legacyProgressColorPage = createOptionsPage({
+  advancedSettings: {
+    scrollBookmarks: { buttonColorMode: 'followProgressBar' },
+    outlineNavigation: { buttonColorMode: 'followProgressBar' }
+  }
+});
+assert(legacyProgressColorPage.elements.scrollBookmarkButtonColorMode.value === 'followTopButton', 'legacy bookmark progress color loads as top button color');
+assert(legacyProgressColorPage.elements.outlineButtonColorMode.value === 'followTopButton', 'legacy outline progress color loads as top button color');
+assert(!OPTIONS_HTML.includes('settings.featureButtonColorMode.followProgressBar'), 'feature color selects omit the progress bar option');
 
 console.log('\nTest 2: Live opacity and speed inputs update the page');
 page.elements.opacity.value = '42';
@@ -388,11 +435,22 @@ console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.progressBarEnabled.checked = true;
 page.elements.progressBarMode.value = 'horizontalBar';
 page.elements.progressThickness.value = '12';
-page.elements.readingToolsEnabled.checked = true;
-page.elements.readingToolPosition.value = 'betweenScrollButtons';
-page.elements.readingToolColorMode.value = 'custom';
-page.elements.readingToolCustomColor.value = '#778899';
-page.elements.scrollBookmarkPerDomainLimit.value = '3';
+page.elements.scrollBookmarksEnabled.checked = true;
+page.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
+page.elements.scrollBookmarkButtonColorMode.value = 'custom';
+page.elements.scrollBookmarkButtonCustomColor.value = '#778899';
+page.elements.outlineNavigationEnabled.checked = true;
+page.elements.outlineButtonPosition.value = 'pageTop';
+page.elements.outlineButtonColorMode.value = 'followBottomButton';
+page.elements.outlineSourceH1.checked = false;
+page.elements.outlineSourceH2.checked = true;
+page.elements.outlineSourceH3.checked = true;
+page.elements.outlineSourceIdBlocks.checked = true;
+page.elements.outlineMaxItems.value = '42';
+page.elements.outlineFilterShortHeadings.checked = false;
+page.elements.outlineHighlightCurrentSection.checked = false;
+page.elements.scrollBookmarkPerDomainLimit.value = '2';
+page.elements.scrollBookmarkRestoreMode.value = 'auto';
 page.elements.iconSet.value = 'doubleArrow';
 page.elements.iconColor.value = '#123456';
 page.elements.saveButton.dispatch('click');
@@ -402,11 +460,21 @@ assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge dis
 assert(page.syncData.advancedSettings.progressBar.enabled === true, 'save persists progress bar enabled state');
 assert(page.syncData.advancedSettings.progressBar.mode === 'horizontalBar', 'save persists progress bar mode');
 assert(page.syncData.advancedSettings.progressBar.thickness === 12, 'save persists progress bar thickness');
-assert(page.syncData.advancedSettings.readingTools.enabled === true, 'save persists reading tools enabled state');
-assert(page.syncData.advancedSettings.readingTools.buttonPosition === 'betweenScrollButtons', 'save persists reading tool position');
-assert(page.syncData.advancedSettings.readingTools.buttonColorMode === 'custom', 'save persists reading tool color mode');
-assert(page.syncData.advancedSettings.readingTools.buttonCustomColor === '#778899', 'save persists reading tool custom color');
-assert(page.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3, 'save persists scroll bookmark per-domain limit');
+assert(page.syncData.advancedSettings.scrollBookmarks.enabled === true, 'save persists scroll bookmark enabled state');
+assert(page.syncData.advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons', 'save persists scroll bookmark button position');
+assert(page.syncData.advancedSettings.scrollBookmarks.buttonColorMode === 'custom', 'save persists scroll bookmark button color mode');
+assert(page.syncData.advancedSettings.scrollBookmarks.buttonCustomColor === '#778899', 'save persists scroll bookmark custom color');
+assert(page.syncData.advancedSettings.outlineNavigation.enabled === true, 'save persists outline navigation enabled state');
+assert(page.syncData.advancedSettings.outlineNavigation.buttonPosition === 'pageTop', 'save persists outline button position');
+assert(page.syncData.advancedSettings.outlineNavigation.buttonColorMode === 'followBottomButton', 'save persists outline button color mode');
+assert(page.syncData.advancedSettings.outlineNavigation.sources.h1 === false, 'save persists the H1 outline source');
+assert(page.syncData.advancedSettings.outlineNavigation.sources.h3 === true, 'save persists the H3 outline source');
+assert(page.syncData.advancedSettings.outlineNavigation.sources.idBlocks === true, 'save persists the id block outline source');
+assert(page.syncData.advancedSettings.outlineNavigation.maxItems === 42, 'save persists the outline batch size');
+assert(page.syncData.advancedSettings.outlineNavigation.filterShortHeadings === false, 'save persists short heading filtering');
+assert(page.syncData.advancedSettings.outlineNavigation.highlightCurrentSection === false, 'save persists current section highlighting');
+assert(page.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 2, 'save persists scroll bookmark per-domain limit');
+assert(page.syncData.advancedSettings.scrollBookmarks.restoreMode === 'auto', 'save persists scroll bookmark restore mode');
 assert(page.syncData.advancedSettings.iconCustomization.iconSet === 'doubleArrow', 'save persists icon set');
 assert(page.syncData.advancedSettings.iconCustomization.iconColor === '#123456', 'save persists icon color');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateSpeed' && entry.message.speed === 250), 'save sends updateSpeed message');
@@ -468,26 +536,35 @@ page4.elements.progressHorizontalPosition.value = 'bottom';
 page4.elements.progressHorizontalPosition.dispatch('change');
 assert(page4.elements.previewHorizontalProgress.style.bottom === '0', 'horizontal progress preview follows bottom position');
 
-console.log('\nTest 8: Reading tools preview is hidden by default and follows button geometry when enabled');
+console.log('\nTest 8: Advanced feature previews are hidden by default and follow button geometry when enabled');
 let page5 = createOptionsPage();
-assert(page5.elements.previewReadingToolButton.style.display === 'none', 'reading tool preview is hidden by default');
-page5.elements.readingToolsEnabled.checked = true;
-page5.elements.readingToolPosition.value = 'pageBottom';
-page5.elements.readingToolColorMode.value = 'followTopButton';
-page5.elements.readingToolsEnabled.dispatch('change');
-assert(page5.elements.previewReadingToolButton.style.display === 'flex', 'reading tool preview is shown when enabled');
-assert(page5.elements.previewReadingToolButton.style.backgroundColor === '#4A9EDD', 'reading tool preview falls back to top button color');
-assert(page5.elements.previewReadingToolButton.style.bottom === '8px', 'page-bottom reading tool preview uses edge distance when scroll buttons are centered');
+assert(page5.elements.previewBookmarkButton.style.display === 'none', 'scroll bookmark preview is hidden by default');
+assert(page5.elements.previewOutlineButton.style.display === 'none', 'outline preview is hidden by default');
+page5.elements.scrollBookmarksEnabled.checked = true;
+page5.elements.scrollBookmarkButtonPosition.value = 'pageBottom';
+page5.elements.scrollBookmarkButtonColorMode.value = 'followTopButton';
+page5.elements.scrollBookmarksEnabled.dispatch('change');
+assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview is shown when enabled');
+assert(page5.elements.previewBookmarkButton.style.backgroundColor === '#4A9EDD', 'scroll bookmark preview falls back to top button color');
+assert(page5.elements.previewBookmarkButton.style.bottom === '8px', 'page-bottom scroll bookmark preview uses edge distance when scroll buttons are centered');
 page5.elements.verticalAlignment.value = 'bottom';
 page5.elements.verticalAlignment.dispatch('change');
-assert(page5.elements.previewReadingToolButton.style.bottom === '104px', 'page-bottom reading tool preview avoids bottom-aligned scroll buttons');
+assert(page5.elements.previewBookmarkButton.style.bottom === '104px', 'page-bottom scroll bookmark preview avoids bottom-aligned scroll buttons');
 page5.elements.verticalAlignment.value = 'center';
 page5.elements.verticalAlignment.dispatch('change');
-page5.elements.readingToolPosition.value = 'betweenScrollButtons';
-page5.elements.readingToolPosition.dispatch('change');
-assert(page5.elements.previewReadingToolButton.style.top.includes('calc(50%'), 'between-buttons reading tool preview joins centered button group');
+page5.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
+page5.elements.outlineNavigationEnabled.checked = true;
+page5.elements.outlineButtonPosition.value = 'betweenScrollButtons';
+page5.elements.scrollBookmarkButtonPosition.dispatch('change');
+page5.elements.outlineNavigationEnabled.dispatch('change');
+assert(page5.elements.previewBookmarkButton.style.top.includes('calc(50%'), 'between-buttons scroll bookmark preview joins centered button group');
+assert(page5.elements.previewOutlineButton.style.top.includes('calc(50%'), 'between-buttons outline preview joins centered button group');
+assert(page5.elements.previewBookmarkButton.style.top !== page5.elements.previewOutlineButton.style.top, 'between-buttons feature previews do not overlap');
 
 console.log('\nTest 9: Saved scroll bookmarks render and can be deleted');
+const savedBookmarksDetailsTag = OPTIONS_HTML.match(/<details\b[^>]*saved-bookmarks-details[^>]*>/)?.[0] || '';
+assert(Boolean(savedBookmarksDetailsTag), 'saved bookmarks use a collapsible details section');
+assert(!/\sopen(?:\s|=|>)/.test(savedBookmarksDetailsTag), 'saved bookmarks section is collapsed by default');
 let page6 = createOptionsPage(
   { language: 'en-US' },
   {
@@ -513,11 +590,64 @@ let page6 = createOptionsPage(
 );
 assert(page6.elements.savedBookmarksEmpty.style.display === 'none', 'saved bookmarks empty state hides when bookmarks exist');
 assert(page6.elements.savedBookmarksList.children.length === 2, 'saved bookmarks list renders stored entries');
-assert(page6.elements.savedBookmarksList.children[0].children[0].children[0].textContent === 'Article B', 'saved bookmarks list sorts newest first');
+const firstBookmarkInfo = page6.elements.savedBookmarksList.children[0].children[0];
+const firstBookmarkTitle = firstBookmarkInfo.children[0];
+assert(firstBookmarkTitle.children[0].textContent === 'Article B', 'saved bookmarks list sorts newest first');
+assert(/^34% · .+/.test(firstBookmarkTitle.children[1].textContent), 'bookmark percentage and time appear after the title');
+assert(!firstBookmarkTitle.children[1].textContent.includes('example.test'), 'bookmark metadata does not repeat the domain');
+assert(firstBookmarkInfo.children[1].textContent === 'https://example.test/b', 'bookmark row keeps the detailed address');
+const openButton = page6.elements.savedBookmarksList.children[0].children[1].children[0];
+openButton.dispatch('click');
+assert(page6.localData.pendingScrollBookmarkRestore.key === 'exact:https://example.test/b', 'open stores a one-time restore request for the selected bookmark');
+assert(page6.createdTabs[0].url === 'https://example.test/b', 'open creates the bookmark tab after storing the restore request');
 const deleteButton = page6.elements.savedBookmarksList.children[0].children[1].children[1];
 deleteButton.dispatch('click');
 assert(!page6.localData.bookmarks['exact:https://example.test/b'], 'delete removes the selected saved bookmark from storage');
 assert(page6.elements.savedBookmarksList.children.length === 1, 'saved bookmarks list rerenders after deletion');
+
+console.log('\nTest 10: Outline controls restore valid sources and validate item limits');
+let page7 = createOptionsPage({
+  advancedSettings: {
+    readingTools: {
+      enabled: true,
+      features: {
+        scrollBookmarks: true,
+        outlineNavigation: true
+      }
+    },
+    outlineNavigation: {
+      enabled: true,
+      sources: {
+        h1: false,
+        h2: false,
+        h3: true,
+        idBlocks: false
+      },
+      maxItems: 50,
+      filterShortHeadings: false,
+      highlightCurrentSection: false
+    }
+  }
+});
+assert(page7.elements.outlineNavigationSettings.style.display === 'block', 'enabled outline navigation shows its child settings');
+assert(page7.elements.outlineSourceH3.checked === true, 'saved H3 source loads into the settings page');
+assert(page7.elements.outlineMaxItems.value === 50, 'saved outline batch size loads into the settings page');
+assert(page7.elements.outlineFilterShortHeadings.checked === false, 'saved short heading filter loads into the settings page');
+page7.elements.outlineNavigationEnabled.checked = false;
+page7.elements.outlineNavigationEnabled.dispatch('change');
+assert(page7.elements.outlineNavigationSettings.style.display === 'none', 'disabled outline navigation hides its child settings');
+page7.elements.outlineNavigationEnabled.checked = true;
+page7.elements.outlineNavigationEnabled.dispatch('change');
+page7.elements.outlineSourceH3.checked = false;
+page7.elements.outlineSourceH3.dispatch('change');
+assert(page7.elements.outlineSourceH1.checked === true && page7.elements.outlineSourceH2.checked === true, 'clearing all outline sources restores H1 and H2');
+assert(page7.elements.outlineSourcesResetNotice.style.display === 'block', 'restoring outline sources shows a short notice');
+page7.elements.outlineMaxItems.value = '9';
+page7.elements.outlineMaxItems.dispatch('input');
+assert(page7.elements.outlineMaxItemsError.style.display === 'block', 'out-of-range outline batch sizes show validation feedback');
+page7.elements.outlineMaxItems.value = '30';
+page7.elements.outlineMaxItems.dispatch('input');
+assert(page7.elements.outlineMaxItemsError.style.display === 'none', 'valid outline batch sizes clear validation feedback');
 
 console.log('\n=== Test summary ===');
 console.log(`Passed: ${passCount}`);

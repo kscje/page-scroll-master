@@ -402,6 +402,10 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-outline-navigation.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-icon-customization.js')], {
     cwd: ROOT,
     stdio: 'inherit',
@@ -423,6 +427,14 @@ function runRegressionTests() {
     stdio: 'inherit',
   });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-progress-bar.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      CONTENT_SOURCE: path.join(BUILD_DIR, 'content.js'),
+    },
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-outline-navigation.js')], {
     cwd: ROOT,
     env: {
       ...process.env,

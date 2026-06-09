@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Haut, bas et progression",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Faites défiler vers le haut ou le bas, suivez la progression et naviguez dans les longues pages",
+    "description": "Extension description"
+  },
+  "commandScrollToTop": {
+    "message": "Faire défiler jusqu’en haut de la page",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "Faire défiler jusqu’en bas de la page",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "Aller en haut",
+    "description": "Floating button tooltip"
+  },
+  "popupScrollBottom": {
+    "message": "Aller en bas",
+    "description": "Floating button tooltip"
+  },
+  "popupSettings": {
+    "message": "Paramètres",
+    "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "Activer sur ce site",
+    "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "Distance du bord(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "La distance du bord doit être comprise entre 0px et 200px",
+    "description": "Edge distance input error message"
+  }
+}

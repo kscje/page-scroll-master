@@ -1,0 +1,42 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – 상단, 하단 및 진행률",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "페이지 상단이나 하단으로 스크롤하고, 진행률을 추적하며, 긴 페이지를 빠르게 이동합니다",
+    "description": "Extension description"
+  },
+  "commandScrollToTop": {
+    "message": "페이지 상단으로 스크롤",
+    "description": "Command description"
+  },
+  "commandScrollToBottom": {
+    "message": "페이지 하단으로 스크롤",
+    "description": "Command description"
+  },
+  "popupScrollTop": {
+    "message": "상단으로 스크롤",
+    "description": "Floating button tooltip"
+  },
+  "popupScrollBottom": {
+    "message": "하단으로 스크롤",
+    "description": "Floating button tooltip"
+  },
+  "popupSettings": {
+    "message": "설정",
+    "description": "Popup settings button label"
+  },
+  "popupEnableToggle": {
+    "message": "이 사이트에서 사용",
+    "description": "Popup enable toggle label"
+  },
+  "settingsEdgeDistance": {
+    "message": "가장자리 거리(px)",
+    "description": "Settings page edge distance label"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "가장자리 거리는 0px에서 200px 사이여야 합니다",
+    "description": "Edge distance input error message"
+  }
+}

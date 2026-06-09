@@ -33,6 +33,8 @@ Key features:
 - Floating controls that stay near the page edge
 - Advanced page progress display, including vertical button mode and horizontal edge bar mode
 - Click-to-jump progress navigation for quickly moving through long pages
+- Reading tools for saving scroll positions and resuming later from an approximate progress point
+- Smart section navigation with an on-demand page outline, previous/next section actions, and current section highlighting
 - Per-site enable or disable switch from the toolbar popup
 - Site management page for searching, adding, deleting, enabling, disabling, and restoring site states
 - Custom button position, size, shape, spacing, color, and opacity
@@ -45,7 +47,7 @@ Key features:
 
 Privacy-friendly by design:
 
-Smart Scroll Navigator does not collect, transmit, sell, or analyze your browsing history, page content, or personal data. Settings are stored with Chrome storage so the extension can remember your preferences.
+Smart Scroll Navigator does not collect, transmit, sell, or analyze your browsing history, page content, or personal data. Settings, per-site state, and optional scroll position bookmarks are stored with Chrome storage so the extension can remember your preferences. Smart section navigation builds its page outline in memory only and does not save or transmit page headings.
 
 ### Screenshots
 
@@ -73,6 +75,8 @@ Smart Scroll Navigator does not collect, transmit, sell, or analyze your browsin
 - 页面边缘浮动按钮，浏览长页面时随时可用
 - 高级页面进度条，支持纵向进度按钮和顶部/底部横向进度条
 - 点击进度条快速跳转到对应页面位置
+- 滚动位置书签可通过独立按钮保存当前位置，并可选择下次打开页面时自动加载、提示恢复或手动加载
+- 智能段落跳转可通过独立目录按钮打开按需页面目录、上一段、下一段和当前章节高亮
 - 工具栏弹窗可按当前网站启用或停用插件
 - 设置页集中管理网站启用状态，支持搜索、添加、删除、切换、清除已关闭站点和恢复全部启用
 - 支持自定义按钮位置、尺寸、形状、间距、颜色和透明度
@@ -85,7 +89,7 @@ Smart Scroll Navigator does not collect, transmit, sell, or analyze your browsin
 
 隐私说明：
 
-智能页面滚动导航器不会收集、传输、出售或分析你的浏览历史、网页内容或个人数据。插件仅使用 Chrome 存储保存你的功能偏好和站点启用状态。
+智能页面滚动导航器不会收集、传输、出售或分析你的浏览历史、网页内容或个人数据。插件仅使用 Chrome 存储保存你的功能偏好、站点启用状态和可选滚动位置书签。智能段落跳转只在当前页面内存中生成目录，不保存或上传页面标题。
 
 ### 截图
 
@@ -115,6 +119,8 @@ Funciones principales:
 - Controles flotantes junto al borde de la pagina
 - Barra avanzada de progreso de pagina, con modo vertical y modo horizontal en el borde
 - Navegacion por progreso: haz clic en la barra para saltar a una posicion concreta
+- Herramientas de lectura para guardar posiciones y continuar despues desde un progreso aproximado
+- Navegacion inteligente por secciones con indice bajo demanda, acciones anterior/siguiente y resaltado de la seccion actual
 - Activar o desactivar la extension por sitio desde el popup
 - Gestion de sitios en la pagina de opciones: buscar, agregar, eliminar, activar, desactivar y restaurar estados
 - Personalizacion de posicion, tamano, forma, espaciado, color y opacidad de los botones
@@ -127,7 +133,7 @@ Funciones principales:
 
 Privacidad:
 
-Navegador Scroll Inteligente no recopila, transmite, vende ni analiza tu historial de navegacion, contenido de paginas ni datos personales. La extension usa el almacenamiento de Chrome solo para recordar tus preferencias y el estado de activacion por sitio.
+Navegador Scroll Inteligente no recopila, transmite, vende ni analiza tu historial de navegacion, contenido de paginas ni datos personales. La extension usa el almacenamiento de Chrome para recordar preferencias, estado por sitio y marcadores opcionales de posicion. La navegacion por secciones crea el indice solo en memoria y no guarda ni envia titulos de la pagina.
 
 ### Capturas
 
@@ -157,6 +163,8 @@ Navegador Scroll Inteligente no recopila, transmite, vende ni analiza tu histori
 - ページ端に表示されるフローティング操作ボタン
 - 縦型の進捗ボタンと、ページ上部または下部の横型進捗バー
 - 進捗バーをクリックしてページ内の位置へすばやく移動
+- 読書ツールでスクロール位置を保存し、後からおおよその進捗位置へ戻れます
+- スマートセクション移動で、必要なときだけページ目次、前後のセクション移動、現在セクションの強調表示を使えます
 - ツールバーポップアップからサイトごとに有効または無効を切り替え
 - 設定ページでサイト状態を検索、追加、削除、切り替え、復元
 - ボタンの位置、サイズ、形状、間隔、色、透明度をカスタマイズ
@@ -169,7 +177,7 @@ Navegador Scroll Inteligente no recopila, transmite, vende ni analiza tu histori
 
 プライバシー:
 
-スマートスクロールナビは、閲覧履歴、ページ内容、個人データを収集、送信、販売、分析しません。拡張機能は Chrome ストレージを使用して、設定とサイトごとの有効状態のみを保存します。
+スマートスクロールナビは、閲覧履歴、ページ内容、個人データを収集、送信、販売、分析しません。拡張機能は Chrome ストレージを使用して、設定、サイトごとの有効状態、任意のスクロール位置ブックマークを保存します。スマートセクション移動の目次はメモリ内でのみ作成され、ページ見出しを保存または送信しません。
 
 ### スクリーンショット
 
