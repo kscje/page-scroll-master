@@ -431,7 +431,7 @@ function testBibliographyStructureFiltering() {
   );
 }
 
-function testAdjacentTargetsUseReadingAnchorAndBoundaries() {
+function testAdjacentTargetsUseTopNavigationAnchorAndBoundaries() {
   const { sandbox, body, documentElement } = createContext({ rootScrollHeight: 3000 });
   const first = new FakeElement('h1', {
     textContent: 'First section',
@@ -450,7 +450,7 @@ function testAdjacentTargetsUseReadingAnchorAndBoundaries() {
   let snapshot = sandbox.buildOutlineSnapshot(outlineSettings(), documentElement);
   let targets = sandbox.getOutlineAdjacentTargets(snapshot);
   assert(targets.previous === null, 'previous is disabled before or within the first outline item');
-  assert(targets.next.element === second, 'next jumps to the first heading after the reading anchor');
+  assert(targets.next.element === first, 'next jumps to the first heading below the viewport-top navigation anchor');
 
   sandbox.window.pageYOffset = 484;
   documentElement.scrollTop = 484;
@@ -460,7 +460,7 @@ function testAdjacentTargetsUseReadingAnchorAndBoundaries() {
   snapshot = sandbox.buildOutlineSnapshot(outlineSettings(), documentElement);
   targets = sandbox.getOutlineAdjacentTargets(snapshot);
   assert(targets.previous.element === first, 'previous skips the current heading when the user is near its top');
-  assert(targets.next.element === third, 'next uses the same reading anchor to find the following heading');
+  assert(targets.next.element === third, 'next finds the heading after the current top-anchored section');
 
   sandbox.window.pageYOffset = 884;
   documentElement.scrollTop = 884;
@@ -512,7 +512,7 @@ testSemanticAncestorFilteringAndContainerException();
 testVisibilityFiltering();
 testTextQualityAndAdjacentDuplicateFiltering();
 testBibliographyStructureFiltering();
-testAdjacentTargetsUseReadingAnchorAndBoundaries();
+testAdjacentTargetsUseTopNavigationAnchorAndBoundaries();
 testCurrentItemUsesReadingAnchor();
 
 console.log('outline navigation tests passed');

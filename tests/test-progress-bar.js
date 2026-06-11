@@ -390,6 +390,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(CONTENT_SOURCE_PATH, 'utf8'), sandbox);
   sandbox.__localData = localData;
+  sandbox.__documentListeners = documentListeners;
   sandbox.__windowListeners = windowListeners;
   sandbox.__mutationObservers = mutationObservers;
   sandbox.__runtimeMessageListeners = runtimeMessageListeners;
@@ -846,13 +847,91 @@ function testOutlineMenuRootPageJump() {
   sandbox.handleReadingToolClick({ stopPropagation() {} });
   const menu = root.getElementById('page-scroll-master-reading-menu');
   const targetButton = menu.querySelector('.psm-reading-menu-outline').children[1];
+  const host = sandbox.document.getElementById('page-scroll-master-host');
+  sandbox.__documentListeners.click[0]({
+    target: host,
+    composedPath() {
+      return [targetButton, menu, root, host, sandbox.document];
+    }
+  });
+  assert(menu.classList.contains('psm-open'), 'document capture ignores outline clicks inside the extension shadow root');
   menu.listeners.click[0]({ stopPropagation() {}, target: targetButton });
 
   assert(sandbox.window.pageYOffset === 784, 'root outline jump uses current page scroll plus target viewport position and offset');
   assert(menu.classList.contains('psm-open'), 'outline jump keeps the reading tool menu open');
+  sandbox.__documentListeners.click[0]({
+    target: sandbox.document.body,
+    composedPath() {
+      return [sandbox.document.body, sandbox.document.documentElement, sandbox.document];
+    }
+  });
+  assert(!menu.classList.contains('psm-open'), 'clicking the page outside the extension closes the outline menu');
+  sandbox.handleReadingToolClick({ stopPropagation() {} });
   const closeButton = menu.querySelector('.psm-reading-menu-close');
   menu.listeners.click[0]({ stopPropagation() {}, target: closeButton });
   assert(!menu.classList.contains('psm-open'), 'outline menu closes from its explicit close button');
+}
+
+function testPinnedOutlineMenuOnlyClosesExplicitly() {
+  const sandbox = createContext({
+    advancedSettings: {
+      outlineNavigation: { enabled: true }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  sandbox.document.body.appendChild(new FakeElement('h1', {
+    id: 'intro',
+    textContent: 'Introduction',
+    rect: { left: 0, top: 120, right: 400, bottom: 144, width: 400, height: 24 }
+  }));
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-outline-menu');
+  let pinButton = menu.querySelector('.psm-reading-menu-pin');
+  assert(pinButton.getAttribute('aria-pressed') === 'false', 'outline menu starts unpinned');
+  const pinIconPath = new FakeElement('path');
+  pinButton.appendChild(pinIconPath);
+  menu.listeners.click[0]({
+    stopPropagation() {},
+    target: pinIconPath,
+    composedPath() {
+      return [pinIconPath, pinButton, menu];
+    }
+  });
+
+  pinButton = menu.querySelector('.psm-reading-menu-pin');
+  assert(menu.__psmPinned === true, 'SVG pin click stores pinned state on the current menu');
+  assert(menu.classList.contains('psm-pinned'), 'pinned outline menu exposes its visual state');
+  assert(pinButton.getAttribute('aria-pressed') === 'true', 'pinned button exposes pressed state');
+
+  sandbox.__documentListeners.click[0]({
+    target: sandbox.document.body,
+    composedPath() {
+      return [sandbox.document.body, sandbox.document.documentElement, sandbox.document];
+    }
+  });
+  assert(menu.classList.contains('psm-open'), 'page clicks do not close a pinned outline menu');
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  assert(menu.classList.contains('psm-open'), 'outline tool button does not close a pinned menu');
+
+  pinButton = menu.querySelector('.psm-reading-menu-pin');
+  menu.listeners.click[0]({ stopPropagation() {}, target: pinButton });
+  assert(menu.__psmPinned === false, 'pin action can restore the unpinned state');
+  sandbox.__documentListeners.click[0]({
+    target: sandbox.document.body,
+    composedPath() {
+      return [sandbox.document.body, sandbox.document.documentElement, sandbox.document];
+    }
+  });
+  assert(!menu.classList.contains('psm-open'), 'page clicks close the outline menu after unpinning');
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  pinButton = menu.querySelector('.psm-reading-menu-pin');
+  menu.listeners.click[0]({ stopPropagation() {}, target: pinButton });
+  const closeButton = menu.querySelector('.psm-reading-menu-close');
+  menu.listeners.click[0]({ stopPropagation() {}, target: closeButton });
+  assert(!menu.classList.contains('psm-open'), 'explicit close button closes a pinned outline menu');
 }
 
 function testOutlineMenuCustomContainerJump() {
@@ -931,7 +1010,20 @@ function testOutlineMenuAdjacentActionJumpAndBoundaryState() {
 
   menu.listeners.click[0]({ stopPropagation() {}, target: previousButton });
   assert(sandbox.window.pageYOffset === 84, 'previous outline action reuses outline jump coordinates and reading offset');
-  assert(!menu.classList.contains('psm-open'), 'previous outline action closes the reading tool menu');
+  assert(menu.classList.contains('psm-open'), 'previous outline action keeps the reading tool menu open');
+
+  first.rect.top = 16;
+  second.rect.top = 416;
+  third.rect.top = 816;
+  sandbox.updateOutlineCurrentHighlight(menu, menu.__psmMenuModel);
+  assert(previousButton.disabled === true, 'adjacent action state updates after jumping to the first section');
+  assert(nextButton.disabled !== true, 'next action becomes available after the current section changes');
+  menu.listeners.click[0]({ stopPropagation() {}, target: nextButton });
+  assert(sandbox.window.pageYOffset === 484, 'next outline action recalculates its target after the previous jump');
+  assert(menu.classList.contains('psm-open'), 'next outline action keeps the reading tool menu open');
+
+  const closeButton = menu.querySelector('.psm-reading-menu-close');
+  menu.listeners.click[0]({ stopPropagation() {}, target: closeButton });
 
   sandbox.window.pageYOffset = 884;
   sandbox.document.documentElement.scrollTop = 884;
@@ -943,6 +1035,143 @@ function testOutlineMenuAdjacentActionJumpAndBoundaryState() {
   const lastFixedSection = lastMenu.querySelector('.psm-reading-menu-fixed');
   assert(lastFixedSection.children[0].disabled !== true, 'previous remains enabled at the last section');
   assert(lastFixedSection.children[1].disabled === true, 'next outline action is disabled at the last section');
+}
+
+function testOutlineAdjacentActionsUseTopNavigationAnchor() {
+  const sandbox = createContext({
+    scrollSpeed: 100,
+    advancedSettings: {
+      outlineNavigation: {
+        enabled: true,
+        sources: { h1: true, h2: true, h3: true, idBlocks: false }
+      }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const previous = new FakeElement('h2', {
+    textContent: 'Domestic policy',
+    rect: { left: 0, top: -84, right: 400, bottom: -60, width: 400, height: 24 }
+  });
+  const current = new FakeElement('h3', {
+    textContent: 'Economy',
+    rect: { left: 0, top: 16, right: 400, bottom: 40, width: 400, height: 24 }
+  });
+  const next = new FakeElement('h3', {
+    textContent: 'Education',
+    rect: { left: 0, top: 140, right: 400, bottom: 164, width: 400, height: 24 }
+  });
+  [previous, current, next].forEach((element) => sandbox.document.body.appendChild(element));
+  sandbox.document.documentElement.scrollTop = 1000;
+  sandbox.window.pageYOffset = 1000;
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-outline-menu');
+  const fixedSection = menu.querySelector('.psm-reading-menu-fixed');
+  assert(fixedSection.children[0].disabled !== true, 'short sections still expose the previous action');
+
+  menu.listeners.click[0]({ stopPropagation() {}, target: fixedSection.children[0] });
+  assert(
+    sandbox.window.pageYOffset === 900,
+    'previous action uses the heading near the viewport top instead of a later heading inside the reading anchor'
+  );
+}
+
+function testClickedOutlineItemRemainsSelectedAfterShortSectionJump() {
+  const sandbox = createContext({
+    scrollSpeed: 100,
+    advancedSettings: {
+      outlineNavigation: {
+        enabled: true,
+        sources: { h1: true, h2: true, h3: true, idBlocks: false },
+        highlightCurrentSection: true
+      }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const gunControl = new FakeElement('h3', {
+    id: 'gun-control',
+    textContent: 'Gun control',
+    rect: { left: 0, top: 500, right: 400, bottom: 524, width: 400, height: 24 }
+  });
+  const foreignPolicy = new FakeElement('h2', {
+    id: 'foreign-policy',
+    textContent: 'Foreign policy',
+    rect: { left: 0, top: 650, right: 400, bottom: 674, width: 400, height: 24 }
+  });
+  sandbox.document.body.appendChild(gunControl);
+  sandbox.document.body.appendChild(foreignPolicy);
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-outline-menu');
+  const outlineSection = menu.querySelector('.psm-reading-menu-outline');
+  const gunControlButton = outlineSection.children[1];
+  const foreignPolicyButton = outlineSection.children[2];
+  menu.listeners.click[0]({ stopPropagation() {}, target: gunControlButton });
+
+  assert(
+    gunControlButton.classList.contains('psm-outline-current'),
+    'clicked short-section outline item remains selected after programmatic scrolling'
+  );
+  assert(
+    foreignPolicyButton.getAttribute('aria-current') === null,
+    'reading anchor does not overwrite the clicked outline item with the following short section'
+  );
+}
+
+function testProgrammaticOutlineJumpSuppressesIntermediateHighlightChanges() {
+  const sandbox = createContext({
+    scrollSpeed: 100,
+    advancedSettings: {
+      outlineNavigation: {
+        enabled: true,
+        sources: { h1: true, h2: true, h3: true, idBlocks: false },
+        highlightCurrentSection: true
+      }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const target = new FakeElement('h3', {
+    id: 'target-section',
+    textContent: 'Target section',
+    rect: { left: 0, top: 500, right: 400, bottom: 524, width: 400, height: 24 }
+  });
+  const following = new FakeElement('h2', {
+    id: 'following-section',
+    textContent: 'Following section',
+    rect: { left: 0, top: 620, right: 400, bottom: 644, width: 400, height: 24 }
+  });
+  sandbox.document.body.appendChild(target);
+  sandbox.document.body.appendChild(following);
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-outline-menu');
+  const outlineSection = menu.querySelector('.psm-reading-menu-outline');
+  const targetButton = outlineSection.children[1];
+  const followingButton = outlineSection.children[2];
+  menu.__psmHighlightLockId = 'target-section';
+  sandbox.setOutlineMenuCurrentItem(menu, 'target-section');
+
+  sandbox.window.pageYOffset = 500;
+  sandbox.document.documentElement.scrollTop = 500;
+  target.rect.top = 0;
+  following.rect.top = 120;
+  sandbox.updateOutlineCurrentHighlight(menu, menu.__psmMenuModel);
+
+  assert(
+    targetButton.classList.contains('psm-outline-current'),
+    'programmatic jump lock keeps the clicked item selected during intermediate scroll frames'
+  );
+  assert(
+    followingButton.getAttribute('aria-current') === null,
+    'intermediate reading-anchor updates do not select a following short section'
+  );
+
+  menu.__psmHighlightLockId = '';
+  sandbox.updateOutlineCurrentHighlight(menu, menu.__psmMenuModel);
+  assert(
+    followingButton.classList.contains('psm-outline-current'),
+    'automatic highlight resumes after the programmatic jump lock is released'
+  );
 }
 
 function testOutlineMenuCurrentHighlightUpdatesOnScroll() {
@@ -1443,8 +1672,12 @@ testDynamicReadingToolMenuStructure();
 testOutlineDisabledBookmarkMenuDoesNotScanOrRenderOutline();
 testOutlineMenuListRendering();
 testOutlineMenuRootPageJump();
+testPinnedOutlineMenuOnlyClosesExplicitly();
 testOutlineMenuCustomContainerJump();
 testOutlineMenuAdjacentActionJumpAndBoundaryState();
+testOutlineAdjacentActionsUseTopNavigationAnchor();
+testClickedOutlineItemRemainsSelectedAfterShortSectionJump();
+testProgrammaticOutlineJumpSuppressesIntermediateHighlightChanges();
 testOutlineMenuCurrentHighlightUpdatesOnScroll();
 testOutlineMenuHighlightCanBeDisabled();
 testOutlineRouteChangeInvalidatesSnapshotAndClosesMenu();

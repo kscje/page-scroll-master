@@ -119,6 +119,7 @@ let buttonSettings = {
 let advancedSettings = mergeAdvancedSettings();
 let progressScrollTarget = null;
 let progressUpdateFrame = null;
+const scrollAnimationStateMap = new WeakMap();
 let readingEstimateCache = {
   target: null,
   calculatedAt: 0,
@@ -725,7 +726,7 @@ function scrollToOutlineItem(element, container, options = {}) {
   if (!options.keepMenuOpen) {
     hideReadingToolMenu();
   }
-  smoothScrollTo(container, targetTop);
+  smoothScrollTo(container, targetTop, options);
   return true;
 }
 
@@ -735,6 +736,11 @@ function getOutlineReadingAnchorTop(container) {
     ? (window.innerHeight || document.documentElement.clientHeight || container.clientHeight || 0)
     : (container.clientHeight || 0);
   return getScrollTop(container) + (viewportHeight * 0.3);
+}
+
+function getOutlineNavigationAnchorTop(container) {
+  if (!container) return 0;
+  return getScrollTop(container) + 24;
 }
 
 function getOutlineItemTop(item, container) {
@@ -752,7 +758,7 @@ function getOutlineAdjacentTargets(snapshot) {
     };
   }
 
-  const anchorTop = getOutlineReadingAnchorTop(container);
+  const anchorTop = getOutlineNavigationAnchorTop(container);
   const positionedItems = items
     .map((item) => ({
       item,
@@ -760,20 +766,19 @@ function getOutlineAdjacentTargets(snapshot) {
     }))
     .filter((entry) => entry.top !== null);
   let currentPosition = -1;
-  let nextPosition = -1;
-
   for (let position = 0; position < positionedItems.length; position++) {
     if (positionedItems[position].top <= anchorTop) {
       currentPosition = position;
-    } else {
-      nextPosition = position;
-      break;
+      continue;
     }
+    break;
   }
 
   return {
     previous: currentPosition > 0 ? positionedItems[currentPosition - 1].item : null,
-    next: nextPosition !== -1 ? positionedItems[nextPosition].item : null
+    next: currentPosition + 1 < positionedItems.length
+      ? positionedItems[currentPosition + 1].item
+      : null
   };
 }
 
@@ -983,14 +988,27 @@ function normalizeEnableStates(states) {
   return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
 }
 
-function smoothScrollTo(container, targetTop) {
+function smoothScrollTo(container, targetTop, options = {}) {
   if (!container) return;
+  const previousAnimation = scrollAnimationStateMap.get(container);
+  if (previousAnimation && previousAnimation.frame) {
+    cancelAnimationFrame(previousAnimation.frame);
+    if (typeof previousAnimation.onCancel === 'function') {
+      previousAnimation.onCancel();
+    }
+  }
   const start = getScrollTop(container);
   const range = getElementScrollRange(container);
   const end = clampNumber(targetTop, 0, range, 0);
   const startTime = performance.now();
+  const animationState = {
+    frame: null,
+    onCancel: options.onCancel
+  };
+  scrollAnimationStateMap.set(container, animationState);
 
   function scroll(currentTime) {
+    if (scrollAnimationStateMap.get(container) !== animationState) return;
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / scrollSpeed, 1);
     const easeProgress = easeInOutCubic(progress);
@@ -998,13 +1016,49 @@ function smoothScrollTo(container, targetTop) {
     setScrollTop(container, start + (end - start) * easeProgress);
 
     if (progress < 1) {
-      requestAnimationFrame(scroll);
+      animationState.frame = requestAnimationFrame(scroll);
     } else {
+      scrollAnimationStateMap.delete(container);
       requestProgressUpdate();
+      if (typeof options.onComplete === 'function') {
+        options.onComplete();
+      } else {
+        requestOutlineHighlightUpdate();
+      }
     }
   }
 
-  requestAnimationFrame(scroll);
+  animationState.frame = requestAnimationFrame(scroll);
+}
+
+function navigateOutlineMenuToItem(item, snapshot, menu) {
+  if (!item || !snapshot) return false;
+  if (menu) {
+    menu.__psmHighlightLockId = item.id;
+    setOutlineMenuCurrentItem(menu, item.id, { scrollCurrentIntoView: true });
+  }
+  const didStart = scrollToOutlineItem(item.element, snapshot.container, {
+    keepMenuOpen: true,
+    onCancel: () => {
+      if (menu && menu.__psmHighlightLockId === item.id) {
+        menu.__psmHighlightLockId = '';
+      }
+    },
+    onComplete: () => {
+      if (!menu || menu.__psmHighlightLockId !== item.id) return;
+      if (!menu.classList.contains('psm-open')) {
+        menu.__psmHighlightLockId = '';
+        return;
+      }
+      setOutlineMenuCurrentItem(menu, item.id, { scrollCurrentIntoView: true });
+      updateOutlineAdjacentActions(menu, menu.__psmMenuModel);
+      menu.__psmHighlightLockId = '';
+    }
+  });
+  if (!didStart && menu && menu.__psmHighlightLockId === item.id) {
+    menu.__psmHighlightLockId = '';
+  }
+  return didStart;
 }
 
 // 平滑滚动到顶部
@@ -1234,8 +1288,8 @@ function getOutlineMenuContribution(options = {}) {
         order: item.order,
         level: item.level,
         current: Boolean(currentItem && currentItem.id === item.id),
-        handler: () => {
-          scrollToOutlineItem(item.element, snapshot.container, { keepMenuOpen: true });
+        handler: (menu) => {
+          navigateOutlineMenuToItem(item, snapshot, menu);
         }
       });
     });
@@ -1255,16 +1309,22 @@ function getOutlineMenuContribution(options = {}) {
         action: 'outline-previous',
         label: '上一段',
         disabled: !adjacentTargets.previous,
-        handler: () => {
-          scrollToOutlineItem(adjacentTargets.previous.element, snapshot.container);
+        handler: (menu) => {
+          const target = getOutlineAdjacentTargets(snapshot).previous;
+          if (target) {
+            navigateOutlineMenuToItem(target, snapshot, menu);
+          }
         }
       },
       {
         action: 'outline-next',
         label: '下一段',
         disabled: !adjacentTargets.next,
-        handler: () => {
-          scrollToOutlineItem(adjacentTargets.next.element, snapshot.container);
+        handler: (menu) => {
+          const target = getOutlineAdjacentTargets(snapshot).next;
+          if (target) {
+            navigateOutlineMenuToItem(target, snapshot, menu);
+          }
         }
       }
     ],
@@ -1348,6 +1408,23 @@ function createReadingToolMenuItem(item) {
     if (item.kind === 'outline-heading') {
       row.setAttribute('role', 'heading');
       row.setAttribute('aria-level', '2');
+      const actions = document.createElement('span');
+      actions.className = 'psm-reading-menu-heading-actions';
+      const pinButton = document.createElement('button');
+      pinButton.type = 'button';
+      pinButton.className = item.pinned
+        ? 'psm-reading-menu-pin psm-active'
+        : 'psm-reading-menu-pin';
+      pinButton.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 3h8l-1.5 6 3 3v2h-5v7h-1v-7h-5v-2l3-3L8 3z"></path>
+        </svg>
+      `;
+      pinButton.title = item.pinned ? '取消钉住目录' : '钉住目录';
+      pinButton.setAttribute('aria-label', pinButton.title);
+      pinButton.setAttribute('aria-pressed', item.pinned ? 'true' : 'false');
+      pinButton.setAttribute('data-action', 'outline-toggle-pin');
+      actions.appendChild(pinButton);
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
       closeButton.className = 'psm-reading-menu-close';
@@ -1355,7 +1432,8 @@ function createReadingToolMenuItem(item) {
       closeButton.title = '关闭目录';
       closeButton.setAttribute('aria-label', '关闭目录');
       closeButton.setAttribute('data-action', 'outline-close');
-      row.appendChild(closeButton);
+      actions.appendChild(closeButton);
+      row.appendChild(actions);
     }
     return row;
   }
@@ -1429,10 +1507,14 @@ function renderReadingToolMenu(menu, options = {}) {
     fixedSection.appendChild(createReadingToolMenuItem(item));
   });
   getVisibleOutlineMenuItems(model).forEach((item) => {
-    outlineSection.appendChild(createReadingToolMenuItem(item));
+    const renderedItem = item.kind === 'outline-heading'
+      ? { ...item, pinned: menu.__psmPinned === true }
+      : item;
+    outlineSection.appendChild(createReadingToolMenuItem(renderedItem));
   });
 
   menu.__psmMenuModel = model;
+  menu.classList.toggle('psm-pinned', menu.__psmPinned === true);
   fixedSection.style.display = model.fixedActions.length ? 'block' : 'none';
   outlineSection.style.display = model.outlineItems.length ? 'block' : 'none';
   return model;
@@ -1461,7 +1543,37 @@ function setOutlineMenuCurrentItem(menu, currentId, options = {}) {
   }
 }
 
+function setReadingToolMenuActionDisabled(menu, action, disabled) {
+  if (!menu) return;
+  const fixedSection = menu.querySelector('.psm-reading-menu-fixed');
+  if (!fixedSection) return;
+  const button = Array.from(fixedSection.children)
+    .find((element) => element.getAttribute && element.getAttribute('data-action') === action);
+  if (!button) return;
+  button.disabled = disabled;
+  if (disabled) {
+    button.setAttribute('aria-disabled', 'true');
+  } else if (button.removeAttribute) {
+    button.removeAttribute('aria-disabled');
+  }
+}
+
+function updateOutlineAdjacentActions(menu, model) {
+  if (!menu || !model || !model.outlineSnapshot) return;
+  const adjacentTargets = getOutlineAdjacentTargets(model.outlineSnapshot);
+  const previousAction = model.fixedActions.find((item) => item.action === 'outline-previous');
+  const nextAction = model.fixedActions.find((item) => item.action === 'outline-next');
+  if (previousAction) previousAction.disabled = !adjacentTargets.previous;
+  if (nextAction) nextAction.disabled = !adjacentTargets.next;
+  setReadingToolMenuActionDisabled(menu, 'outline-previous', !adjacentTargets.previous);
+  setReadingToolMenuActionDisabled(menu, 'outline-next', !adjacentTargets.next);
+}
+
 function updateOutlineCurrentHighlight(menu, model, options = {}) {
+  updateOutlineAdjacentActions(menu, model);
+  if (menu && menu.__psmHighlightLockId && !options.ignoreProgrammaticLock) {
+    return;
+  }
   if (!menu || !model || !model.outlineHighlightEnabled || !model.outlineSnapshot) {
     setOutlineMenuCurrentItem(menu, '');
     return;
@@ -1471,6 +1583,12 @@ function updateOutlineCurrentHighlight(menu, model, options = {}) {
 }
 
 function requestOutlineHighlightUpdate() {
+  if (
+    outlineHighlightMenu &&
+    outlineHighlightMenu.__psmHighlightLockId
+  ) {
+    return;
+  }
   if (outlineHighlightUpdateFrame) return;
   outlineHighlightUpdateFrame = requestAnimationFrame(() => {
     outlineHighlightUpdateFrame = null;
@@ -1513,7 +1631,13 @@ function bindOutlineHighlightUpdates(menu, model) {
 
 function handleReadingToolMenuAction(action, model = getReadingToolMenuModel(), menu = null) {
   if (action === 'outline-close') {
-    hideReadingToolMenu();
+    hideReadingToolMenu({ force: true });
+    return;
+  }
+  if (action === 'outline-toggle-pin' && menu && model) {
+    menu.__psmPinned = menu.__psmPinned !== true;
+    renderReadingToolMenu(menu, { model });
+    bindOutlineHighlightUpdates(menu, model);
     return;
   }
   if (action === 'outline-load-more' && menu && model) {
@@ -1528,9 +1652,21 @@ function handleReadingToolMenuAction(action, model = getReadingToolMenuModel(), 
   }
   const item = [...model.fixedActions, ...model.outlineItems]
     .find((candidate) => candidate.action === action);
-  if (item && !item.disabled && typeof item.handler === 'function') {
-    item.handler();
+  const isDynamicAdjacentAction = action === 'outline-previous' || action === 'outline-next';
+  if (item && (!item.disabled || isDynamicAdjacentAction) && typeof item.handler === 'function') {
+    item.handler(menu);
   }
+}
+
+function getReadingToolMenuAction(event, menu) {
+  const eventPath = event && typeof event.composedPath === 'function'
+    ? event.composedPath()
+    : [event && event.target].filter(Boolean);
+  const actionElement = eventPath.find((element) => {
+    if (!element || element === menu || typeof element.getAttribute !== 'function') return false;
+    return Boolean(element.getAttribute('data-action'));
+  });
+  return actionElement ? actionElement.getAttribute('data-action') : '';
 }
 
 function getFeatureToolMenu(root, menuId, options = {}) {
@@ -1554,7 +1690,7 @@ function getFeatureToolMenu(root, menuId, options = {}) {
 
   menu.addEventListener('click', (event) => {
     event.stopPropagation();
-    const action = event.target && event.target.getAttribute ? event.target.getAttribute('data-action') : '';
+    const action = getReadingToolMenuAction(event, menu);
     handleReadingToolMenuAction(action, menu.__psmMenuModel, menu);
   });
   root.appendChild(menu);
@@ -1670,16 +1806,31 @@ function handleReadingToolClick(event) {
   }
 }
 
-function hideReadingToolMenu() {
+function hideReadingToolMenu(options = {}) {
   const root = getScrollRoot();
   if (!root) return;
   [BOOKMARK_MENU_ID, OUTLINE_MENU_ID, 'page-scroll-master-reading-menu'].forEach((menuId) => {
     const menu = root.getElementById(menuId);
-    if (menu) {
+    if (menu && (options.force || menu.__psmPinned !== true)) {
       menu.classList.remove('psm-open');
+      menu.__psmHighlightLockId = '';
     }
   });
-  unbindOutlineHighlightUpdates();
+  const pinnedOpenMenu = [OUTLINE_MENU_ID, 'page-scroll-master-reading-menu']
+    .map((menuId) => root.getElementById(menuId))
+    .find((menu) => menu && menu.__psmPinned === true && menu.classList.contains('psm-open'));
+  if (!pinnedOpenMenu) {
+    unbindOutlineHighlightUpdates();
+  }
+}
+
+function handleReadingToolDocumentClick(event) {
+  const eventPath = event && typeof event.composedPath === 'function'
+    ? event.composedPath()
+    : [event && event.target].filter(Boolean);
+  const isExtensionClick = eventPath.some((element) => element && element.id === HOST_ID);
+  if (isExtensionClick) return;
+  hideReadingToolMenu();
 }
 
 function getScrollProgress(container) {
@@ -2549,7 +2700,7 @@ function createScrollButton() {
   // 添加事件监听器
   topButton.addEventListener('click', scrollToTop);
   bottomButton.addEventListener('click', scrollToBottom);
-  document.addEventListener('click', hideReadingToolMenu, true);
+  document.addEventListener('click', handleReadingToolDocumentClick, true);
 
   // 添加鼠标悬停+快捷键隐藏功能
   setupHoverHideFunctionality(buttonContainer, topButton, bottomButton);
@@ -2846,6 +2997,36 @@ function addButtonStyles(root) {
       font-size: 18px;
       line-height: 24px;
       text-align: center;
+    }
+
+    .psm-reading-menu-heading-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .psm-reading-menu .psm-reading-menu-pin {
+      flex: 0 0 auto;
+      width: 24px;
+      min-height: 24px;
+      padding: 0;
+      border-radius: 5px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 15px;
+      line-height: 24px;
+      text-align: center;
+    }
+
+    .psm-reading-menu .psm-reading-menu-pin.psm-active {
+      background: rgba(74, 158, 221, 0.34);
+      color: white;
+    }
+
+    .psm-reading-menu .psm-reading-menu-pin svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+      vertical-align: middle;
     }
 
     .psm-reading-menu-item {
