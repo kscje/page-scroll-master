@@ -2,6 +2,8 @@
 
 本文档用于指导后续 Codex 自动开发 Page Scroll Master 的高级功能。开发时应优先保持现有插件体验稳定：所有高级功能默认关闭，用户未主动启用前，页面浮动按钮、Popup、设置页基础功能应与 v1.7.0 保持一致。
 
+> 2026-06-10 产品规则更新：页面进度条、滚动位置书签和智能段落跳转的启用入口统一迁移到 Popup，并按当前主域名保存。设置页只配置三个模块的详细参数。域名管理列表同时展示插件总开关和三项高级功能状态。具体规则以 `doc/v2.1-product-plan-zh.md` 为准。
+
 ## 目标版本规划
 
 ### v1.8 Advanced Controls Update
@@ -34,7 +36,7 @@ v2.0 聚焦长页面导航：
 
 v2.1 聚焦站点级高级功能控制、新用户引导、版本信息可发现性和隐私友好统计：
 
-- Popup 支持按当前域名设置各高级功能是否启用
+- Popup 支持按当前主域名设置插件总开关和三项高级功能是否启用
 - 新用户成功安装后自动打开设置页，升级时不自动打开
 - “建议&反馈”内新增“更新记录”，简要展示各版本主要新功能和优化项
 - 设置页新增“发送匿名使用统计”开关，默认关闭
@@ -84,14 +86,15 @@ v3.0 聚焦扩展内直接提交建议和问题反馈，在用户量达到需要
 
 ### 设置结构应可向后兼容
 
-新增设置应写入 `chrome.storage.sync`，站点级状态继续写入 `chrome.storage.local`。读取设置时必须提供默认值，避免旧版本用户升级后出现 `undefined` 导致的样式或逻辑异常。
+高级功能详细参数写入 `chrome.storage.sync`，主域名级插件和高级功能启用状态写入 `chrome.storage.local`。读取设置时必须提供默认值，避免旧版本用户升级后出现 `undefined` 导致的样式或逻辑异常。
+
+从 v2.1 起，`progressBar.enabled`、`scrollBookmarks.enabled` 和 `outlineNavigation.enabled` 不再是设置页字段，仅可作为旧数据迁移来源。运行时是否启用必须读取 Popup 保存的主域名状态。
 
 建议新增统一设置对象：
 
 ```js
 advancedSettings: {
   progressBar: {
-    enabled: false,
     mode: 'verticalButton',
     horizontalPosition: 'top',
     colorMode: 'followTopButton',
@@ -112,30 +115,28 @@ advancedSettings: {
       bottomIconDataUrl: ''
     }
   },
-  readingTools: {
-    enabled: false,
+  scrollBookmarks: {
     buttonPosition: 'pageBottom',
     buttonColorMode: 'followTopButton',
     buttonCustomColor: '#4A9EDD',
-    features: {
-      scrollBookmarks: true,
-      outlineNavigation: false
-    }
-  },
-  scrollBookmarks: {
     matchMode: 'exact',
     perDomainLimit: 1,
     globalLimit: 300,
     restoreMode: 'prompt'
   },
   outlineNavigation: {
-    enabled: false,
-    includeH1: true,
-    includeH2: true,
-    includeH3: false,
-    includeIdAnchors: false,
+    buttonPosition: 'pageBottom',
+    buttonColorMode: 'followTopButton',
+    buttonCustomColor: '#4A9EDD',
+    sources: {
+      h1: true,
+      h2: true,
+      h3: false,
+      idBlocks: false
+    },
     maxItems: 30,
-    highlightCurrent: true
+    filterShortHeadings: true,
+    highlightCurrentSection: true
   }
 }
 ```
@@ -380,7 +381,8 @@ Twitter/X、微博、部分信息流页面会动态增加 `scrollHeight`，导�
 ```text
 高级功能
 ────────────────────────
-[ ] 启用阅读进度条
+页面进度条
+启用状态：请在工具栏 Popup 中按当前主域名设置
 
 显示样式
 (•) 进度按钮，显示在上下按钮之间
@@ -473,7 +475,7 @@ iconCustomization: {
 
 ### 产品目标
 
-当前 Popup 已支持按域名启用/禁用插件，但用户缺少集中管理入口。v1.8 在设置页新增网站列表管理。
+当前 Popup 已支持按站点启用/禁用插件。v2.1 将状态统一到主域名层级，并在同一条记录中管理插件总开关和三项高级功能开关。
 
 ### 当前存储
 
@@ -499,20 +501,20 @@ const STATES_KEY = 'enableStates';
 ### 设置页 UI
 
 ```text
-网站启用状态
+域名功能状态
 ────────────────────────
 搜索域名
 [ notion.so              ]
 
-┌──────────────────────────────┐
-│ 域名                  状态    │
-├──────────────────────────────┤
-│ notion.so             开启    │
-│ yuque.com             关闭    │
-│ docs.google.com       关闭    │
-└──────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│ 主域名       插件   页面进度条   滚动位置书签   智能段落跳转      │
+├────────────────────────────────────────────────────────────────────┤
+│ notion.so    开     开           开             开                  │
+│ yuque.com    开     关           开             关                  │
+│ google.com   关     关           关             关                  │
+└────────────────────────────────────────────────────────────────────┘
 
-[添加域名]   [清除已关闭站点]   [恢复全部启用]
+[添加主域名]   [删除所选记录]   [清除全部记录]
 ```
 
 添加域名：
@@ -520,34 +522,37 @@ const STATES_KEY = 'enableStates';
 ```text
 添加网站规则
 ────────────────
-域名
+主域名
 [ example.com ]
 
-状态
-(•) 启用
-( ) 禁用
+插件                         [开]
+页面进度条                   [关]
+滚动位置书签                 [关]
+智能段落跳转                 [关]
 
 [保存]
 ```
 
 ### 行为规则
 
-- 只保存 hostname，不保存完整 URL。
-- 用户输入 URL 时应解析为 hostname。
-- 列表只展示用户手动改过的站点。
-- “恢复全部启用”应清空 `enableStates` 或将所有值设为 `true`。推荐清空，保持存储干净。
-- “清除已关闭站点”只删除值为 `false` 的记录。
+- 只保存标准化后的主域名，不保存完整 URL、路径、query 或 hash。
+- 用户输入 URL 或子域名时应解析为可注册主域名；IP、`localhost` 和开发环境 hostname 保留完整 hostname。
+- 主域名解析必须正确处理公共后缀，不能简单截取最后两段。
+- 列表同时展示插件总状态和三个高级功能状态。
+- 插件关闭时保留三个高级功能的已保存状态，但在列表中显示为不可用。
+- 删除记录后恢复新站点默认值：插件开启，三个高级功能关闭。
 - 设置页修改后，已打开页面应通过 `chrome.storage.onChanged` 自动响应。
 
 ### 测试建议
 
 新增或扩展测试：
 
-- URL 输入可正确提取 hostname
+- URL 和子域名输入可正确提取主域名
 - 非 http/https 输入被拒绝或提示
-- 默认未列出域名视为启用
-- 设置页修改 `enableStates` 后 Popup 状态同步
-- 清空列表后所有站点恢复默认启用
+- 同一主域名下的子域名共享状态
+- 默认未列出主域名时插件启用、三个高级功能关闭
+- 设置页修改主域名状态后 Popup 状态同步
+- 清空列表后所有站点恢复新站点默认状态
 
 ## v1.8 功能四：新增语言支持
 
@@ -658,18 +663,15 @@ function normalizeLanguage(browserLang) {
 ```text
 高级功能
 ────────────────────────
-[ ] 显示阅读工具按钮
+滚动位置书签
+启用状态：请在工具栏 Popup 中按当前主域名设置
 
-功能：
-[x] 滚动位置书签
-[ ] 智能段落跳转（v2.0）
-
-阅读工具按钮位置：
+书签按钮位置：
 ( ) 页面顶部
 (•) 页面底部
 ( ) 上/下按钮之间
 
-阅读工具按钮颜色：
+书签按钮颜色：
 (•) 跟随顶部按钮
 ( ) 跟随底部按钮
 ( ) 自定义颜色
@@ -898,7 +900,7 @@ images[]: 用户主动选择的图片文件
 
 ### 推荐入口
 
-不要常驻显示目录面板。开启后复用 v1.9 引入的「阅读工具按钮」，点击后在同一个菜单中显示目录和段落跳转能力。
+不要常驻显示目录面板。启用后显示独立的智能段落跳转按钮，点击后显示目录和段落跳转菜单，不与滚动位置书签共用入口。
 
 ```text
 ┌──────┐
@@ -909,7 +911,7 @@ images[]: 用户主动选择的图片文件
 │  ▼   │
 └──────┘
 
-  🔖   ← 阅读工具按钮
+  ≡    ← 智能段落跳转按钮
 ```
 
 点击后展开：
@@ -943,7 +945,8 @@ images[]: 用户主动选择的图片文件
 ```text
 高级功能
 ────────────────────────
-[ ] 启用智能段落跳转
+智能段落跳转
+启用状态：请在工具栏 Popup 中按当前主域名设置
 
 目录来源：
 [x] H1
@@ -952,7 +955,7 @@ images[]: 用户主动选择的图片文件
 [ ] 带 id 的区块
 
 显示方式：
-(•) 点击阅读工具按钮后显示
+(•) 点击智能段落跳转按钮后显示
 
 最大目录项：
 [ 30 ]
