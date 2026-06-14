@@ -198,5 +198,5 @@
 
 **最后更新时间**：2026-06-14
 **状态**：v2.1.0 发布候选包和自动化验收已完成；真实 Chrome Network 验证与商店后台隐私披露仍待人工完成
-**构建产物**：`dist/page-scroll-master-v2.1.0.zip`，SHA-256 `0cf3fc14a7d8244a5bbec4e2ca851c64da67462058f0a1bf48fda0b4229e75fa`
+**构建产物**：`dist/page-scroll-master-v2.1.0.zip`，SHA-256 `1d4bac08a5c72a0b8ddb09184055ae8c13bb23494a2f4d4dfbcd1b070dd46b4b`
 **环境限制**：本次自动化环境禁止访问 `chrome://extensions`，且固定统计端点连接超时，因此未将模拟上传测试记作真实浏览器 Network 验收

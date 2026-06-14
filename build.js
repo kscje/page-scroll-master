@@ -19,13 +19,25 @@ const INCLUDED_FILES = [
   'popup.js',
   'options.html',
   'options.js',
+  'icons/icon16.png',
+  'icons/icon32.png',
+  'icons/icon48.png',
+  'icons/icon128.png',
+  '_locales/en/messages.json',
+  '_locales/zh_CN/messages.json',
+  '_locales/zh_TW/messages.json',
+  '_locales/es/messages.json',
+  '_locales/ja/messages.json',
+  '_locales/de/messages.json',
+  '_locales/fr/messages.json',
+  '_locales/pt_BR/messages.json',
+  '_locales/ko/messages.json',
+  '_locales/it/messages.json',
+  'vendor/tldts.umd.min.js',
+  'vendor/TLDTS_LICENSE.txt',
 ];
 
-const INCLUDED_DIRS = [
-  'icons',
-  '_locales',
-  'vendor',
-];
+const INCLUDED_DIRS = [];
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
