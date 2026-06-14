@@ -384,6 +384,42 @@
       margin: 6px 0 10px;
     }
 
+    .global-shortcuts {
+      margin-bottom: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .global-shortcut-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(180px, auto);
+      gap: 16px;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .global-shortcut-label {
+      color: #354052;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .global-shortcut-value {
+      padding: 7px 10px;
+      border: 1px solid #d6deea;
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .shortcut-management-button {
+      width: auto;
+      margin-top: 10px;
+    }
+
     .validation-message {
       display: none;
       font-size: 12px;
@@ -840,6 +876,15 @@
         flex-direction: column;
       }
 
+      .global-shortcut-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .global-shortcut-value {
+        text-align: left;
+      }
+
       .bookmark-row {
         grid-template-columns: 1fr;
       }
@@ -1216,6 +1261,20 @@
 
           <div class="setting-group full-width">
             <h3 data-i18n="settings.shortcutSettings">快捷键设置</h3>
+
+            <div class="global-shortcuts">
+              <h4 data-i18n="settings.globalScrollShortcuts">全局滚动快捷键</h4>
+              <div class="global-shortcut-row">
+                <span class="global-shortcut-label" data-i18n="settings.scrollToTopShortcut">回到顶部</span>
+                <span id="globalShortcutTop" class="global-shortcut-value" data-i18n="settings.shortcutLoading">正在读取...</span>
+              </div>
+              <div class="global-shortcut-row">
+                <span class="global-shortcut-label" data-i18n="settings.scrollToBottomShortcut">回到底部</span>
+                <span id="globalShortcutBottom" class="global-shortcut-value" data-i18n="settings.shortcutLoading">正在读取...</span>
+              </div>
+              <button type="button" id="manageGlobalShortcuts" class="shortcut-management-button" data-i18n="settings.customizeShortcuts">自定义快捷键</button>
+              <p class="muted-note" data-i18n="settings.globalShortcutsHint">快捷键由 Chrome 管理，修改后返回本页即可查看最新绑定。</p>
+            </div>
 
             <div class="checkbox-container">
               <input type="checkbox" id="enableHoverHide" checked>

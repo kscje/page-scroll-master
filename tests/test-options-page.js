@@ -121,8 +121,9 @@ function createOption(value, textContent) {
   });
 }
 
-function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
+function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialCommandShortcuts = {}) {
   const appendedHeadElements = [];
+  const windowListeners = {};
   const elements = {
     scrollSpeed: createElement('scrollSpeed', { value: '1000' }),
     speedValue: createElement('speedValue', { textContent: '1000ms' }),
@@ -155,6 +156,9 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
         createOption('Shift', 'Shift')
       ]
     }),
+    globalShortcutTop: createElement('globalShortcutTop', { textContent: 'Loading...' }),
+    globalShortcutBottom: createElement('globalShortcutBottom', { textContent: 'Loading...' }),
+    manageGlobalShortcuts: createElement('manageGlobalShortcuts'),
     languageSelector: createElement('languageSelector', { value: 'auto' }),
     progressBarEnabled: createElement('progressBarEnabled'),
     screenNavigationSettings: createElement('screenNavigationSettings'),
@@ -268,6 +272,11 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
   const sentMessages = [];
   const analyticsMessages = [];
   const createdTabs = [];
+  const commandShortcuts = {
+    'scroll-to-top': 'Command+Shift+Up',
+    'scroll-to-bottom': 'Command+Shift+Down',
+    ...initialCommandShortcuts
+  };
   let analyticsPermissionRequestCount = 0;
   const analyticsState = {
     configured: true,
@@ -333,7 +342,10 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     },
     window: {
       scrollTo() {},
-      addEventListener() {},
+      addEventListener(type, callback) {
+        windowListeners[type] = windowListeners[type] || [];
+        windowListeners[type].push(callback);
+      },
       document: null
     },
     document: {
@@ -414,6 +426,14 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
           createdTabs.push(createProperties);
         }
       },
+      commands: {
+        getAll(callback) {
+          callback(Object.entries(commandShortcuts).map(([name, shortcut]) => ({
+            name,
+            shortcut
+          })));
+        }
+      },
       runtime,
       permissions: {
         request(options, callback) {
@@ -447,6 +467,10 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
       return analyticsPermissionRequestCount;
     },
     createdTabs,
+    commandShortcuts,
+    dispatchWindowEvent(type) {
+      (windowListeners[type] || []).forEach((callback) => callback());
+    },
     appendedHeadElements
   };
 }
@@ -571,6 +595,34 @@ assert(OPTIONS_HTML.includes('id="analyticsEnabled"'), 'settings page exposes th
 assert(
   OPTIONS_HTML.includes('data-i18n="settings.tab.feedback">建议&关于插件</'),
   'suggestions tab uses the suggestions and about title'
+);
+assert(
+  OPTIONS_HTML.includes('id="globalShortcutTop"') &&
+    OPTIONS_HTML.includes('id="globalShortcutBottom"') &&
+    OPTIONS_HTML.includes('id="manageGlobalShortcuts"'),
+  'shortcut settings expose current top and bottom bindings plus the Chrome management entry'
+);
+assert(
+  page.elements.globalShortcutTop.textContent === 'Command+Shift+Up' &&
+    page.elements.globalShortcutBottom.textContent === 'Command+Shift+Down',
+  'current Chrome command bindings are displayed on initialization'
+);
+const shortcutPage = createOptionsPage({}, {}, {
+  'scroll-to-top': '',
+  'scroll-to-bottom': 'Alt+Shift+Down'
+});
+assert(shortcutPage.elements.globalShortcutTop.textContent === 'Not set', 'unbound commands show an explicit status');
+assert(shortcutPage.elements.globalShortcutBottom.textContent === 'Alt+Shift+Down', 'custom Chrome command bindings are displayed');
+shortcutPage.elements.manageGlobalShortcuts.dispatch('click');
+assert(
+  shortcutPage.createdTabs[0].url === 'chrome://extensions/shortcuts',
+  'customize shortcuts opens the Chrome shortcut management page'
+);
+shortcutPage.commandShortcuts['scroll-to-top'] = 'Alt+Shift+Up';
+shortcutPage.dispatchWindowEvent('focus');
+assert(
+  shortcutPage.elements.globalShortcutTop.textContent === 'Alt+Shift+Up',
+  'returning focus to the settings page refreshes command bindings'
 );
 assert(
   (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 3,

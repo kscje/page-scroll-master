@@ -1262,6 +1262,18 @@ Object.keys(translations).forEach((lang) => {
       'Rileva i titoli per consultare l’indice e spostarsi tra le sezioni.'
     ]
   }[lang];
+  const globalShortcutTranslations = {
+    'zh-CN': ['全局滚动快捷键', '回到顶部', '回到底部', '自定义快捷键', '快捷键由 Chrome 管理，修改后返回本页即可查看最新绑定。', '未设置', '正在读取...'],
+    'zh-TW': ['全域捲動快捷鍵', '回到頂部', '回到底部', '自訂快捷鍵', '快捷鍵由 Chrome 管理，修改後返回本頁即可查看最新綁定。', '未設定', '正在讀取...'],
+    'en-US': ['Global scroll shortcuts', 'Scroll to top', 'Scroll to bottom', 'Customize shortcuts', 'Shortcuts are managed by Chrome. Return to this page to see updated bindings.', 'Not set', 'Loading...'],
+    'es-ES': ['Atajos globales de desplazamiento', 'Ir al inicio', 'Ir al final', 'Personalizar atajos', 'Chrome administra los atajos. Vuelve a esta página para ver los cambios.', 'Sin asignar', 'Cargando...'],
+    'ja-JP': ['グローバルスクロールショートカット', 'ページ先頭へ', 'ページ末尾へ', 'ショートカットをカスタマイズ', 'ショートカットは Chrome で管理されます。変更後、このページに戻ると最新の割り当てが表示されます。', '未設定', '読み込み中...'],
+    'de-DE': ['Globale Scroll-Tastenkürzel', 'Zum Seitenanfang', 'Zum Seitenende', 'Tastenkürzel anpassen', 'Tastenkürzel werden von Chrome verwaltet. Kehren Sie nach Änderungen zu dieser Seite zurück.', 'Nicht festgelegt', 'Wird geladen...'],
+    'fr-FR': ['Raccourcis globaux de défilement', 'Aller en haut', 'Aller en bas', 'Personnaliser les raccourcis', 'Les raccourcis sont gérés par Chrome. Revenez sur cette page après les avoir modifiés.', 'Non défini', 'Chargement...'],
+    'pt-BR': ['Atalhos globais de rolagem', 'Ir para o topo', 'Ir para o fim', 'Personalizar atalhos', 'Os atalhos são gerenciados pelo Chrome. Volte a esta página para ver as alterações.', 'Não definido', 'Carregando...'],
+    'ko-KR': ['전역 스크롤 단축키', '페이지 맨 위로', '페이지 맨 아래로', '단축키 맞춤설정', '단축키는 Chrome에서 관리합니다. 변경 후 이 페이지로 돌아오면 최신 설정이 표시됩니다.', '설정 안 됨', '불러오는 중...'],
+    'it-IT': ['Scorciatoie globali di scorrimento', 'Vai all’inizio', 'Vai alla fine', 'Personalizza scorciatoie', 'Le scorciatoie sono gestite da Chrome. Torna a questa pagina dopo le modifiche.', 'Non impostata', 'Caricamento...']
+  }[lang];
   Object.assign(t, {
     'settings.progressColorMode': buttonColorTranslations,
     'settings.readingToolCustomColor': buttonColorTranslations,
@@ -1294,7 +1306,14 @@ Object.keys(translations).forEach((lang) => {
     'settings.advancedIntro': domainFeatureTranslations[7],
     'settings.domainIntro': domainFeatureTranslations[8],
     'settings.domainName': domainFeatureTranslations[9],
-    'settings.domainActions': domainFeatureTranslations[10]
+    'settings.domainActions': domainFeatureTranslations[10],
+    'settings.globalScrollShortcuts': globalShortcutTranslations[0],
+    'settings.scrollToTopShortcut': globalShortcutTranslations[1],
+    'settings.scrollToBottomShortcut': globalShortcutTranslations[2],
+    'settings.customizeShortcuts': globalShortcutTranslations[3],
+    'settings.globalShortcutsHint': globalShortcutTranslations[4],
+    'settings.shortcutUnset': globalShortcutTranslations[5],
+    'settings.shortcutLoading': globalShortcutTranslations[6]
   });
   if (advancedIntroTranslations) {
     t['settings.screenNavigationIntro'] = advancedIntroTranslations[0];
@@ -2346,6 +2365,53 @@ async function updateShortcutKeyDisplay() {
     const key = option.value;
     option.textContent = getPlatformKeyName(key, platform, lang);
   });
+}
+
+const GLOBAL_SHORTCUT_COMMANDS = {
+  'scroll-to-top': 'globalShortcutTop',
+  'scroll-to-bottom': 'globalShortcutBottom'
+};
+
+function getSelectedLanguage() {
+  const selectedLanguage = document.getElementById('languageSelector')?.value;
+  return selectedLanguage && selectedLanguage !== 'auto'
+    ? selectedLanguage
+    : normalizeLanguage(navigator.language || navigator.userLanguage);
+}
+
+function refreshGlobalShortcuts() {
+  const lang = getSelectedLanguage();
+  const unsetText = translations[lang]?.['settings.shortcutUnset'] || 'Not set';
+
+  Object.values(GLOBAL_SHORTCUT_COMMANDS).forEach((elementId) => {
+    const element = document.getElementById(elementId);
+    if (element) element.textContent = unsetText;
+  });
+
+  if (!chrome.commands || !chrome.commands.getAll) {
+    return;
+  }
+
+  chrome.commands.getAll((commands) => {
+    if (chrome.runtime.lastError || !Array.isArray(commands)) {
+      return;
+    }
+
+    commands.forEach((command) => {
+      const elementId = GLOBAL_SHORTCUT_COMMANDS[command.name];
+      const element = elementId && document.getElementById(elementId);
+      if (element) {
+        element.textContent = command.shortcut || unsetText;
+      }
+    });
+  });
+}
+
+function openGlobalShortcutManager() {
+  if (!chrome.tabs || !chrome.tabs.create) {
+    return;
+  }
+  chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
 }
 
 // 获取当前语言
@@ -3898,6 +3964,7 @@ function init() {
 
   // 更新快捷键显示（根据操作系统平台）
   updateShortcutKeyDisplay();
+  refreshGlobalShortcuts();
 
   // 监听滚动速度变化
   document.getElementById('scrollSpeed').addEventListener('input', (e) => {
@@ -4208,11 +4275,13 @@ function init() {
     if (lang === 'auto') {
       getCurrentLanguage().then(detectedLang => {
         applyTranslation(detectedLang);
+        refreshGlobalShortcuts();
         renderDomainFeatureStatesList();
         renderSavedBookmarksList();
       });
     } else {
       applyTranslation(lang);
+      refreshGlobalShortcuts();
       renderDomainFeatureStatesList();
       renderSavedBookmarksList();
     }
@@ -4223,6 +4292,7 @@ function init() {
   document.getElementById('analyticsEnabled').addEventListener('change', handleAnalyticsToggle);
   document.getElementById('dismissOnboardingButton').addEventListener('click', dismissOnboarding);
   document.getElementById('reopenOnboardingButton').addEventListener('click', reopenOnboarding);
+  document.getElementById('manageGlobalShortcuts').addEventListener('click', openGlobalShortcutManager);
 
   // 设置预览按钮交互
   setupPreviewButtonInteractions();
@@ -4235,6 +4305,7 @@ function init() {
       updatePreviewButtons();
     }, 100); // 防抖处理，100ms后更新
   });
+  window.addEventListener('focus', refreshGlobalShortcuts);
 }
 
 if (chrome.storage.onChanged && chrome.storage.onChanged.addListener) {
