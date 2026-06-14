@@ -4,6 +4,7 @@ var STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 var extensionToggleEl = document.getElementById('extensionToggle');
 var featureToggleEls = {
   progressBar: document.getElementById('progressBarToggle'),
+  screenNavigation: document.getElementById('screenNavigationToggle'),
   scrollBookmarks: document.getElementById('scrollBookmarksToggle'),
   outlineNavigation: document.getElementById('outlineNavigationToggle')
 };
@@ -24,6 +25,7 @@ var popupTranslations = {
     'popupCurrentSite': '当前网站：',
     'popupAdvancedFeatures': '高级功能',
     'popupProgressBar': '页面进度条',
+    'popupScreenNavigation': '按屏跳转',
     'popupScrollBookmarks': '滚动位置书签',
     'popupOutlineNavigation': '智能段落跳转',
     'popupUnavailable': '当前页面不支持扩展功能控制'
@@ -34,6 +36,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Current site: ',
     'popupAdvancedFeatures': 'Advanced features',
     'popupProgressBar': 'Page progress bar',
+    'popupScreenNavigation': 'Previous/next screen',
     'popupScrollBookmarks': 'Scroll position bookmarks',
     'popupOutlineNavigation': 'Smart section navigation',
     'popupUnavailable': 'Extension controls are unavailable on this page'
@@ -44,6 +47,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Sitio actual: ',
     'popupAdvancedFeatures': 'Funciones avanzadas',
     'popupProgressBar': 'Barra de progreso',
+    'popupScreenNavigation': 'Pantalla anterior/siguiente',
     'popupScrollBookmarks': 'Marcadores de posición',
     'popupOutlineNavigation': 'Navegación por secciones',
     'popupUnavailable': 'Los controles no están disponibles en esta página'
@@ -54,6 +58,7 @@ var popupTranslations = {
     'popupCurrentSite': '現在のサイト：',
     'popupAdvancedFeatures': '高度な機能',
     'popupProgressBar': 'ページ進捗バー',
+    'popupScreenNavigation': '前後の画面へ移動',
     'popupScrollBookmarks': 'スクロール位置ブックマーク',
     'popupOutlineNavigation': 'スマートセクション移動',
     'popupUnavailable': 'このページでは拡張機能を制御できません'
@@ -64,6 +69,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Aktuelle Website: ',
     'popupAdvancedFeatures': 'Erweiterte Funktionen',
     'popupProgressBar': 'Seitenfortschritt',
+    'popupScreenNavigation': 'Vorheriger/nächster Bildschirm',
     'popupScrollBookmarks': 'Scrollpositions-Lesezeichen',
     'popupOutlineNavigation': 'Abschnittsnavigation',
     'popupUnavailable': 'Steuerung auf dieser Seite nicht verfügbar'
@@ -74,6 +80,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Site actuel : ',
     'popupAdvancedFeatures': 'Fonctions avancées',
     'popupProgressBar': 'Progression de page',
+    'popupScreenNavigation': 'Écran précédent/suivant',
     'popupScrollBookmarks': 'Marque-pages de position',
     'popupOutlineNavigation': 'Navigation par sections',
     'popupUnavailable': 'Commandes indisponibles sur cette page'
@@ -84,6 +91,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Site atual: ',
     'popupAdvancedFeatures': 'Recursos avançados',
     'popupProgressBar': 'Progresso da página',
+    'popupScreenNavigation': 'Tela anterior/seguinte',
     'popupScrollBookmarks': 'Favoritos de posição',
     'popupOutlineNavigation': 'Navegação por seções',
     'popupUnavailable': 'Controles indisponíveis nesta página'
@@ -94,6 +102,7 @@ var popupTranslations = {
     'popupCurrentSite': '目前網站：',
     'popupAdvancedFeatures': '進階功能',
     'popupProgressBar': '頁面進度條',
+    'popupScreenNavigation': '上一屏／下一屏',
     'popupScrollBookmarks': '捲動位置書籤',
     'popupOutlineNavigation': '智慧段落跳轉',
     'popupUnavailable': '目前頁面不支援外掛功能控制'
@@ -104,6 +113,7 @@ var popupTranslations = {
     'popupCurrentSite': '현재 사이트: ',
     'popupAdvancedFeatures': '고급 기능',
     'popupProgressBar': '페이지 진행률 표시줄',
+    'popupScreenNavigation': '이전/다음 화면',
     'popupScrollBookmarks': '스크롤 위치 북마크',
     'popupOutlineNavigation': '스마트 구간 이동',
     'popupUnavailable': '이 페이지에서는 확장 기능을 제어할 수 없습니다'
@@ -114,6 +124,7 @@ var popupTranslations = {
     'popupCurrentSite': 'Sito corrente: ',
     'popupAdvancedFeatures': 'Funzioni avanzate',
     'popupProgressBar': 'Progresso pagina',
+    'popupScreenNavigation': 'Schermata precedente/successiva',
     'popupScrollBookmarks': 'Segnalibri posizione',
     'popupOutlineNavigation': 'Navigazione sezioni',
     'popupUnavailable': 'Controlli non disponibili in questa pagina'
@@ -240,6 +251,7 @@ function readStateFromControls() {
     extensionEnabled: extensionToggleEl.checked,
     features: {
       progressBar: featureToggleEls.progressBar.checked,
+      screenNavigation: featureToggleEls.screenNavigation.checked,
       scrollBookmarks: featureToggleEls.scrollBookmarks.checked,
       outlineNavigation: featureToggleEls.outlineNavigation.checked
     }

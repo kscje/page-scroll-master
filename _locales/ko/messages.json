@@ -23,6 +23,8 @@
     "message": "하단으로 스크롤",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "이전 화면", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "다음 화면", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "설정",
     "description": "Popup settings button label"

@@ -127,6 +127,12 @@ const translations = {
 
 Object.assign(translations['zh-CN'], {
   'settings.advancedFeatures': '高级功能',
+  'settings.screenNavigation': '按屏跳转',
+  'settings.screenNavigationIntro': '按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。',
+  'settings.screenStepRatio': '每次滚动距离（可视区域百分比）',
+  'settings.previousScreenButtonColor': '上一屏按钮颜色',
+  'settings.nextScreenButtonColor': '下一屏按钮颜色',
+  'settings.progressBarIntro': '显示当前页面阅读进度，并可点击快速跳转到指定位置。',
   'settings.progressBarEnabled': '启用页面进度条',
   'settings.progressBarMode': '显示样式',
   'settings.progressBarMode.verticalButton': '纵向进度按钮',
@@ -158,7 +164,9 @@ Object.assign(translations['zh-CN'], {
   'settings.readingToolColorMode.custom': '自定义',
   'settings.readingToolCustomColor': '自定义阅读工具颜色',
   'settings.scrollBookmarksEnabled': '启用滚动位置书签',
+  'settings.scrollBookmarksIntro': '保存当前阅读位置，方便稍后返回并继续阅读。',
   'settings.outlineNavigationEnabled': '启用智能段落跳转',
+  'settings.outlineNavigationIntro': '识别页面标题结构，快速查看目录并跳转到上一段或下一段。',
   'settings.outlineSources': '目录来源',
   'settings.outlineSourceH1': 'H1 来源',
   'settings.outlineSourceH2': 'H2 来源',
@@ -199,6 +207,12 @@ Object.assign(translations['zh-CN'], {
 
 Object.assign(translations['en-US'], {
   'settings.advancedFeatures': 'Advanced Features',
+  'settings.screenNavigation': 'Previous/Next Screen',
+  'settings.screenNavigationIntro': 'Move by the current viewport height while preserving reading context.',
+  'settings.screenStepRatio': 'Scroll distance (% of viewport)',
+  'settings.previousScreenButtonColor': 'Previous screen button color',
+  'settings.nextScreenButtonColor': 'Next screen button color',
+  'settings.progressBarIntro': 'Show page progress and click to jump to a specific position.',
   'settings.progressBarEnabled': 'Enable page progress bar',
   'settings.progressBarMode': 'Display style',
   'settings.progressBarMode.verticalButton': 'Vertical progress button',
@@ -230,7 +244,9 @@ Object.assign(translations['en-US'], {
   'settings.readingToolColorMode.custom': 'Custom',
   'settings.readingToolCustomColor': 'Custom reading tools color',
   'settings.scrollBookmarksEnabled': 'Enable scroll position bookmarks',
+  'settings.scrollBookmarksIntro': 'Save your current reading position and continue later.',
   'settings.outlineNavigationEnabled': 'Enable smart section navigation',
+  'settings.outlineNavigationIntro': 'Detect page headings to browse the outline and jump between sections.',
   'settings.outlineSources': 'Outline sources',
   'settings.outlineSourceH1': 'H1 source',
   'settings.outlineSourceH2': 'H2 source',
@@ -1173,23 +1189,85 @@ Object.keys(translations).forEach((lang) => {
     'it-IT': 'Colore del pulsante'
   }[lang];
   const domainFeatureTranslations = {
-    'zh-CN': ['是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。', '插件', '页面进度条', '滚动位置书签', '智能段落跳转', '清除全部主域名记录', '配置三项高级功能的显示、位置和交互参数。', '按主域名管理插件和三项高级功能的启用状态。', '主域名', '操作'],
-    'zh-TW': ['是否啟用由工具列 Popup 依目前主網域控制，此處只設定詳細參數。', '外掛', '頁面進度條', '捲動位置書籤', '智慧段落跳轉', '清除全部主網域記錄', '設定三項進階功能的顯示、位置和互動參數。', '依主網域管理外掛和三項進階功能的啟用狀態。', '主網域', '操作'],
-    'en-US': ['Enable these features per domain from the toolbar popup. Configure details here.', 'Extension', 'Progress bar', 'Scroll bookmarks', 'Section navigation', 'Clear all domain records', 'Configure display, position, and interaction details for advanced features.', 'Manage the extension and advanced features by registrable domain.', 'Domain', 'Actions'],
-    'es-ES': ['Activa estas funciones por dominio desde el popup. Configura aquí sus detalles.', 'Extensión', 'Progreso', 'Marcadores', 'Navegación', 'Borrar todos los dominios', 'Configura la visualización, posición e interacción de las funciones avanzadas.', 'Gestiona la extensión y sus funciones por dominio principal.', 'Dominio', 'Acciones'],
-    'ja-JP': ['有効化はツールバーのポップアップでドメインごとに設定します。ここでは詳細のみ設定します。', '拡張機能', '進捗バー', '位置ブックマーク', 'セクション移動', '全ドメイン記録を消去', '高度な機能の表示、位置、操作を設定します。', '登録可能なドメインごとに拡張機能を管理します。', 'ドメイン', '操作'],
-    'de-DE': ['Aktivierung pro Domain im Toolbar-Popup; hier werden nur Details konfiguriert.', 'Erweiterung', 'Fortschritt', 'Lesezeichen', 'Navigation', 'Alle Domain-Einträge löschen', 'Anzeige, Position und Interaktion der erweiterten Funktionen konfigurieren.', 'Erweiterung und Funktionen nach registrierbarer Domain verwalten.', 'Domain', 'Aktionen'],
-    'fr-FR': ['Activez ces fonctions par domaine dans le popup. Configurez les détails ici.', 'Extension', 'Progression', 'Marque-pages', 'Navigation', 'Effacer tous les domaines', 'Configurer l’affichage, la position et les interactions des fonctions avancées.', 'Gérer l’extension et ses fonctions par domaine principal.', 'Domaine', 'Actions'],
-    'pt-BR': ['Ative por domínio no popup da barra de ferramentas. Configure os detalhes aqui.', 'Extensão', 'Progresso', 'Favoritos', 'Navegação', 'Limpar todos os domínios', 'Configure exibição, posição e interação dos recursos avançados.', 'Gerencie a extensão e os recursos por domínio registrável.', 'Domínio', 'Ações'],
-    'ko-KR': ['사용 여부는 도구 모음 팝업에서 도메인별로 설정하고 여기서는 세부 옵션만 구성합니다.', '확장 프로그램', '진행률', '위치 북마크', '구간 이동', '모든 도메인 기록 지우기', '고급 기능의 표시, 위치 및 상호작용을 설정합니다.', '등록 가능한 도메인별로 확장 프로그램과 기능을 관리합니다.', '도메인', '작업'],
-    'it-IT': ['Attiva le funzioni per dominio dal popup. Configura qui solo i dettagli.', 'Estensione', 'Progresso', 'Segnalibri', 'Navigazione', 'Cancella tutti i domini', 'Configura visualizzazione, posizione e interazione delle funzioni avanzate.', 'Gestisci estensione e funzioni per dominio registrabile.', 'Dominio', 'Azioni']
+    'zh-CN': ['是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。', '插件', '页面进度条', '按屏跳转', '滚动位置书签', '智能段落跳转', '清除全部主域名记录', '配置高级功能的显示、位置和交互参数。', '按主域名管理插件和高级功能的启用状态。', '主域名', '操作'],
+    'zh-TW': ['是否啟用由工具列 Popup 依目前主網域控制，此處只設定詳細參數。', '外掛', '頁面進度條', '上一屏／下一屏', '捲動位置書籤', '智慧段落跳轉', '清除全部主網域記錄', '設定進階功能的顯示、位置和互動參數。', '依主網域管理外掛和進階功能的啟用狀態。', '主網域', '操作'],
+    'en-US': ['Enable these features per domain from the toolbar popup. Configure details here.', 'Extension', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Clear all domain records', 'Configure display, position, and interaction details for advanced features.', 'Manage the extension and advanced features by registrable domain.', 'Domain', 'Actions'],
+    'es-ES': ['Activa estas funciones por dominio desde el popup. Configura aquí sus detalles.', 'Extensión', 'Progreso', 'Pantallas', 'Marcadores', 'Navegación', 'Borrar todos los dominios', 'Configura la visualización, posición e interacción de las funciones avanzadas.', 'Gestiona la extensión y sus funciones por dominio principal.', 'Dominio', 'Acciones'],
+    'ja-JP': ['有効化はツールバーのポップアップでドメインごとに設定します。ここでは詳細のみ設定します。', '拡張機能', '進捗バー', '画面移動', '位置ブックマーク', 'セクション移動', '全ドメイン記録を消去', '高度な機能の表示、位置、操作を設定します。', '登録可能なドメインごとに拡張機能を管理します。', 'ドメイン', '操作'],
+    'de-DE': ['Aktivierung pro Domain im Toolbar-Popup; hier werden nur Details konfiguriert.', 'Erweiterung', 'Fortschritt', 'Bildschirmnavigation', 'Lesezeichen', 'Navigation', 'Alle Domain-Einträge löschen', 'Anzeige, Position und Interaktion der erweiterten Funktionen konfigurieren.', 'Erweiterung und Funktionen nach registrierbarer Domain verwalten.', 'Domain', 'Aktionen'],
+    'fr-FR': ['Activez ces fonctions par domaine dans le popup. Configurez les détails ici.', 'Extension', 'Progression', 'Navigation écran', 'Marque-pages', 'Navigation', 'Effacer tous les domaines', 'Configurer l’affichage, la position et les interactions des fonctions avancées.', 'Gérer l’extension et ses fonctions par domaine principal.', 'Domaine', 'Actions'],
+    'pt-BR': ['Ative por domínio no popup da barra de ferramentas. Configure os detalhes aqui.', 'Extensão', 'Progresso', 'Navegação de tela', 'Favoritos', 'Navegação', 'Limpar todos os domínios', 'Configure exibição, posição e interação dos recursos avançados.', 'Gerencie a extensão e os recursos por domínio registrável.', 'Domínio', 'Ações'],
+    'ko-KR': ['사용 여부는 도구 모음 팝업에서 도메인별로 설정하고 여기서는 세부 옵션만 구성합니다.', '확장 프로그램', '진행률', '화면 이동', '위치 북마크', '구간 이동', '모든 도메인 기록 지우기', '고급 기능의 표시, 위치 및 상호작용을 설정합니다.', '등록 가능한 도메인별로 확장 프로그램과 기능을 관리합니다.', '도메인', '작업'],
+    'it-IT': ['Attiva le funzioni per dominio dal popup. Configura qui solo i dettagli.', 'Estensione', 'Progresso', 'Navigazione schermata', 'Segnalibri', 'Navigazione', 'Cancella tutti i domini', 'Configura visualizzazione, posizione e interazione delle funzioni avanzate.', 'Gestisci estensione e funzioni per dominio registrabile.', 'Dominio', 'Azioni']
   }[lang] || [];
+  const advancedIntroTranslations = {
+    'zh-CN': [
+      '按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。',
+      '显示当前页面阅读进度，并可点击快速跳转到指定位置。',
+      '保存当前阅读位置，方便稍后返回并继续阅读。',
+      '识别页面标题结构，快速查看目录并跳转到上一段或下一段。'
+    ],
+    'zh-TW': [
+      '依目前可視區域高度跳轉上一屏或下一屏，並保留閱讀脈絡。',
+      '顯示目前頁面閱讀進度，並可點擊快速跳轉到指定位置。',
+      '儲存目前閱讀位置，方便稍後返回並繼續閱讀。',
+      '辨識頁面標題結構，快速查看目錄並跳轉到上一段或下一段。'
+    ],
+    'en-US': [
+      'Move by the current viewport height while preserving reading context.',
+      'Show page progress and click to jump to a specific position.',
+      'Save your current reading position and continue later.',
+      'Detect page headings to browse the outline and jump between sections.'
+    ],
+    'es-ES': [
+      'Avanza o retrocede según la altura visible y conserva el contexto de lectura.',
+      'Muestra el progreso de la página y permite saltar a una posición.',
+      'Guarda la posición de lectura para continuar más tarde.',
+      'Detecta los títulos para explorar el índice y saltar entre secciones.'
+    ],
+    'ja-JP': [
+      '現在の表示領域の高さを基準に前後の画面へ移動し、読書の文脈を保ちます。',
+      'ページの進捗を表示し、クリックして指定位置へ移動できます。',
+      '現在の読書位置を保存し、後で続きから再開できます。',
+      'ページ見出しを検出し、目次の確認や前後のセクション移動ができます。'
+    ],
+    'de-DE': [
+      'Navigiert anhand der sichtbaren Höhe vor oder zurück und erhält den Lesekontext.',
+      'Zeigt den Seitenfortschritt und ermöglicht Sprünge zu einer Position.',
+      'Speichert die aktuelle Leseposition, um später fortzufahren.',
+      'Erkennt Überschriften für Gliederung und Abschnittsnavigation.'
+    ],
+    'fr-FR': [
+      'Navigue selon la hauteur visible tout en conservant le contexte de lecture.',
+      'Affiche la progression et permet de rejoindre une position précise.',
+      'Enregistre la position de lecture pour reprendre plus tard.',
+      'Détecte les titres pour parcourir le plan et changer de section.'
+    ],
+    'pt-BR': [
+      'Avança ou retorna pela altura visível mantendo o contexto de leitura.',
+      'Mostra o progresso da página e permite saltar para uma posição.',
+      'Salva a posição de leitura para continuar mais tarde.',
+      'Detecta títulos para navegar pelo sumário e entre seções.'
+    ],
+    'ko-KR': [
+      '현재 보이는 영역 높이만큼 이전 또는 다음 화면으로 이동해 읽기 맥락을 유지합니다.',
+      '페이지 진행률을 표시하고 원하는 위치로 빠르게 이동합니다.',
+      '현재 읽기 위치를 저장해 나중에 이어서 읽습니다.',
+      '페이지 제목 구조를 감지해 목차와 이전·다음 구간으로 이동합니다.'
+    ],
+    'it-IT': [
+      'Avanza o torna indietro in base all’altezza visibile mantenendo il contesto.',
+      'Mostra l’avanzamento della pagina e consente di passare a una posizione.',
+      'Salva la posizione di lettura per continuare in seguito.',
+      'Rileva i titoli per consultare l’indice e spostarsi tra le sezioni.'
+    ]
+  }[lang];
   Object.assign(t, {
     'settings.progressColorMode': buttonColorTranslations,
     'settings.readingToolCustomColor': buttonColorTranslations,
-    'settings.scrollBookmarks': domainFeatureTranslations[3],
+    'settings.scrollBookmarks': domainFeatureTranslations[4],
     'settings.scrollBookmarksIntro': t['settings.scrollBookmarksIntro'] || t['settings.readingToolsIntro'],
-    'settings.outlineNavigation': domainFeatureTranslations[4],
+    'settings.outlineNavigation': domainFeatureTranslations[5],
     'settings.outlineNavigationIntro': t['settings.outlineNavigationIntro'] || t['settings.readingToolsIntro'],
     'settings.featureButtonPosition': t['settings.featureButtonPosition'] || t['settings.readingToolPosition'],
     'settings.featureButtonPosition.pageTop': t['settings.featureButtonPosition.pageTop'] || t['settings.readingToolPosition.pageTop'],
@@ -1209,14 +1287,21 @@ Object.keys(translations).forEach((lang) => {
     'settings.advancedEnableHint': domainFeatureTranslations[0],
     'settings.domainExtension': domainFeatureTranslations[1],
     'settings.domainProgressBar': domainFeatureTranslations[2],
-    'settings.domainScrollBookmarks': domainFeatureTranslations[3],
-    'settings.domainOutlineNavigation': domainFeatureTranslations[4],
-    'settings.clearAllDomainStates': domainFeatureTranslations[5],
-    'settings.advancedIntro': domainFeatureTranslations[6],
-    'settings.domainIntro': domainFeatureTranslations[7],
-    'settings.domainName': domainFeatureTranslations[8],
-    'settings.domainActions': domainFeatureTranslations[9]
+    'settings.domainScreenNavigation': domainFeatureTranslations[3],
+    'settings.domainScrollBookmarks': domainFeatureTranslations[4],
+    'settings.domainOutlineNavigation': domainFeatureTranslations[5],
+    'settings.clearAllDomainStates': domainFeatureTranslations[6],
+    'settings.advancedIntro': domainFeatureTranslations[7],
+    'settings.domainIntro': domainFeatureTranslations[8],
+    'settings.domainName': domainFeatureTranslations[9],
+    'settings.domainActions': domainFeatureTranslations[10]
   });
+  if (advancedIntroTranslations) {
+    t['settings.screenNavigationIntro'] = advancedIntroTranslations[0];
+    t['settings.progressBarIntro'] = advancedIntroTranslations[1];
+    t['settings.scrollBookmarksIntro'] = advancedIntroTranslations[2];
+    t['settings.outlineNavigationIntro'] = advancedIntroTranslations[3];
+  }
 });
 
 const analyticsTranslations = {
@@ -1901,6 +1986,13 @@ const releaseNotesTranslations = {
 };
 
 const DEFAULT_ADVANCED_SETTINGS = {
+  screenNavigation: {
+    enabled: false,
+    screenStepRatio: 0.9,
+    previousScreenButtonColor: '#4A9EDD',
+    nextScreenButtonColor: '#4A9EDD',
+    opacity: 100
+  },
   progressBar: {
     enabled: false,
     mode: 'verticalButton',
@@ -2103,6 +2195,16 @@ function mergeAdvancedSettings(savedSettings) {
     ? savedSettings.readingTools.features
     : {};
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
+  merged.screenNavigation.screenStepRatio = clampNumber(merged.screenNavigation.screenStepRatio, 0.5, 1, 0.9);
+  merged.screenNavigation.previousScreenButtonColor = validateHexColor(
+    merged.screenNavigation.previousScreenButtonColor,
+    '#4A9EDD'
+  );
+  merged.screenNavigation.nextScreenButtonColor = validateHexColor(
+    merged.screenNavigation.nextScreenButtonColor,
+    '#4A9EDD'
+  );
+  merged.screenNavigation.opacity = clampNumber(merged.screenNavigation.opacity, 0, 100, 100);
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, 120);
   merged.iconCustomization.enabled = true;
@@ -2315,10 +2417,19 @@ function getOutlineIconSvg() {
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
 }
 
+function getScreenNavigationIconSvg(direction) {
+  const arrowPath = direction === 'previous'
+    ? '<path d="M12 17V8M8.5 11.5 12 8l3.5 3.5"/>'
+    : '<path d="M12 7v9m-3.5-3.5L12 16l3.5-3.5"/>';
+  return `<svg class="psm-screen-navigation-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/>${arrowPath}</svg>`;
+}
+
 // 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
 function updatePreviewButtons() {
   const topButton = document.getElementById('previewTopButton');
+  const previousScreenButton = document.getElementById('previewPreviousScreenButton');
   const bottomButton = document.getElementById('previewBottomButton');
+  const nextScreenButton = document.getElementById('previewNextScreenButton');
   const progressButton = document.getElementById('previewProgressButton');
   const bookmarkButton = document.getElementById('previewBookmarkButton');
   const outlineButton = document.getElementById('previewOutlineButton');
@@ -2343,6 +2454,16 @@ function updatePreviewButtons() {
   const progressHorizontalPosition = document.getElementById('progressHorizontalPosition')?.value || 'top';
   const progressThickness = normalizeProgressThickness(document.getElementById('progressThickness')?.value);
   const progressColor = getPreviewProgressColor(topButtonColor, bottomButtonColor);
+  const previousScreenButtonColor = validateHexColor(
+    document.getElementById('previousScreenButtonColor')?.value,
+    '#4A9EDD'
+  );
+  const nextScreenButtonColor = validateHexColor(
+    document.getElementById('nextScreenButtonColor')?.value,
+    '#4A9EDD'
+  );
+  const screenNavigationOpacity =
+    clampNumber(document.getElementById('screenNavigationOpacity')?.value, 0, 100, 100) / 100;
   const featureButtons = [
     {
       button: bookmarkButton,
@@ -2417,80 +2538,57 @@ function updatePreviewButtons() {
 
   // 计算按钮组的总高度
   const totalGroupHeight = isVerticalProgressPreview
-    ? (displaySize * 2) + displayProgressHeight + (displaySpacing * 2)
-    : (displaySize * 2) + displaySpacing;
+    ? (displaySize * 4) + displayProgressHeight + (displaySpacing * 4)
+    : (displaySize * 4) + (displaySpacing * 3);
   const betweenFeatureCount = featureButtons.filter((feature) => feature.enabled && feature.position === 'betweenScrollButtons').length;
   const totalPreviewGroupHeight = betweenFeatureCount
     ? totalGroupHeight + (betweenFeatureCount * (displaySize + displaySpacing))
     : totalGroupHeight;
 
-  // 顶部按钮位置计算
-  let topButtonTop, topButtonBottom;
-  if (verticalAlignment === 'center') {
-    // 居中模式：按钮组整体居中，不使用transform避免弹跳
-    // 计算从视口顶部到按钮组顶部的距离
-    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-    topButtonTop = groupTopOffset;
-    topButtonBottom = 'auto';
-  } else if (verticalAlignment === 'top') {
-    topButtonTop = displayEdgeDistance + 'px';
-    topButtonBottom = 'auto';
-  } else {
-    // bottom
-    topButtonTop = 'auto';
-    topButtonBottom = isVerticalProgressPreview
-      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`
-      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`;
+  const unit = displaySize + displaySpacing;
+  const previousScreenOffset = unit;
+  const progressOffset = unit * 2;
+  const nextScreenOffset = progressOffset +
+    (isVerticalProgressPreview ? displayProgressHeight + displaySpacing : 0);
+  const betweenFeatureOffset = nextScreenOffset + unit;
+  const bottomButtonOffset = betweenFeatureOffset + (betweenFeatureCount * unit);
+
+  function getMainButtonPosition(offset, height) {
+    if (verticalAlignment === 'center') {
+      return {
+        top: `calc(50% - ${totalPreviewGroupHeight / 2}px + ${offset}px)`,
+        bottom: 'auto'
+      };
+    }
+    if (verticalAlignment === 'top') {
+      return {
+        top: `${displayEdgeDistance + offset}px`,
+        bottom: 'auto'
+      };
+    }
+    return {
+      top: 'auto',
+      bottom: `${displayEdgeDistance + totalPreviewGroupHeight - offset - height}px`
+    };
   }
 
-  // 底部按钮位置计算
-  let bottomButtonTop, bottomButtonBottom;
-  if (verticalAlignment === 'center') {
-    // 居中模式：底部按钮在顶部按钮下方固定间距
-    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-    bottomButtonTop = isVerticalProgressPreview
-      ? `calc(${groupTopOffset} + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`
-      : `calc(${groupTopOffset} + ${displaySize + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`;
-    bottomButtonBottom = 'auto';
-  } else if (verticalAlignment === 'top') {
-    bottomButtonTop = isVerticalProgressPreview
-      ? `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + displayProgressHeight + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`
-      : `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`;
-    bottomButtonBottom = 'auto';
-  } else {
-    // bottom
-    bottomButtonTop = 'auto';
-    bottomButtonBottom = displayEdgeDistance + 'px';
-  }
-
-  let progressButtonTop = 'auto';
-  let progressButtonBottom = 'auto';
-  if (verticalAlignment === 'center') {
-    const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-    progressButtonTop = `calc(${groupTopOffset} + ${displaySize + displaySpacing}px)`;
-  } else if (verticalAlignment === 'top') {
-    progressButtonTop = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing}px)`;
-  } else {
-    progressButtonBottom = `calc(${displayEdgeDistance}px + ${displaySize + displaySpacing + (betweenFeatureCount * (displaySize + displaySpacing))}px)`;
-  }
+  const topButtonPosition = getMainButtonPosition(0, displaySize);
+  const previousScreenPosition = getMainButtonPosition(previousScreenOffset, displaySize);
+  const progressButtonPosition = getMainButtonPosition(progressOffset, displayProgressHeight);
+  const nextScreenPosition = getMainButtonPosition(nextScreenOffset, displaySize);
+  const bottomButtonPosition = getMainButtonPosition(bottomButtonOffset, displaySize);
 
   function getBetweenFeaturePosition(index) {
     let top = 'auto';
     let bottom = 'auto';
     if (verticalAlignment === 'center') {
       const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-      const baseOffset = isVerticalProgressPreview
-        ? displaySize + displaySpacing + displayProgressHeight + displaySpacing
-        : displaySize + displaySpacing;
-      top = `calc(${groupTopOffset} + ${baseOffset + (index * (displaySize + displaySpacing))}px)`;
+      top = `calc(${groupTopOffset} + ${betweenFeatureOffset + (index * unit)}px)`;
     } else if (verticalAlignment === 'top') {
-      const baseOffset = isVerticalProgressPreview
-        ? displaySize + displaySpacing + displayProgressHeight + displaySpacing
-        : displaySize + displaySpacing;
-      top = `calc(${displayEdgeDistance}px + ${baseOffset + (index * (displaySize + displaySpacing))}px)`;
+      top = `calc(${displayEdgeDistance}px + ${betweenFeatureOffset + (index * unit)}px)`;
     } else {
-      const reverseIndex = betweenFeatureCount - index;
-      bottom = `calc(${displayEdgeDistance}px + ${reverseIndex * (displaySize + displaySpacing)}px)`;
+      bottom = `${displayEdgeDistance + totalPreviewGroupHeight -
+        (betweenFeatureOffset + (index * unit)) - displaySize}px`;
     }
     return { top, bottom };
   }
@@ -2524,8 +2622,8 @@ function updatePreviewButtons() {
     topButton.style.opacity = opacity;
     topButton.style.left = leftPos;
     topButton.style.right = rightPos;
-    topButton.style.top = topButtonTop;
-    topButton.style.bottom = topButtonBottom;
+    topButton.style.top = topButtonPosition.top;
+    topButton.style.bottom = topButtonPosition.bottom;
     // 移除transform，使用精确计算的位置避免弹跳
     topButton.style.transform = 'none';
     topButton.style.willChange = 'top, bottom, width, height';
@@ -2540,19 +2638,55 @@ function updatePreviewButtons() {
     bottomButton.style.opacity = opacity;
     bottomButton.style.left = leftPos;
     bottomButton.style.right = rightPos;
-    bottomButton.style.top = bottomButtonTop;
-    bottomButton.style.bottom = bottomButtonBottom;
+    bottomButton.style.top = bottomButtonPosition.top;
+    bottomButton.style.bottom = bottomButtonPosition.bottom;
     // 移除transform，使用精确计算的位置避免弹跳
     bottomButton.style.transform = 'none';
     bottomButton.style.willChange = 'top, bottom, width, height';
     bottomButton.style.color = iconColor;
 
+    // 计算图标大小（与实际页面一致）
+    const iconSize = Math.max(40, Math.min(70, displaySize * 0.6)) + '%';
+
+    [
+      {
+        button: previousScreenButton,
+        direction: 'previous',
+        color: previousScreenButtonColor,
+        position: previousScreenPosition
+      },
+      {
+        button: nextScreenButton,
+        direction: 'next',
+        color: nextScreenButtonColor,
+        position: nextScreenPosition
+      }
+    ].forEach((screenButton) => {
+      if (!screenButton.button) return;
+      screenButton.button.innerHTML = getScreenNavigationIconSvg(screenButton.direction);
+      screenButton.button.style.display = 'flex';
+      screenButton.button.style.width = size;
+      screenButton.button.style.height = size;
+      screenButton.button.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
+      screenButton.button.style.backgroundColor = screenButton.color;
+      screenButton.button.style.opacity = screenNavigationOpacity;
+      screenButton.button.style.left = leftPos;
+      screenButton.button.style.right = rightPos;
+      screenButton.button.style.top = screenButton.position.top;
+      screenButton.button.style.bottom = screenButton.position.bottom;
+      screenButton.button.style.transform = 'none';
+      screenButton.button.style.color = '#FFFFFF';
+      const screenIcon = screenButton.button.querySelector('svg');
+      if (screenIcon) {
+        screenIcon.style.width = iconSize;
+        screenIcon.style.height = iconSize;
+        screenIcon.style.display = 'block';
+      }
+    });
+
     // 更新SVG图标样式 - 确保与实际页面完全一致
     const topIcon = topButton.querySelector('svg');
     const bottomIcon = bottomButton.querySelector('svg');
-
-    // 计算图标大小（与实际页面一致）
-    const iconSize = Math.max(40, Math.min(70, displaySize * 0.6)) + '%';
 
     if (topIcon) {
       topIcon.style.width = iconSize;
@@ -2576,8 +2710,8 @@ function updatePreviewButtons() {
       progressButton.style.opacity = opacity;
       progressButton.style.left = leftPos;
       progressButton.style.right = rightPos;
-      progressButton.style.top = progressButtonTop;
-      progressButton.style.bottom = progressButtonBottom;
+      progressButton.style.top = progressButtonPosition.top;
+      progressButton.style.bottom = progressButtonPosition.bottom;
       progressButton.style.transform = 'none';
       progressButton.style.willChange = 'top, bottom, width, height';
       progressButton.style.color = iconColor;
@@ -2689,6 +2823,14 @@ function updatePreviewButtons() {
     }
     #previewBottomButton:active {
       transform: scale(0.95) !important;
+    }
+    #previewPreviousScreenButton:hover {
+      background-color: ${adjustColorBrightness(previousScreenButtonColor, -10)} !important;
+      transform: scale(1.1) !important;
+    }
+    #previewNextScreenButton:hover {
+      background-color: ${adjustColorBrightness(nextScreenButtonColor, -10)} !important;
+      transform: scale(1.1) !important;
     }
     #previewBookmarkButton:hover {
       background-color: ${adjustColorBrightness(featureButtons[0].color, -10)} !important;
@@ -2837,10 +2979,19 @@ function updateAdvancedPreviewControls() {
 
 function setAdvancedSettingsControls(settings) {
   advancedSettingsState = mergeAdvancedSettings(settings);
+  const screenNavigation = advancedSettingsState.screenNavigation;
   const progress = advancedSettingsState.progressBar;
   const icons = advancedSettingsState.iconCustomization;
   const scrollBookmarks = advancedSettingsState.scrollBookmarks;
   const outlineNavigation = advancedSettingsState.outlineNavigation;
+
+  document.getElementById('screenStepRatio').value = Math.round(screenNavigation.screenStepRatio * 100);
+  document.getElementById('previousScreenButtonColor').value = screenNavigation.previousScreenButtonColor;
+  document.getElementById('previousScreenButtonColorHex').value = screenNavigation.previousScreenButtonColor;
+  document.getElementById('nextScreenButtonColor').value = screenNavigation.nextScreenButtonColor;
+  document.getElementById('nextScreenButtonColorHex').value = screenNavigation.nextScreenButtonColor;
+  document.getElementById('screenNavigationOpacity').value = screenNavigation.opacity;
+  document.getElementById('screenNavigationOpacityValue').textContent = screenNavigation.opacity + '%';
 
   document.getElementById('progressBarMode').value = progress.mode;
   document.getElementById('progressHorizontalPosition').value = progress.horizontalPosition;
@@ -2882,6 +3033,21 @@ function setAdvancedSettingsControls(settings) {
 }
 
 function getAdvancedSettingsFromControls() {
+  const screenStepRatio = clampNumber(document.getElementById('screenStepRatio').value, 50, 100, 90) / 100;
+  const previousScreenButtonColor = validateHexColor(
+    document.getElementById('previousScreenButtonColor').value,
+    '#4A9EDD'
+  );
+  const nextScreenButtonColor = validateHexColor(
+    document.getElementById('nextScreenButtonColor').value,
+    '#4A9EDD'
+  );
+  const screenNavigationOpacity = clampNumber(
+    document.getElementById('screenNavigationOpacity').value,
+    0,
+    100,
+    100
+  );
   const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
   const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4a9edd');
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
@@ -2889,6 +3055,13 @@ function getAdvancedSettingsFromControls() {
   const outlineCustomColor = validateHexColor(document.getElementById('outlineButtonCustomColor').value, '#4a9edd');
   ensureOutlineSourceSelection(false);
   return mergeAdvancedSettings({
+    screenNavigation: {
+      enabled: true,
+      screenStepRatio,
+      previousScreenButtonColor,
+      nextScreenButtonColor,
+      opacity: screenNavigationOpacity
+    },
     progressBar: {
       enabled: true,
       mode: document.getElementById('progressBarMode').value,
@@ -3032,6 +3205,7 @@ function renderDomainFeatureStatesList() {
       'settings.domainName',
       'settings.domainExtension',
       'settings.domainProgressBar',
+      'settings.domainScreenNavigation',
       'settings.domainScrollBookmarks',
       'settings.domainOutlineNavigation',
       'settings.domainActions'
@@ -3067,6 +3241,7 @@ function renderDomainFeatureStatesList() {
     const featureToggles = domainUtils.FEATURE_KEYS.map((featureKey) => {
       const labelKeys = {
         progressBar: 'settings.domainProgressBar',
+        screenNavigation: 'settings.domainScreenNavigation',
         scrollBookmarks: 'settings.domainScrollBookmarks',
         outlineNavigation: 'settings.domainOutlineNavigation'
       };
@@ -3758,6 +3933,11 @@ function init() {
     }
   });
 
+  document.getElementById('screenStepRatio').addEventListener('input', updatePreviewButtons);
+  document.getElementById('screenNavigationOpacity').addEventListener('input', (e) => {
+    document.getElementById('screenNavigationOpacityValue').textContent = e.target.value + '%';
+    updatePreviewButtons();
+  });
   document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
@@ -3803,6 +3983,8 @@ function init() {
 
   bindColorPair('scrollBookmarkButtonCustomColor', 'scrollBookmarkButtonCustomColorHex');
   bindColorPair('outlineButtonCustomColor', 'outlineButtonCustomColorHex');
+  bindColorPair('previousScreenButtonColor', 'previousScreenButtonColorHex');
+  bindColorPair('nextScreenButtonColor', 'nextScreenButtonColorHex');
 
   document.getElementById('iconSet').addEventListener('change', updatePreviewButtons);
   document.getElementById('iconColor').addEventListener('input', (e) => {
@@ -3835,6 +4017,7 @@ function init() {
       extensionEnabled: document.getElementById('domainInitialState').value === 'true',
       features: {
         progressBar: false,
+        screenNavigation: false,
         scrollBookmarks: false,
         outlineNavigation: false
       }

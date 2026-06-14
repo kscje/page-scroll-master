@@ -23,6 +23,8 @@
     "message": "末尾へスクロール",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "前の画面", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "次の画面", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "設定",
     "description": "Popup settings button label"

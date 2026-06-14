@@ -39,6 +39,8 @@ let outlineLastKnownUrl = window.location.href;
 let outlineRouteChangeTimer = null;
 const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to Top';
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
+const LABEL_PREVIOUS_SCREEN = chrome.i18n.getMessage('previousScreen') || 'Previous Screen';
+const LABEL_NEXT_SCREEN = chrome.i18n.getMessage('nextScreen') || 'Next Screen';
 
 function recordAnalyticsAction(actionKey) {
   if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
@@ -50,6 +52,13 @@ function recordAnalyticsAction(actionKey) {
   });
 }
 const DEFAULT_ADVANCED_SETTINGS = {
+  screenNavigation: {
+    enabled: false,
+    screenStepRatio: 0.9,
+    previousScreenButtonColor: DEFAULT_BUTTON_COLOR,
+    nextScreenButtonColor: DEFAULT_BUTTON_COLOR,
+    opacity: 100
+  },
   progressBar: {
     enabled: false,
     mode: 'verticalButton',
@@ -138,6 +147,7 @@ let buttonSettings = {
 let advancedSettings = mergeAdvancedSettings();
 let progressScrollTarget = null;
 let progressUpdateFrame = null;
+let screenNavigationAnimationContainer = null;
 const scrollAnimationStateMap = new WeakMap();
 let readingEstimateCache = {
   target: null,
@@ -201,6 +211,21 @@ function mergeAdvancedSettings(savedSettings) {
     ? savedSettings.readingTools.features
     : {};
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
+  merged.screenNavigation.screenStepRatio = clampNumber(
+    merged.screenNavigation.screenStepRatio,
+    0.5,
+    1,
+    0.9
+  );
+  merged.screenNavigation.previousScreenButtonColor = validateHexColor(
+    merged.screenNavigation.previousScreenButtonColor,
+    DEFAULT_BUTTON_COLOR
+  );
+  merged.screenNavigation.nextScreenButtonColor = validateHexColor(
+    merged.screenNavigation.nextScreenButtonColor,
+    DEFAULT_BUTTON_COLOR
+  );
+  merged.screenNavigation.opacity = clampNumber(merged.screenNavigation.opacity, 0, 100, 100);
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT);
   merged.iconCustomization.enabled = true;
@@ -981,7 +1006,9 @@ function getButtonElements() {
     return {
       root: null,
       topButton: null,
+      previousScreenButton: null,
       progressButton: null,
+      nextScreenButton: null,
       bottomButton: null,
       bookmarkButton: null,
       outlineButton: null
@@ -991,7 +1018,9 @@ function getButtonElements() {
   return {
     root,
     topButton: root.querySelector('.psm-scroll-top'),
+    previousScreenButton: root.querySelector('.psm-screen-previous'),
     progressButton: root.querySelector('.psm-progress-button'),
+    nextScreenButton: root.querySelector('.psm-screen-next'),
     bottomButton: root.querySelector('.psm-scroll-bottom'),
     bookmarkButton: root.querySelector('.psm-bookmark-tool-button'),
     outlineButton: root.querySelector('.psm-outline-tool-button')
@@ -1029,6 +1058,7 @@ function getDomainStorageKeys() {
 function applyEffectiveDomainFeatures() {
   const state = domainUtils.normalizeState(currentDomainFeatureState, domainFeatureDefaults);
   advancedSettings.progressBar.enabled = state.extensionEnabled && state.features.progressBar;
+  advancedSettings.screenNavigation.enabled = state.extensionEnabled && state.features.screenNavigation;
   advancedSettings.scrollBookmarks.enabled = state.extensionEnabled && state.features.scrollBookmarks;
   advancedSettings.outlineNavigation.enabled = state.extensionEnabled && state.features.outlineNavigation;
 }
@@ -1113,6 +1143,19 @@ function smoothScrollTo(container, targetTop, options = {}) {
   animationState.frame = requestAnimationFrame(scroll);
 }
 
+function cancelScrollAnimation(container) {
+  if (!container) return;
+  const animationState = scrollAnimationStateMap.get(container);
+  if (!animationState) return;
+  if (animationState.frame) {
+    cancelAnimationFrame(animationState.frame);
+  }
+  scrollAnimationStateMap.delete(container);
+  if (typeof animationState.onCancel === 'function') {
+    animationState.onCancel();
+  }
+}
+
 function navigateOutlineMenuToItem(item, snapshot, menu) {
   if (!item || !snapshot) return false;
   if (menu) {
@@ -1158,6 +1201,46 @@ function scrollToBottom() {
   smoothScrollTo(container, getElementScrollRange(container));
 }
 
+function getScrollContainerViewportHeight(container) {
+  if (!container) return 0;
+  if (isRootScrollElement(container)) {
+    return window.innerHeight || document.documentElement.clientHeight || container.clientHeight || 0;
+  }
+  return container.clientHeight || 0;
+}
+
+function getScreenNavigationTarget(container, direction, ratio = advancedSettings.screenNavigation.screenStepRatio) {
+  const currentTop = getScrollTop(container);
+  const maxScrollTop = getElementScrollRange(container);
+  const viewportHeight = getScrollContainerViewportHeight(container);
+  const normalizedRatio = clampNumber(ratio, 0.5, 1, 0.9);
+  return clamp(currentTop + (direction * viewportHeight * normalizedRatio), 0, maxScrollTop);
+}
+
+function navigateByScreen(direction) {
+  if (!advancedSettings.screenNavigation.enabled) return false;
+  const container = resolveScrollContainer();
+  const targetTop = getScreenNavigationTarget(container, direction);
+  if (screenNavigationAnimationContainer) {
+    cancelScrollAnimation(screenNavigationAnimationContainer);
+  }
+  screenNavigationAnimationContainer = container;
+  smoothScrollTo(container, targetTop, {
+    onCancel: () => {
+      if (screenNavigationAnimationContainer === container) {
+        screenNavigationAnimationContainer = null;
+      }
+    },
+    onComplete: () => {
+      if (screenNavigationAnimationContainer === container) {
+        screenNavigationAnimationContainer = null;
+      }
+      requestOutlineHighlightUpdate();
+    }
+  });
+  return true;
+}
+
 // 缓动函数
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -1195,6 +1278,13 @@ function getOutlineIconSvg() {
   return '<svg class="scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
 }
 
+function getScreenNavigationIconSvg(direction) {
+  const arrowPath = direction === 'previous'
+    ? '<path d="M12 17V8M8.5 11.5 12 8l3.5 3.5"/>'
+    : '<path d="M12 7v9m-3.5-3.5L12 16l3.5-3.5"/>';
+  return `<svg class="scroll-icon psm-screen-navigation-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/>${arrowPath}</svg>`;
+}
+
 function getActiveIconSet() {
   return normalizeIconSet(advancedSettings.iconCustomization.iconSet);
 }
@@ -1208,9 +1298,16 @@ function getIconSizePercent() {
 }
 
 function applyIconSizing() {
-  const { topButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  const {
+    topButton,
+    previousScreenButton,
+    nextScreenButton,
+    bottomButton,
+    bookmarkButton,
+    outlineButton
+  } = getButtonElements();
   const iconSize = getIconSizePercent();
-  [topButton, bottomButton, bookmarkButton, outlineButton].forEach((button) => {
+  [topButton, previousScreenButton, nextScreenButton, bottomButton, bookmarkButton, outlineButton].forEach((button) => {
     if (!button) return;
     const icon = button.querySelector('.scroll-icon');
     if (!icon) return;
@@ -1220,11 +1317,24 @@ function applyIconSizing() {
 }
 
 function applyButtonIcons() {
-  const { topButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  const {
+    topButton,
+    previousScreenButton,
+    nextScreenButton,
+    bottomButton,
+    bookmarkButton,
+    outlineButton
+  } = getButtonElements();
   if (!topButton || !bottomButton) return;
   const iconSet = getActiveIconSet();
   topButton.innerHTML = getIconSvg('top', iconSet);
   bottomButton.innerHTML = getIconSvg('bottom', iconSet);
+  if (previousScreenButton) {
+    previousScreenButton.innerHTML = getScreenNavigationIconSvg('previous');
+  }
+  if (nextScreenButton) {
+    nextScreenButton.innerHTML = getScreenNavigationIconSvg('next');
+  }
   if (bookmarkButton) {
     bookmarkButton.innerHTML = getBookmarkIconSvg();
   }
@@ -2763,8 +2873,43 @@ function applyAdvancedSettings() {
   advancedSettings = mergeAdvancedSettings(advancedSettings);
   applyButtonIcons();
   ensureProgressControls();
+  ensureScreenNavigationControls();
   ensureReadingToolControls();
   updateButtonStyle();
+}
+
+function createScreenNavigationButton(direction) {
+  const isPrevious = direction === 'previous';
+  const button = document.createElement('button');
+  button.className = `psm-scroll-button psm-screen-navigation-button ${isPrevious ? 'psm-screen-previous' : 'psm-screen-next'}`;
+  button.type = 'button';
+  button.title = isPrevious ? LABEL_PREVIOUS_SCREEN : LABEL_NEXT_SCREEN;
+  button.setAttribute('aria-label', button.title);
+  button.innerHTML = getScreenNavigationIconSvg(direction);
+  button.addEventListener('click', () => {
+    navigateByScreen(isPrevious ? -1 : 1);
+  });
+  return button;
+}
+
+function ensureScreenNavigationControls() {
+  const container = getButtonContainer();
+  if (!container) return;
+  const { topButton, previousScreenButton, progressButton, nextScreenButton, bottomButton } = getButtonElements();
+  if (!topButton || !bottomButton) return;
+
+  if (!advancedSettings.screenNavigation.enabled) {
+    cancelScrollAnimation(screenNavigationAnimationContainer);
+    screenNavigationAnimationContainer = null;
+    if (previousScreenButton) previousScreenButton.remove();
+    if (nextScreenButton) nextScreenButton.remove();
+    return;
+  }
+
+  const previousButton = previousScreenButton || createScreenNavigationButton('previous');
+  const nextButton = nextScreenButton || createScreenNavigationButton('next');
+  container.insertBefore(previousButton, progressButton || bottomButton);
+  container.insertBefore(nextButton, bottomButton);
 }
 
 // 创建滚动按钮
@@ -2809,8 +2954,14 @@ function createScrollButton() {
 
   // 添加按钮到容器
   buttonContainer.appendChild(topButton);
+  if (advancedSettings.screenNavigation.enabled) {
+    buttonContainer.appendChild(createScreenNavigationButton('previous'));
+  }
   if (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton') {
     buttonContainer.appendChild(createVerticalProgressButton());
+  }
+  if (advancedSettings.screenNavigation.enabled) {
+    buttonContainer.appendChild(createScreenNavigationButton('next'));
   }
   if (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons') {
     buttonContainer.appendChild(createBookmarkToolButton());
@@ -2857,6 +3008,9 @@ function createScrollButton() {
 // 移除滚动按钮
 function removeButton() {
   const host = document.getElementById(HOST_ID);
+  cancelScrollAnimation(screenNavigationAnimationContainer);
+  screenNavigationAnimationContainer = null;
+  cancelScrollAnimation(currentScrollContainer || resolveScrollContainer());
   unbindProgressContainer();
   unbindOutlineHighlightUpdates();
   if (typeof document.removeEventListener === 'function') {
@@ -3615,6 +3769,7 @@ function getMainButtonGroupHeight() {
   const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
   const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
   const hasVerticalProgress = advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton';
+  const screenNavigationCount = advancedSettings.screenNavigation.enabled ? 2 : 0;
   const betweenFeatureCount = [
     isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons',
     isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons'
@@ -3625,7 +3780,8 @@ function getMainButtonGroupHeight() {
   const baseHeight = hasVerticalProgress
     ? (buttonSize * 2) + progressHeight + (spacing * 2)
     : (buttonSize * 2) + spacing;
-  return baseHeight + (betweenFeatureCount * (buttonSize + spacing));
+  return baseHeight +
+    ((screenNavigationCount + betweenFeatureCount) * (buttonSize + spacing));
 }
 
 function updateReadingToolPosition() {
@@ -3704,8 +3860,18 @@ function validateColor(color) {
 
 // 更新按钮样式
 function updateButtonStyle() {
-  const { root, topButton, progressButton, bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  const {
+    root,
+    topButton,
+    previousScreenButton,
+    progressButton,
+    nextScreenButton,
+    bottomButton,
+    bookmarkButton,
+    outlineButton
+  } = getButtonElements();
   if (!topButton || !bottomButton) return;
+  const screenNavigationButtons = [previousScreenButton, nextScreenButton].filter(Boolean);
   const featureButtons = [bookmarkButton, outlineButton].filter(Boolean);
   
   // 更新按钮尺寸
@@ -3714,6 +3880,10 @@ function updateButtonStyle() {
   topButton.style.height = size;
   bottomButton.style.width = size;
   bottomButton.style.height = size;
+  screenNavigationButtons.forEach((button) => {
+    button.style.width = size;
+    button.style.height = size;
+  });
   if (progressButton) {
     progressButton.style.width = size;
     progressButton.style.height = clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT) + 'px';
@@ -3729,6 +3899,9 @@ function updateButtonStyle() {
   const progressBorderRadius = shape === 'square' ? '4px' : '999px';
   topButton.style.borderRadius = borderRadius;
   bottomButton.style.borderRadius = borderRadius;
+  screenNavigationButtons.forEach((button) => {
+    button.style.borderRadius = borderRadius;
+  });
   if (progressButton) {
     progressButton.style.borderRadius = progressBorderRadius;
   }
@@ -3744,6 +3917,12 @@ function updateButtonStyle() {
   const bottomColor = validateColor(buttonSettings.bottomButtonColor);
   topButton.style.backgroundColor = topColor;
   bottomButton.style.backgroundColor = bottomColor;
+  if (previousScreenButton) {
+    previousScreenButton.style.backgroundColor = advancedSettings.screenNavigation.previousScreenButtonColor;
+  }
+  if (nextScreenButton) {
+    nextScreenButton.style.backgroundColor = advancedSettings.screenNavigation.nextScreenButtonColor;
+  }
   if (progressButton) {
     progressButton.style.backgroundColor = getProgressColor();
   }
@@ -3753,6 +3932,9 @@ function updateButtonStyle() {
   const iconColor = getActiveIconColor();
   topButton.style.color = iconColor;
   bottomButton.style.color = iconColor;
+  screenNavigationButtons.forEach((button) => {
+    button.style.color = DEFAULT_ICON_COLOR;
+  });
   if (progressButton) {
     progressButton.style.color = iconColor;
   }
@@ -3770,6 +3952,9 @@ function updateButtonStyle() {
   const opacity = buttonSettings.opacity / 100;
   topButton.style.opacity = opacity;
   bottomButton.style.opacity = opacity;
+  screenNavigationButtons.forEach((button) => {
+    button.style.opacity = advancedSettings.screenNavigation.opacity / 100;
+  });
   if (progressButton) {
     progressButton.style.opacity = opacity;
   }
@@ -3791,6 +3976,12 @@ function updateButtonStyle() {
     }
     .psm-scroll-bottom:hover {
       background-color: ${adjustColorBrightness(bottomColor, -10)};
+    }
+    .psm-screen-previous:hover {
+      background-color: ${adjustColorBrightness(advancedSettings.screenNavigation.previousScreenButtonColor, -10)};
+    }
+    .psm-screen-next:hover {
+      background-color: ${adjustColorBrightness(advancedSettings.screenNavigation.nextScreenButtonColor, -10)};
     }
     .psm-progress-button:hover {
       background-color: ${adjustColorBrightness(getProgressColor(), -25)};
@@ -3935,6 +4126,7 @@ function detectAndUpdateScrollContainer() {
         scrollToBottom();
       });
       applyButtonIcons();
+      ensureScreenNavigationControls();
 
       // 重新设置悬停隐藏功能 - 先重置初始化状态
       const buttonContainer = getButtonContainer();

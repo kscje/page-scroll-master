@@ -5,6 +5,7 @@ const { getSharedRuntimeSource } = require('./runtime-loader');
 
 const ROOT = path.join(__dirname, '..');
 const POPUP_PATH = path.join(ROOT, 'popup.js');
+const POPUP_HTML = fs.readFileSync(path.join(ROOT, 'popup.html'), 'utf8');
 const POPUP_SOURCE = getSharedRuntimeSource(ROOT, POPUP_PATH) + '\n' +
   fs.readFileSync(POPUP_PATH, 'utf8');
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
@@ -79,6 +80,7 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   const elements = {
     extensionToggle: createElement('extensionToggle'),
     progressBarToggle: createElement('progressBarToggle'),
+    screenNavigationToggle: createElement('screenNavigationToggle'),
     scrollBookmarksToggle: createElement('scrollBookmarksToggle'),
     outlineNavigationToggle: createElement('outlineNavigationToggle'),
     currentSite: createElement('currentSite'),
@@ -150,12 +152,17 @@ console.log('=== Page Scroll Master domain popup tests ===\n');
 
 console.log('Test 0: Popup has permission to inspect the active tab');
 assert(MANIFEST.permissions.includes('activeTab'), 'manifest includes activeTab');
+assert(
+  POPUP_HTML.indexOf('id="screenNavigationToggle"') < POPUP_HTML.indexOf('id="progressBarToggle"'),
+  'screen navigation is the first advanced feature in the popup'
+);
 
 console.log('\nTest 1: New domains default to extension on and advanced features off');
 let popup = openPopup('https://docs.example.co.uk/page');
 assert(popup.elements.currentSite.textContent === 'example.co.uk', 'public suffix parsing resolves example.co.uk');
 assert(popup.elements.extensionToggle.checked === true, 'extension defaults to enabled');
 assert(popup.elements.progressBarToggle.checked === false, 'progress bar defaults to disabled');
+assert(popup.elements.screenNavigationToggle.checked === false, 'screen navigation defaults to disabled');
 assert(popup.elements.scrollBookmarksToggle.checked === false, 'bookmarks default to disabled');
 assert(popup.elements.outlineNavigationToggle.checked === false, 'outline navigation defaults to disabled');
 assert(popup.elements.progressBarToggle.disabled === false, 'feature switches are interactive while extension is enabled');
@@ -167,12 +174,18 @@ assert(popup.sentMessages.some((entry) => entry.message.action === 'updateDomain
 const analyticsToggle = popup.runtimeMessages.find((message) => message.action === 'analytics:recordToggle');
 assert(analyticsToggle.feature === 'progressBar' && analyticsToggle.enabled === true, 'popup records only the changed feature state');
 assert(!Object.prototype.hasOwnProperty.call(analyticsToggle, 'domain'), 'popup analytics message excludes the current domain');
+toggle(popup, 'screenNavigationToggle', true);
+assert(
+  popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.screenNavigation === true,
+  'screen navigation state is stored under the main domain'
+);
 
 console.log('\nTest 3: Disabling the extension retains feature choices and disables their controls');
 toggle(popup, 'extensionToggle', false);
 const disabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'];
 assert(disabledState.extensionEnabled === false, 'extension state is stored separately');
 assert(disabledState.features.progressBar === true, 'saved progress choice is retained');
+assert(disabledState.features.screenNavigation === true, 'saved screen navigation choice is retained');
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches become unavailable');
 
 console.log('\nTest 4: Another subdomain reads the same main-domain state');

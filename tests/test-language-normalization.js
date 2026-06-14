@@ -47,6 +47,7 @@ function createPopupContext() {
   const elements = {
     extensionToggle: { addEventListener() {}, checked: false, disabled: false },
     progressBarToggle: { addEventListener() {}, checked: false, disabled: false },
+    screenNavigationToggle: { addEventListener() {}, checked: false, disabled: false },
     scrollBookmarksToggle: { addEventListener() {}, checked: false, disabled: false },
     outlineNavigationToggle: { addEventListener() {}, checked: false, disabled: false },
     currentSite: { textContent: '', style: {} },

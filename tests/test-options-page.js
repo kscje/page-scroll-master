@@ -157,6 +157,14 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     }),
     languageSelector: createElement('languageSelector', { value: 'auto' }),
     progressBarEnabled: createElement('progressBarEnabled'),
+    screenNavigationSettings: createElement('screenNavigationSettings'),
+    screenStepRatio: createElement('screenStepRatio', { value: '90' }),
+    screenNavigationOpacity: createElement('screenNavigationOpacity', { value: '100' }),
+    screenNavigationOpacityValue: createElement('screenNavigationOpacityValue', { textContent: '100%' }),
+    previousScreenButtonColor: createElement('previousScreenButtonColor', { value: '#4A9EDD' }),
+    previousScreenButtonColorHex: createElement('previousScreenButtonColorHex', { value: '#4A9EDD' }),
+    nextScreenButtonColor: createElement('nextScreenButtonColor', { value: '#4A9EDD' }),
+    nextScreenButtonColorHex: createElement('nextScreenButtonColorHex', { value: '#4A9EDD' }),
     progressBarSettings: createElement('progressBarSettings'),
     progressBarMode: createElement('progressBarMode', { value: 'verticalButton' }),
     verticalProgressSettings: createElement('verticalProgressSettings'),
@@ -222,6 +230,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     previewTopButton: createElement('previewTopButton', {
       children: [createElement('topSvg', { attributes: { tagName: 'svg' } })]
     }),
+    previewPreviousScreenButton: createElement('previewPreviousScreenButton'),
     previewProgressButton: createElement('previewProgressButton', {
       className: 'preview-scroll-button preview-progress-button hidden',
       children: [
@@ -238,6 +247,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     previewBottomButton: createElement('previewBottomButton', {
       children: [createElement('bottomSvg', { attributes: { tagName: 'svg' } })]
     }),
+    previewNextScreenButton: createElement('previewNextScreenButton'),
     previewHorizontalProgress: createElement('previewHorizontalProgress', {
       className: 'preview-horizontal-progress hidden',
       children: [
@@ -517,6 +527,24 @@ assert(!OPTIONS_HTML.includes('id="progressBarEnabled"'), 'settings page no long
 assert(!OPTIONS_HTML.includes('id="scrollBookmarksEnabled"'), 'settings page no longer exposes the bookmark enable switch');
 assert(!OPTIONS_HTML.includes('id="outlineNavigationEnabled"'), 'settings page no longer exposes the outline enable switch');
 assert(
+  OPTIONS_HTML.includes('<span class="input-suffix" aria-hidden="true">%</span>'),
+  'screen navigation distance input displays an in-field percent suffix'
+);
+assert(
+  OPTIONS_HTML.includes('<label for="screenNavigationOpacity" data-i18n="settings.opacity">透明度</label>') &&
+    OPTIONS_HTML.includes('<input type="range" id="screenNavigationOpacity" min="0" max="100" step="1" value="100">') &&
+    OPTIONS_HTML.includes('<div class="speed-value" id="screenNavigationOpacityValue">100%</div>'),
+  'screen navigation opacity uses the shared opacity label and range control'
+);
+assert(
+  !OPTIONS_HTML.includes('data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup') &&
+    OPTIONS_HTML.includes('data-i18n="settings.screenNavigationIntro"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.progressBarIntro"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.scrollBookmarksIntro"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.outlineNavigationIntro"'),
+  'advanced modules use feature introductions instead of the shared popup enable hint'
+);
+assert(
   OPTIONS_HTML.includes('.tab-panel[data-tab-panel="advanced"] .sub-setting {') &&
     OPTIONS_HTML.includes('padding-left: 0;'),
   'advanced feature detail sections align with their module headings without indentation'
@@ -559,6 +587,7 @@ const domainTablePage = createOptionsPage({}, {
     extensionEnabled: true,
     features: {
       progressBar: false,
+      screenNavigation: false,
       scrollBookmarks: false,
       outlineNavigation: false
     }
@@ -568,6 +597,7 @@ const domainTablePage = createOptionsPage({}, {
       extensionEnabled: true,
       features: {
         progressBar: true,
+        screenNavigation: true,
         scrollBookmarks: false,
         outlineNavigation: true
       }
@@ -578,24 +608,24 @@ const domainHeader = domainTablePage.elements.domainList.children[0];
 const domainRow = domainTablePage.elements.domainList.children[1];
 assert(domainHeader.className === 'domain-header', 'domain feature names render once in a table header');
 assert(
-  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 120px 140px 140px 44px;') &&
-    OPTIONS_HTML.includes('min-width: 704px;'),
+  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 132px 132px 44px;') &&
+    OPTIONS_HTML.includes('min-width: 824px;'),
   'domain header and rows use identical explicit column tracks'
 );
 assert(
   JSON.stringify(domainHeader.children.map((child) => child.textContent)) ===
-    JSON.stringify(['Domain', 'Extension', 'Progress bar', 'Scroll bookmarks', 'Section navigation', 'Actions']),
+    JSON.stringify(['Domain', 'Extension', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Actions']),
   'domain table header labels every column'
 );
-assert(domainRow.children.length === 6, 'domain rows contain one domain, four controls, and one action');
+assert(domainRow.children.length === 7, 'domain rows contain one domain, five controls, and one action');
 assert(
-  domainRow.children.slice(1, 5).every((label) =>
+  domainRow.children.slice(1, 6).every((label) =>
     label.children.length === 1 &&
     Boolean(label.children[0].getAttribute('aria-label'))
   ),
   'domain rows omit repeated feature text while retaining accessible checkbox labels'
 );
-const domainDeleteButton = domainRow.children[5];
+const domainDeleteButton = domainRow.children[6];
 assert(
   domainDeleteButton.className === 'domain-delete-button' &&
     domainDeleteButton.innerHTML.includes('<svg') &&
@@ -706,6 +736,10 @@ assert(page.elements.speedValue.textContent === '250ms', 'speed label updates on
 
 console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.progressBarMode.value = 'horizontalBar';
+page.elements.screenStepRatio.value = '50';
+page.elements.screenNavigationOpacity.value = '35';
+page.elements.previousScreenButtonColor.value = '#112233';
+page.elements.nextScreenButtonColor.value = '#445566';
 page.elements.progressThickness.value = '12';
 page.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
 page.elements.scrollBookmarkButtonColorMode.value = 'custom';
@@ -727,6 +761,11 @@ page.elements.saveButton.dispatch('click');
 assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
 assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
+assert(page.syncData.advancedSettings.screenNavigation.screenStepRatio === 0.5, 'save persists the screen step ratio');
+assert(page.syncData.advancedSettings.screenNavigation.opacity === 35, 'save persists the shared screen navigation opacity');
+assert(page.syncData.advancedSettings.screenNavigation.previousScreenButtonColor === '#112233', 'save persists the previous screen color');
+assert(page.syncData.advancedSettings.screenNavigation.nextScreenButtonColor === '#445566', 'save persists the next screen color independently');
+assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.screenNavigation, 'enabled'), 'save omits screen navigation enabled state');
 assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.progressBar, 'enabled'), 'save omits progress bar enabled state');
 assert(page.syncData.advancedSettings.progressBar.mode === 'horizontalBar', 'save persists progress bar mode');
 assert(page.syncData.advancedSettings.progressBar.thickness === 12, 'save persists progress bar thickness');
@@ -793,10 +832,14 @@ page3.elements.iconSet.value = 'triangle';
 page3.elements.iconSet.dispatch('change');
 assert(page3.elements.previewTopButton.innerHTML.includes('M12 5l8 12H4z'), 'top preview button renders selected icon style');
 assert(page3.elements.previewBottomButton.innerHTML.includes('M12 19L4 7h16z'), 'bottom preview button renders selected icon style');
+assert(page3.elements.previewPreviousScreenButton.innerHTML.includes('<rect'), 'previous screen keeps its viewport icon');
+assert(page3.elements.previewNextScreenButton.innerHTML.includes('<rect'), 'next screen keeps its viewport icon');
 page3.elements.iconColor.value = '#FF0000';
 page3.elements.iconColor.dispatch('input');
 assert(page3.elements.previewTopButton.style.color === '#FF0000', 'top preview button renders selected icon color');
 assert(page3.elements.previewBottomButton.style.color === '#FF0000', 'bottom preview button renders selected icon color');
+assert(page3.elements.previewPreviousScreenButton.style.color === '#FFFFFF', 'previous screen icon ignores the main icon color');
+assert(page3.elements.previewNextScreenButton.style.color === '#FFFFFF', 'next screen icon ignores the main icon color');
 page3.elements.saveButton.dispatch('click');
 assert(page3.syncData.advancedSettings.iconCustomization.enabled === true, 'icon customization is always saved as enabled');
 
@@ -804,7 +847,26 @@ console.log('\nTest 7: Progress settings update the real preview surface');
 let page4 = createOptionsPage();
 assert(page4.elements.previewProgressButton.style.display === 'flex', 'vertical progress preview is always available for configuration');
 assert(
-  page4.elements.previewBottomButton.style.top.includes('176'),
+  page4.elements.previewPreviousScreenButton.style.top.includes('48') &&
+    page4.elements.previewProgressButton.style.top.includes('96') &&
+    page4.elements.previewNextScreenButton.style.top.includes('224') &&
+    page4.elements.previewBottomButton.style.top.includes('272'),
+  'screen navigation preview follows top, previous, progress, next, bottom order'
+);
+page4.elements.previousScreenButtonColor.value = '#123456';
+page4.elements.previousScreenButtonColor.dispatch('input');
+assert(page4.elements.previewPreviousScreenButton.style.backgroundColor === '#123456', 'previous screen preview uses its own color');
+assert(page4.elements.previewNextScreenButton.style.backgroundColor === '#4A9EDD', 'changing previous screen color does not overwrite next screen color');
+page4.elements.opacity.value = '20';
+page4.elements.opacity.dispatch('input');
+page4.elements.screenNavigationOpacity.value = '65';
+page4.elements.screenNavigationOpacity.dispatch('input');
+assert(page4.elements.screenNavigationOpacityValue.textContent === '65%', 'screen navigation opacity label updates on input');
+assert(page4.elements.previewTopButton.style.opacity === 0.2, 'main button opacity still follows the global setting');
+assert(page4.elements.previewPreviousScreenButton.style.opacity === 0.65, 'screen navigation opacity is independent from the global setting');
+assert(page4.elements.previewNextScreenButton.style.opacity === 0.65, 'both screen navigation buttons share one opacity');
+assert(
+  page4.elements.previewBottomButton.style.top.includes('272'),
   `bottom preview button is offset below vertical progress preview (${page4.elements.previewBottomButton.style.top})`
 );
 page4.elements.progressShowPercentage.checked = true;

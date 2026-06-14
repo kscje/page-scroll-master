@@ -23,6 +23,8 @@
     "message": "Scorri in basso",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "Schermata precedente", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "Schermata successiva", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "Impostazioni",
     "description": "Popup settings button label"

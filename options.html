@@ -401,10 +401,10 @@
     .domain-header,
     .domain-row {
       display: grid;
-      grid-template-columns: minmax(140px, 1fr) 72px 120px 140px 140px 44px;
+      grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 132px 132px 44px;
       gap: 8px;
       align-items: center;
-      min-width: 704px;
+      min-width: 824px;
     }
 
     .domain-header {
@@ -602,6 +602,23 @@
     .color-input-container input[type="text"] {
       flex: 1;
       margin-bottom: 0;
+    }
+
+    .number-suffix-input {
+      position: relative;
+    }
+
+    .number-suffix-input input {
+      padding-right: 34px;
+    }
+
+    .number-suffix-input .input-suffix {
+      position: absolute;
+      top: 20px;
+      right: 12px;
+      color: var(--muted);
+      pointer-events: none;
+      transform: translateY(-50%);
     }
     
     /* 颜色说明文字样式 */
@@ -1226,8 +1243,37 @@
         </div>
 
         <div class="setting-group full-width">
+          <h3 data-i18n="settings.screenNavigation">按屏跳转</h3>
+          <p class="muted-note" data-i18n="settings.screenNavigationIntro">按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。</p>
+
+          <div id="screenNavigationSettings" class="sub-setting">
+            <label for="screenStepRatio" data-i18n="settings.screenStepRatio">每次滚动距离（可视区域百分比）</label>
+            <div class="number-suffix-input">
+              <input type="number" id="screenStepRatio" min="50" max="100" step="1" value="90">
+              <span class="input-suffix" aria-hidden="true">%</span>
+            </div>
+
+            <label data-i18n="settings.previousScreenButtonColor">上一屏按钮颜色</label>
+            <div class="color-input-container">
+              <input type="color" id="previousScreenButtonColor" value="#4A9EDD">
+              <input type="text" id="previousScreenButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+            </div>
+
+            <label data-i18n="settings.nextScreenButtonColor">下一屏按钮颜色</label>
+            <div class="color-input-container">
+              <input type="color" id="nextScreenButtonColor" value="#4A9EDD">
+              <input type="text" id="nextScreenButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+            </div>
+
+            <label for="screenNavigationOpacity" data-i18n="settings.opacity">透明度</label>
+            <input type="range" id="screenNavigationOpacity" min="0" max="100" step="1" value="100">
+            <div class="speed-value" id="screenNavigationOpacityValue">100%</div>
+          </div>
+        </div>
+
+        <div class="setting-group full-width">
           <h3 data-i18n="settings.progressBar">页面进度条</h3>
-          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
+          <p class="muted-note" data-i18n="settings.progressBarIntro">显示当前页面阅读进度，并可点击快速跳转到指定位置。</p>
 
           <div id="progressBarSettings" class="sub-setting">
             <label for="progressBarMode" data-i18n="settings.progressBarMode">显示样式</label>
@@ -1293,7 +1339,7 @@
 
         <div class="setting-group full-width">
           <h3 data-i18n="settings.scrollBookmarks">滚动位置书签</h3>
-          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
+          <p class="muted-note" data-i18n="settings.scrollBookmarksIntro">保存当前阅读位置，方便稍后返回并继续阅读。</p>
 
           <div id="scrollBookmarksSettings" class="sub-setting">
             <label for="scrollBookmarkButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
@@ -1342,7 +1388,7 @@
 
         <div class="setting-group full-width">
           <h3 data-i18n="settings.outlineNavigation">智能段落跳转</h3>
-          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
+          <p class="muted-note" data-i18n="settings.outlineNavigationIntro">识别页面标题结构，快速查看目录并跳转到上一段或下一段。</p>
 
           <div id="outlineNavigationSettings" class="sub-setting">
             <label for="outlineButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
@@ -1475,10 +1521,12 @@
       <path d="M12 19V5M5 12l7-7 7 7"/>
     </svg>
   </button>
+  <button id="previewPreviousScreenButton" class="preview-scroll-button" title="上一屏" aria-label="上一屏"></button>
   <button id="previewProgressButton" class="preview-scroll-button preview-progress-button hidden" title="页面进度">
     <span class="preview-progress-fill"></span>
     <span class="preview-progress-label"></span>
   </button>
+  <button id="previewNextScreenButton" class="preview-scroll-button" title="下一屏" aria-label="下一屏"></button>
   <button id="previewBookmarkButton" class="preview-scroll-button hidden" title="滚动位置书签" aria-label="滚动位置书签"></button>
   <button id="previewOutlineButton" class="preview-scroll-button hidden" title="智能段落跳转" aria-label="智能段落跳转"></button>
   <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">

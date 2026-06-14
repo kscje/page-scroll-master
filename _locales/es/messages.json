@@ -23,6 +23,8 @@
     "message": "Ir al final",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "Pantalla anterior", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "Pantalla siguiente", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "Configuracion",
     "description": "Popup settings button label"

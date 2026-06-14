@@ -23,6 +23,8 @@
     "message": "Rolar para o fim",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "Tela anterior", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "Próxima tela", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "Configurações",
     "description": "Popup settings button label"

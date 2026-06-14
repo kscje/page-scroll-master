@@ -8,9 +8,10 @@
     legacyStates: 'enableStates'
   };
   var MIGRATION_VERSION = 1;
-  var FEATURE_KEYS = ['progressBar', 'scrollBookmarks', 'outlineNavigation'];
+  var FEATURE_KEYS = ['progressBar', 'screenNavigation', 'scrollBookmarks', 'outlineNavigation'];
   var DEFAULT_FEATURES = {
     progressBar: false,
+    screenNavigation: false,
     scrollBookmarks: false,
     outlineNavigation: false
   };
@@ -106,12 +107,14 @@
     var scrollBookmarks = isPlainObject(settings.scrollBookmarks) ? settings.scrollBookmarks : {};
     var outlineNavigation = isPlainObject(settings.outlineNavigation) ? settings.outlineNavigation : {};
     var progressBar = isPlainObject(settings.progressBar) ? settings.progressBar : {};
+    var screenNavigation = isPlainObject(settings.screenNavigation) ? settings.screenNavigation : {};
     var legacyBookmarkEnabled = readingTools.enabled === true && readingFeatures.scrollBookmarks !== false;
 
     return normalizeDefaults({
       extensionEnabled: true,
       features: {
         progressBar: progressBar.enabled === true,
+        screenNavigation: screenNavigation.enabled === true,
         scrollBookmarks: typeof scrollBookmarks.enabled === 'boolean'
           ? scrollBookmarks.enabled
           : legacyBookmarkEnabled,

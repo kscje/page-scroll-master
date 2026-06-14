@@ -102,6 +102,7 @@ function createContext() {
         isExtensionEnabled,
         currentDomainKey,
         progressEnabled: advancedSettings.progressBar.enabled,
+        screenNavigationEnabled: advancedSettings.screenNavigation.enabled,
         bookmarksEnabled: advancedSettings.scrollBookmarks.enabled,
         outlineEnabled: advancedSettings.outlineNavigation.enabled
       })`, sandbox);
@@ -388,6 +389,7 @@ enabledContext.runLocalGet({
     extensionEnabled: true,
     features: {
       progressBar: false,
+      screenNavigation: false,
       scrollBookmarks: false,
       outlineNavigation: false
     }
@@ -397,6 +399,7 @@ enabledContext.runLocalGet({
       extensionEnabled: true,
       features: {
         progressBar: true,
+        screenNavigation: true,
         scrollBookmarks: false,
         outlineNavigation: true
       }
@@ -408,6 +411,7 @@ const enabledState = enabledContext.getState();
 assert(enabledState.currentDomainKey === 'youtube.com', 'content script normalizes subdomains to the main domain');
 assert(enabledContext.initializeCalls === 1, 'enabled main-domain state initializes buttons');
 assert(enabledState.progressEnabled === true, 'progress feature state is applied at runtime');
+assert(enabledState.screenNavigationEnabled === true, 'screen navigation feature state is applied at runtime');
 assert(enabledState.bookmarksEnabled === false, 'disabled bookmark feature stays off');
 assert(enabledState.outlineEnabled === true, 'outline feature state is applied at runtime');
 
@@ -419,6 +423,7 @@ defaultContext.runLocalGet({
     extensionEnabled: true,
     features: {
       progressBar: false,
+      screenNavigation: false,
       scrollBookmarks: false,
       outlineNavigation: false
     }
@@ -437,6 +442,7 @@ const enabledDomainState = {
   extensionEnabled: true,
   features: {
     progressBar: false,
+    screenNavigation: false,
     scrollBookmarks: false,
     outlineNavigation: false
   }

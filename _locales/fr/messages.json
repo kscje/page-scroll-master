@@ -23,6 +23,8 @@
     "message": "Aller en bas",
     "description": "Floating button tooltip"
   },
+  "previousScreen": { "message": "Écran précédent", "description": "Previous screen button tooltip" },
+  "nextScreen": { "message": "Écran suivant", "description": "Next screen button tooltip" },
   "popupSettings": {
     "message": "Paramètres",
     "description": "Popup settings button label"
