@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 const ROOT = path.join(__dirname, '..');
 const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(ROOT, 'content.js');
 
@@ -154,6 +155,7 @@ function createContext(options = {}) {
   };
 
   vm.createContext(sandbox);
+  vm.runInContext(getSharedRuntimeSource(ROOT, CONTENT_SOURCE_PATH), sandbox);
   vm.runInContext(fs.readFileSync(CONTENT_SOURCE_PATH, 'utf8'), sandbox);
   return { sandbox, body, documentElement };
 }

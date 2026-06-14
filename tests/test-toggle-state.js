@@ -1,18 +1,14 @@
-/**
- * Popup toggle persistence tests for Page Scroll Master.
- *
- * The tests execute popup.js in a small mocked Chrome extension environment so
- * they cover the same load, click, save, and reopen path that users exercise.
- */
-
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 
 const ROOT = path.join(__dirname, '..');
-const POPUP_SOURCE = fs.readFileSync(path.join(ROOT, 'popup.js'), 'utf8');
+const POPUP_PATH = path.join(ROOT, 'popup.js');
+const POPUP_SOURCE = getSharedRuntimeSource(ROOT, POPUP_PATH) + '\n' +
+  fs.readFileSync(POPUP_PATH, 'utf8');
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
-const STATES_KEY = 'enableStates';
+const STATES_KEY = 'domainFeatureStates';
 
 let passCount = 0;
 let failCount = 0;
@@ -27,12 +23,17 @@ function assert(condition, message) {
   }
 }
 
+function clone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
 function createElement(id) {
   return {
     id,
     checked: false,
     disabled: false,
     textContent: '',
+    style: {},
     dataset: {},
     listeners: {},
     addEventListener(type, callback) {
@@ -45,40 +46,57 @@ function createElement(id) {
   };
 }
 
-function clone(value) {
-  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
-}
-
-function createMockChrome(activeUrl, initialLocalData) {
-  const listeners = [];
-  const local = {
-    data: clone(initialLocalData) || {},
+function createStorageArea(data, namespace, listeners) {
+  return {
+    data: clone(data) || {},
     get(keys, callback) {
+      const list = Array.isArray(keys) ? keys : [keys];
       const result = {};
-      keys.forEach((key) => {
-        if (this.data[key] !== undefined) {
-          result[key] = clone(this.data[key]);
-        }
+      list.forEach((key) => {
+        if (this.data[key] !== undefined) result[key] = clone(this.data[key]);
       });
       callback(result);
     },
-    set(data, callback) {
+    set(nextData, callback) {
       const changes = {};
-      Object.keys(data).forEach((key) => {
+      Object.keys(nextData).forEach((key) => {
         changes[key] = {
           oldValue: clone(this.data[key]),
-          newValue: clone(data[key])
+          newValue: clone(nextData[key])
         };
-        this.data[key] = clone(data[key]);
+        this.data[key] = clone(nextData[key]);
       });
-      listeners.forEach((listener) => listener(changes, 'local'));
+      listeners.forEach((listener) => listener(changes, namespace));
       if (callback) callback();
     }
   };
+}
 
-  return {
+function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
+  const listeners = [];
+  const sentMessages = [];
+  const runtimeMessages = [];
+  const elements = {
+    extensionToggle: createElement('extensionToggle'),
+    progressBarToggle: createElement('progressBarToggle'),
+    scrollBookmarksToggle: createElement('scrollBookmarksToggle'),
+    outlineNavigationToggle: createElement('outlineNavigationToggle'),
+    currentSite: createElement('currentSite'),
+    unavailableMessage: createElement('unavailableMessage'),
+    openSettings: createElement('openSettings')
+  };
+  const runtime = {
+    lastError: null,
+    openOptionsPage() {},
+    sendMessage(message, callback) {
+      runtimeMessages.push(clone(message));
+      if (callback) callback({ ok: false, reason: 'consent_disabled' });
+    }
+  };
+  const chrome = {
     storage: {
-      local,
+      local: createStorageArea(initialLocalData, 'local', listeners),
+      sync: createStorageArea(initialSyncData, 'sync', listeners),
       onChanged: {
         addListener(callback) {
           listeners.push(callback);
@@ -88,30 +106,19 @@ function createMockChrome(activeUrl, initialLocalData) {
         }
       }
     },
-    runtime: {
-      lastError: null,
-      openOptionsPage() {}
-    },
+    runtime,
     tabs: {
       query(queryInfo, callback) {
-        callback(activeUrl ? [{ url: activeUrl, id: 1 }] : []);
+        callback(activeUrl ? [{ url: activeUrl, id: 7 }] : []);
+      },
+      sendMessage(tabId, message, callback) {
+        sentMessages.push({ tabId, message: clone(message) });
+        runtime.lastError = null;
+        if (callback) callback();
       }
     },
-    i18n: {
-      getMessage(key) {
-        return key === 'popupEnableToggle' ? 'Enable on this site' : '';
-      }
-    }
+    i18n: { getMessage() { return ''; } }
   };
-}
-
-function openPopup(activeUrl, initialLocalData) {
-  const elements = {
-    enableToggle: createElement('enableToggle'),
-    toggleLabel: createElement('toggleLabel'),
-    openSettings: createElement('openSettings')
-  };
-  const chrome = createMockChrome(activeUrl, initialLocalData);
   const context = {
     chrome,
     console,
@@ -119,6 +126,7 @@ function openPopup(activeUrl, initialLocalData) {
     Boolean,
     Object,
     Array,
+    navigator: { language: 'en-US' },
     document: {
       getElementById(id) {
         return elements[id];
@@ -130,75 +138,78 @@ function openPopup(activeUrl, initialLocalData) {
   };
 
   vm.runInNewContext(POPUP_SOURCE, context, { filename: 'popup.js' });
-
-  return { chrome, elements };
+  return { chrome, elements, sentMessages, runtimeMessages };
 }
 
-function togglePopupSwitch(popup, checked) {
-  popup.elements.enableToggle.checked = checked;
-  popup.elements.enableToggle.dispatch('change');
+function toggle(popup, key, checked) {
+  popup.elements[key].checked = checked;
+  popup.elements[key].dispatch('change');
 }
 
-console.log('=== Page Scroll Master popup toggle persistence tests ===\n');
+console.log('=== Page Scroll Master domain popup tests ===\n');
 
-console.log('Test 0: Popup has permission to read the active tab URL');
-assert(MANIFEST.permissions.includes('activeTab'), 'manifest includes activeTab permission for popup hostname detection');
+console.log('Test 0: Popup has permission to inspect the active tab');
+assert(MANIFEST.permissions.includes('activeTab'), 'manifest includes activeTab');
 
-console.log('Test 1: New supported site defaults to enabled after popup load');
-let popup = openPopup('https://example.com/page', {});
-assert(popup.elements.enableToggle.checked === true, 'new site switch is enabled by default');
-assert(popup.elements.enableToggle.disabled === false, 'switch is interactive after hostname is resolved');
+console.log('\nTest 1: New domains default to extension on and advanced features off');
+let popup = openPopup('https://docs.example.co.uk/page');
+assert(popup.elements.currentSite.textContent === 'example.co.uk', 'public suffix parsing resolves example.co.uk');
+assert(popup.elements.extensionToggle.checked === true, 'extension defaults to enabled');
+assert(popup.elements.progressBarToggle.checked === false, 'progress bar defaults to disabled');
+assert(popup.elements.scrollBookmarksToggle.checked === false, 'bookmarks default to disabled');
+assert(popup.elements.outlineNavigationToggle.checked === false, 'outline navigation defaults to disabled');
+assert(popup.elements.progressBarToggle.disabled === false, 'feature switches are interactive while extension is enabled');
 
-console.log('\nTest 2: Turning the switch off stores an explicit false value');
-togglePopupSwitch(popup, false);
-assert(popup.chrome.storage.local.data[STATES_KEY]['example.com'] === false, 'storage keeps example.com=false');
-assert(popup.elements.enableToggle.checked === false, 'current popup remains visually off');
+console.log('\nTest 2: Feature changes persist by registrable domain and notify the active tab');
+toggle(popup, 'progressBarToggle', true);
+assert(popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.progressBar === true, 'progress state is stored under the main domain');
+assert(popup.sentMessages.some((entry) => entry.message.action === 'updateDomainFeatureState'), 'current tab receives an immediate state update');
+const analyticsToggle = popup.runtimeMessages.find((message) => message.action === 'analytics:recordToggle');
+assert(analyticsToggle.feature === 'progressBar' && analyticsToggle.enabled === true, 'popup records only the changed feature state');
+assert(!Object.prototype.hasOwnProperty.call(analyticsToggle, 'domain'), 'popup analytics message excludes the current domain');
 
-console.log('\nTest 3: Reopening the popup restores the stored off state');
-popup = openPopup('https://example.com/again', popup.chrome.storage.local.data);
-assert(popup.elements.enableToggle.checked === false, 'reopened popup shows the switch off');
-assert(popup.elements.enableToggle.disabled === false, 'reopened popup can still be toggled');
+console.log('\nTest 3: Disabling the extension retains feature choices and disables their controls');
+toggle(popup, 'extensionToggle', false);
+const disabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'];
+assert(disabledState.extensionEnabled === false, 'extension state is stored separately');
+assert(disabledState.features.progressBar === true, 'saved progress choice is retained');
+assert(popup.elements.progressBarToggle.disabled === true, 'feature switches become unavailable');
 
-console.log('\nTest 4: Saving one site merges with existing site states');
-popup = openPopup('https://example.com/page', {
-  [STATES_KEY]: {
-    'another.example': false,
-    'enabled.example': true
+console.log('\nTest 4: Another subdomain reads the same main-domain state');
+popup = openPopup(
+  'https://app.example.co.uk/other',
+  popup.chrome.storage.local.data
+);
+assert(popup.elements.currentSite.textContent === 'example.co.uk', 'subdomains share one domain key');
+assert(popup.elements.extensionToggle.checked === false, 'subdomain restores extension off state');
+assert(popup.elements.progressBarToggle.checked === true, 'subdomain restores retained feature state');
+
+console.log('\nTest 5: Legacy hostname and advanced settings migrate without losing behavior');
+popup = openPopup(
+  'https://www.legacy.co.uk/page',
+  {
+    enableStates: {
+      'docs.legacy.co.uk': false
+    }
+  },
+  {
+    advancedSettings: {
+      progressBar: { enabled: true },
+      scrollBookmarks: { enabled: false },
+      outlineNavigation: { enabled: true }
+    }
   }
-});
-togglePopupSwitch(popup, false);
-const mergedStates = popup.chrome.storage.local.data[STATES_KEY];
-assert(mergedStates['example.com'] === false, 'current site off state is saved');
-assert(mergedStates['another.example'] === false, 'existing off state for another site is preserved');
-assert(mergedStates['enabled.example'] === true, 'existing enabled state for another site is preserved');
+);
+const migrated = popup.chrome.storage.local.data[STATES_KEY]['legacy.co.uk'];
+assert(migrated.extensionEnabled === false, 'legacy disabled hostname migrates to its main domain');
+assert(migrated.features.progressBar === true, 'legacy progress setting becomes a local migration default');
+assert(migrated.features.outlineNavigation === true, 'legacy outline setting is preserved');
 
-console.log('\nTest 5: External local storage changes refresh the visible switch');
-popup.chrome.storage.onChanged.trigger({
-  [STATES_KEY]: {
-    oldValue: { 'example.com': false },
-    newValue: { 'example.com': true }
-  }
-}, 'local');
-assert(popup.elements.enableToggle.checked === true, 'local storage change updates popup to on');
-
-console.log('\nTest 6: Non-local storage changes do not affect the popup switch');
-popup.chrome.storage.onChanged.trigger({
-  [STATES_KEY]: {
-    oldValue: { 'example.com': true },
-    newValue: { 'example.com': false }
-  }
-}, 'sync');
-assert(popup.elements.enableToggle.checked === true, 'sync namespace change is ignored');
-
-console.log('\nTest 7: Unsupported pages keep the switch disabled');
-popup = openPopup('chrome://extensions', {});
-assert(popup.elements.enableToggle.checked === true, 'unsupported page falls back to enabled display');
-assert(popup.elements.enableToggle.disabled === true, 'unsupported page switch is not interactive');
-
-console.log('\nTest 8: Invalid stored state falls back safely');
-popup = openPopup('https://invalid-state.example', { [STATES_KEY]: [] });
-assert(popup.elements.enableToggle.checked === true, 'invalid state object defaults to enabled');
-assert(popup.elements.enableToggle.disabled === false, 'valid hostname can still be toggled');
+console.log('\nTest 6: Unsupported pages expose no editable state');
+popup = openPopup('chrome://extensions');
+assert(popup.elements.extensionToggle.disabled === true, 'extension switch is disabled');
+assert(popup.elements.progressBarToggle.disabled === true, 'feature switches are disabled');
+assert(popup.elements.unavailableMessage.style.display === 'block', 'unsupported-page notice is visible');
 
 console.log('\n=== Test summary ===');
 console.log(`Passed: ${passCount}`);

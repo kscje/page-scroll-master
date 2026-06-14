@@ -10,11 +10,13 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 
 const ROOT = path.join(__dirname, '..');
 const OPTIONS_SOURCE_PATH = process.env.OPTIONS_SOURCE || path.join(ROOT, 'options.js');
 const OPTIONS_SOURCE = fs.readFileSync(OPTIONS_SOURCE_PATH, 'utf8');
 const OPTIONS_HTML = fs.readFileSync(path.join(ROOT, 'options.html'), 'utf8');
+const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
 
 let passCount = 0;
 let failCount = 0;
@@ -162,8 +164,8 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     progressHorizontalPosition: createElement('progressHorizontalPosition', { value: 'top' }),
     progressColorMode: createElement('progressColorMode', { value: 'followTopButton' }),
     progressCustomColorContainer: createElement('progressCustomColorContainer'),
-    progressCustomColor: createElement('progressCustomColor', { value: '#4A9EDD' }),
-    progressCustomColorHex: createElement('progressCustomColorHex', { value: '#4A9EDD' }),
+    progressCustomColor: createElement('progressCustomColor', { value: '#4a9edd' }),
+    progressCustomColorHex: createElement('progressCustomColorHex', { value: '#4a9edd' }),
     progressThickness: createElement('progressThickness', { value: '4' }),
     progressVerticalHeight: createElement('progressVerticalHeight', { value: '120' }),
     progressClickToJump: createElement('progressClickToJump', { checked: true }),
@@ -174,15 +176,15 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     scrollBookmarkButtonPosition: createElement('scrollBookmarkButtonPosition', { value: 'pageBottom' }),
     scrollBookmarkButtonColorMode: createElement('scrollBookmarkButtonColorMode', { value: 'followTopButton' }),
     scrollBookmarkButtonCustomColorContainer: createElement('scrollBookmarkButtonCustomColorContainer'),
-    scrollBookmarkButtonCustomColor: createElement('scrollBookmarkButtonCustomColor', { value: '#4A9EDD' }),
-    scrollBookmarkButtonCustomColorHex: createElement('scrollBookmarkButtonCustomColorHex', { value: '#4A9EDD' }),
+    scrollBookmarkButtonCustomColor: createElement('scrollBookmarkButtonCustomColor', { value: '#4a9edd' }),
+    scrollBookmarkButtonCustomColorHex: createElement('scrollBookmarkButtonCustomColorHex', { value: '#4a9edd' }),
     outlineNavigationEnabled: createElement('outlineNavigationEnabled'),
     outlineNavigationSettings: createElement('outlineNavigationSettings'),
     outlineButtonPosition: createElement('outlineButtonPosition', { value: 'pageBottom' }),
     outlineButtonColorMode: createElement('outlineButtonColorMode', { value: 'followTopButton' }),
     outlineButtonCustomColorContainer: createElement('outlineButtonCustomColorContainer'),
-    outlineButtonCustomColor: createElement('outlineButtonCustomColor', { value: '#4A9EDD' }),
-    outlineButtonCustomColorHex: createElement('outlineButtonCustomColorHex', { value: '#4A9EDD' }),
+    outlineButtonCustomColor: createElement('outlineButtonCustomColor', { value: '#4a9edd' }),
+    outlineButtonCustomColorHex: createElement('outlineButtonCustomColorHex', { value: '#4a9edd' }),
     outlineSourceH1: createElement('outlineSourceH1', { checked: true }),
     outlineSourceH2: createElement('outlineSourceH2', { checked: true }),
     outlineSourceH3: createElement('outlineSourceH3'),
@@ -209,7 +211,14 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     addDomainButton: createElement('addDomainButton'),
     clearDisabledSitesButton: createElement('clearDisabledSitesButton'),
     restoreAllSitesButton: createElement('restoreAllSitesButton'),
+    analyticsEnabled: createElement('analyticsEnabled'),
+    analyticsStatus: createElement('analyticsStatus'),
+    analyticsPreviewData: createElement('analyticsPreviewData', { textContent: '[]' }),
+    onboardingGuide: createElement('onboardingGuide'),
+    dismissOnboardingButton: createElement('dismissOnboardingButton'),
+    reopenOnboardingButton: createElement('reopenOnboardingButton'),
     saveButton: createElement('saveButton', { textContent: 'Save' }),
+    releaseNotesList: createElement('releaseNotesList'),
     previewTopButton: createElement('previewTopButton', {
       children: [createElement('topSvg', { attributes: { tagName: 'svg' } })]
     }),
@@ -240,12 +249,58 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
 
   elements.previewTopButton.children[0].tagName = 'svg';
   elements.previewBottomButton.children[0].tagName = 'svg';
+  elements.onboardingGuide.scrollIntoView = function (options) {
+    this.scrollIntoViewOptions = options;
+  };
 
   const syncData = JSON.parse(JSON.stringify(initialSyncData));
   const localData = JSON.parse(JSON.stringify(initialLocalData));
   const sentMessages = [];
+  const analyticsMessages = [];
   const createdTabs = [];
-  const runtime = { lastError: null };
+  let analyticsPermissionRequestCount = 0;
+  const analyticsState = {
+    configured: true,
+    permissionOrigin: 'https://page-scroll-master-analytics.kscje-apps.workers.dev/*',
+    consent: {
+      enabled: initialLocalData.analyticsConsent?.enabled === true,
+      policyVersion: 2
+    },
+    events: []
+  };
+  const runtime = {
+    lastError: null,
+    getManifest() {
+      return MANIFEST;
+    },
+    sendMessage(message, callback) {
+      analyticsMessages.push(JSON.parse(JSON.stringify(message)));
+      if (message.action === 'analytics:getState') {
+        callback({
+          ok: true,
+          state: JSON.parse(JSON.stringify(analyticsState))
+        });
+        return;
+      }
+      if (message.action === 'analytics:setConsent') {
+        analyticsState.consent.enabled = message.enabled === true;
+        if (!analyticsState.consent.enabled) analyticsState.events = [];
+        callback({ ok: true });
+        return;
+      }
+      if (message.action === 'analytics:recordSettingsSnapshot' &&
+          analyticsState.consent.enabled) {
+        analyticsState.events = [{
+          eventName: 'settings_snapshot',
+          eventDate: '2026-06-13',
+          payload: message.payload
+        }];
+        callback({ ok: true });
+        return;
+      }
+      callback({ ok: false, reason: 'consent_disabled' });
+    }
+  };
 
   const context = {
     console,
@@ -349,13 +404,26 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
           createdTabs.push(createProperties);
         }
       },
-      runtime
+      runtime,
+      permissions: {
+        request(options, callback) {
+          analyticsPermissionRequestCount += 1;
+          callback(true);
+        },
+        remove(options, callback) {
+          callback(true);
+        }
+      }
     }
   };
 
   context.window.document = context.document;
 
-  vm.runInNewContext(OPTIONS_SOURCE, context, { filename: OPTIONS_SOURCE_PATH });
+  vm.runInNewContext(
+    getSharedRuntimeSource(ROOT, OPTIONS_SOURCE_PATH) + '\n' + OPTIONS_SOURCE,
+    context,
+    { filename: OPTIONS_SOURCE_PATH }
+  );
 
   return {
     context,
@@ -363,6 +431,11 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}) {
     syncData,
     localData,
     sentMessages,
+    analyticsMessages,
+    analyticsState,
+    get analyticsPermissionRequestCount() {
+      return analyticsPermissionRequestCount;
+    },
     createdTabs,
     appendedHeadElements
   };
@@ -395,13 +468,213 @@ assert(page.elements.previewTopButton.style.opacity === 0.35, 'preview opacity i
 assert(page.elements.previewTopButton.style.left === '24px', 'preview horizontal edge distance is applied');
 assert(page.elements.previewBottomButton.style.bottom === '24px', 'preview vertical edge distance is applied');
 assert(page.elements.buttonShape.value === 'round', 'button shape defaults to round when not in storage');
-assert(page.elements.scrollBookmarksEnabled.checked === false, 'scroll bookmarks default to disabled');
-assert(page.elements.outlineNavigationEnabled.checked === false, 'outline navigation defaults to disabled');
+const basicPanelIndex = OPTIONS_HTML.indexOf('data-tab-panel="basic"');
+const onboardingGuideIndex = OPTIONS_HTML.indexOf('class="onboarding-guide"');
+const settingGridIndex = OPTIONS_HTML.indexOf('class="setting-grid"', basicPanelIndex);
+assert(
+  basicPanelIndex >= 0 &&
+  onboardingGuideIndex > basicPanelIndex &&
+  onboardingGuideIndex < settingGridIndex,
+  'new-user guidance appears on the default basic tab before detailed settings'
+);
+assert(
+  (OPTIONS_HTML.match(/class="onboarding-step"/g) || []).length === 4,
+  'new-user guidance covers four onboarding topics'
+);
+assert(
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingCoreDescription"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingPopupDescription"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingSiteControlsDescription"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyDescription"'),
+  'onboarding explains scroll buttons, toolbar Popup, site controls, and analytics consent'
+);
+assert(
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureProgress"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureBookmarks"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureOutline"'),
+  'onboarding names all three advanced features controlled from the Popup'
+);
+assert(
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyOff"'),
+  'onboarding visibly states that anonymous analytics is off by default'
+);
+assert(page.elements.onboardingGuide.style.display === 'none', 'existing users do not see onboarding without the install marker');
+const newUserPage = createOptionsPage({}, { showOnboarding: true });
+assert(newUserPage.elements.onboardingGuide.style.display === 'block', 'new installations see onboarding while the marker is active');
+newUserPage.elements.dismissOnboardingButton.dispatch('click');
+assert(
+  newUserPage.localData.showOnboarding === false &&
+    newUserPage.elements.onboardingGuide.style.display === 'none',
+  'dismissing onboarding hides it for later settings visits'
+);
+page.elements.reopenOnboardingButton.dispatch('click');
+assert(
+  page.localData.showOnboarding === true &&
+    page.elements.onboardingGuide.style.display === 'block',
+  'the about section can reopen onboarding on demand'
+);
+assert(!OPTIONS_HTML.includes('id="progressBarEnabled"'), 'settings page no longer exposes the progress enable switch');
+assert(!OPTIONS_HTML.includes('id="scrollBookmarksEnabled"'), 'settings page no longer exposes the bookmark enable switch');
+assert(!OPTIONS_HTML.includes('id="outlineNavigationEnabled"'), 'settings page no longer exposes the outline enable switch');
+assert(
+  OPTIONS_HTML.includes('.tab-panel[data-tab-panel="advanced"] .sub-setting {') &&
+    OPTIONS_HTML.includes('padding-left: 0;'),
+  'advanced feature detail sections align with their module headings without indentation'
+);
+assert(
+  page.elements.progressCustomColor.value === '#4a9edd' &&
+    page.elements.scrollBookmarkButtonCustomColor.value === '#4a9edd' &&
+    page.elements.outlineButtonCustomColor.value === '#4a9edd',
+  'all three advanced feature custom colors default to #4a9edd'
+);
+assert(
+  OPTIONS_HTML.includes('data-i18n="settings.progressColorMode">按钮颜色</label>'),
+  'progress color mode uses the button color label'
+);
 assert(page.elements.scrollBookmarkButtonColorMode.value === 'followTopButton', 'scroll bookmark color defaults to the top button');
 assert(page.elements.outlineButtonColorMode.value === 'followTopButton', 'outline color defaults to the top button');
 assert(page.elements.outlineSourceH1.checked === true && page.elements.outlineSourceH2.checked === true, 'old settings receive default H1 and H2 sources');
 assert(page.elements.outlineMaxItems.value === 30, 'old settings receive the default outline batch size');
 assert(page.elements.scrollBookmarkRestoreMode.value === 'prompt', 'scroll bookmark restore mode defaults to prompt');
+assert(page.elements.analyticsEnabled.checked === false, 'anonymous analytics defaults to disabled');
+assert(page.elements.analyticsEnabled.disabled === false, 'analytics local consent remains available before upload is configured');
+assert(page.elements.analyticsPreviewData.textContent === '[]', 'analytics preview starts empty');
+assert(OPTIONS_HTML.includes('id="analyticsEnabled"'), 'settings page exposes the anonymous analytics control');
+assert(
+  OPTIONS_HTML.includes('data-i18n="settings.tab.feedback">建议&关于插件</'),
+  'suggestions tab uses the suggestions and about title'
+);
+assert(
+  (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 3,
+  'feedback page uses one card style for privacy, about, and release notes'
+);
+assert(
+  OPTIONS_HTML.includes('class="analytics-preview feedback-disclosure"'),
+  'analytics preview uses the shared disclosure interaction style'
+);
+
+const domainTablePage = createOptionsPage({}, {
+  domainFeatureMigrationVersion: 1,
+  domainFeatureDefaults: {
+    extensionEnabled: true,
+    features: {
+      progressBar: false,
+      scrollBookmarks: false,
+      outlineNavigation: false
+    }
+  },
+  domainFeatureStates: {
+    'example.com': {
+      extensionEnabled: true,
+      features: {
+        progressBar: true,
+        scrollBookmarks: false,
+        outlineNavigation: true
+      }
+    }
+  }
+});
+const domainHeader = domainTablePage.elements.domainList.children[0];
+const domainRow = domainTablePage.elements.domainList.children[1];
+assert(domainHeader.className === 'domain-header', 'domain feature names render once in a table header');
+assert(
+  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 120px 140px 140px 44px;') &&
+    OPTIONS_HTML.includes('min-width: 704px;'),
+  'domain header and rows use identical explicit column tracks'
+);
+assert(
+  JSON.stringify(domainHeader.children.map((child) => child.textContent)) ===
+    JSON.stringify(['Domain', 'Extension', 'Progress bar', 'Scroll bookmarks', 'Section navigation', 'Actions']),
+  'domain table header labels every column'
+);
+assert(domainRow.children.length === 6, 'domain rows contain one domain, four controls, and one action');
+assert(
+  domainRow.children.slice(1, 5).every((label) =>
+    label.children.length === 1 &&
+    Boolean(label.children[0].getAttribute('aria-label'))
+  ),
+  'domain rows omit repeated feature text while retaining accessible checkbox labels'
+);
+const domainDeleteButton = domainRow.children[5];
+assert(
+  domainDeleteButton.className === 'domain-delete-button' &&
+    domainDeleteButton.innerHTML.includes('<svg') &&
+    domainDeleteButton.textContent === '',
+  'domain deletion uses a compact icon button instead of repeated text'
+);
+assert(
+  domainDeleteButton.getAttribute('aria-label') === 'Delete' &&
+    domainDeleteButton.getAttribute('title') === 'Delete',
+  'domain delete icon retains an accessible label and tooltip'
+);
+
+const analyticsConsentPage = createOptionsPage();
+analyticsConsentPage.elements.analyticsEnabled.checked = true;
+analyticsConsentPage.elements.analyticsEnabled.dispatch('change');
+assert(
+  analyticsConsentPage.analyticsState.consent.enabled === true,
+  'the analytics switch records explicit local consent'
+);
+assert(
+  analyticsConsentPage.analyticsPermissionRequestCount === 1,
+  'analytics consent requests the fixed host and scheduling permissions'
+);
+assert(
+  analyticsConsentPage.analyticsMessages.some((message) =>
+    message.action === 'analytics:recordSettingsSnapshot'
+  ),
+  'first consent records one allowlisted settings snapshot'
+);
+assert(
+  analyticsConsentPage.elements.analyticsPreviewData.textContent.includes('settings_snapshot'),
+  'consented pending data is visible in the preview'
+);
+analyticsConsentPage.elements.analyticsEnabled.checked = false;
+analyticsConsentPage.elements.analyticsEnabled.dispatch('change');
+assert(
+  analyticsConsentPage.analyticsState.consent.enabled === false &&
+  analyticsConsentPage.elements.analyticsPreviewData.textContent === '[]',
+  'opting out clears the pending preview'
+);
+
+const aboutCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card about-card"');
+const releaseNotesCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card release-notes-card"');
+assert(aboutCardIndex >= 0 && releaseNotesCardIndex > aboutCardIndex, 'release notes appear after the about card');
+
+const renderedReleases = page.elements.releaseNotesList.children;
+const plannedReleaseVersions = ['2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const compareTestVersions = (left, right) => {
+  const leftParts = left.split('.').map(Number);
+  const rightParts = right.split('.').map(Number);
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index++) {
+    const difference = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+};
+const expectedVisibleVersions = plannedReleaseVersions.filter(
+  (version) => compareTestVersions(version, MANIFEST.version) <= 0
+);
+assert(renderedReleases.length === expectedVisibleVersions.length, 'release notes start at v1.8 and hide unreleased content');
+assert(renderedReleases[0].getAttribute('data-release-version') === MANIFEST.version, 'current manifest version appears first');
+assert(renderedReleases[0].open === true, 'current version is expanded by default');
+assert(renderedReleases.slice(1).every((release) => release.open !== true), 'historical versions are collapsed by default');
+assert(
+  renderedReleases[renderedReleases.length - 1].getAttribute('data-release-version') === '1.8.0',
+  'v1.8 is the earliest displayed release'
+);
+const currentReleaseSummary = renderedReleases[0].children[0];
+assert(currentReleaseSummary.children[1].textContent === 'Current version', 'current release includes a localized current-version badge');
+const v19Release = renderedReleases.find(
+  (release) => release.getAttribute('data-release-version') === '1.9.0'
+);
+const v19CategoryHeadings = v19Release.children[1].children.map(
+  (category) => category.children[0].textContent
+);
+assert(
+  JSON.stringify(v19CategoryHeadings) === JSON.stringify(['New features', 'Feature improvements']),
+  'empty release-note categories are omitted'
+);
 
 const legacyManualPage = createOptionsPage({
   advancedSettings: {
@@ -432,14 +705,11 @@ page.elements.scrollSpeed.dispatch('input');
 assert(page.elements.speedValue.textContent === '250ms', 'speed label updates on input');
 
 console.log('\nTest 3: Save stores settings and notifies the active tab');
-page.elements.progressBarEnabled.checked = true;
 page.elements.progressBarMode.value = 'horizontalBar';
 page.elements.progressThickness.value = '12';
-page.elements.scrollBookmarksEnabled.checked = true;
 page.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
 page.elements.scrollBookmarkButtonColorMode.value = 'custom';
 page.elements.scrollBookmarkButtonCustomColor.value = '#778899';
-page.elements.outlineNavigationEnabled.checked = true;
 page.elements.outlineButtonPosition.value = 'pageTop';
 page.elements.outlineButtonColorMode.value = 'followBottomButton';
 page.elements.outlineSourceH1.checked = false;
@@ -457,14 +727,14 @@ page.elements.saveButton.dispatch('click');
 assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
 assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
-assert(page.syncData.advancedSettings.progressBar.enabled === true, 'save persists progress bar enabled state');
+assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.progressBar, 'enabled'), 'save omits progress bar enabled state');
 assert(page.syncData.advancedSettings.progressBar.mode === 'horizontalBar', 'save persists progress bar mode');
 assert(page.syncData.advancedSettings.progressBar.thickness === 12, 'save persists progress bar thickness');
-assert(page.syncData.advancedSettings.scrollBookmarks.enabled === true, 'save persists scroll bookmark enabled state');
+assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.scrollBookmarks, 'enabled'), 'save omits bookmark enabled state');
 assert(page.syncData.advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons', 'save persists scroll bookmark button position');
 assert(page.syncData.advancedSettings.scrollBookmarks.buttonColorMode === 'custom', 'save persists scroll bookmark button color mode');
 assert(page.syncData.advancedSettings.scrollBookmarks.buttonCustomColor === '#778899', 'save persists scroll bookmark custom color');
-assert(page.syncData.advancedSettings.outlineNavigation.enabled === true, 'save persists outline navigation enabled state');
+assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.outlineNavigation, 'enabled'), 'save omits outline enabled state');
 assert(page.syncData.advancedSettings.outlineNavigation.buttonPosition === 'pageTop', 'save persists outline button position');
 assert(page.syncData.advancedSettings.outlineNavigation.buttonColorMode === 'followBottomButton', 'save persists outline button color mode');
 assert(page.syncData.advancedSettings.outlineNavigation.sources.h1 === false, 'save persists the H1 outline source');
@@ -479,7 +749,21 @@ assert(page.syncData.advancedSettings.iconCustomization.iconSet === 'doubleArrow
 assert(page.syncData.advancedSettings.iconCustomization.iconColor === '#123456', 'save persists icon color');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateSpeed' && entry.message.speed === 250), 'save sends updateSpeed message');
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateButtonSettings' && entry.message.settings.opacity === 42), 'save sends updateButtonSettings message');
-assert(page.sentMessages.some((entry) => entry.message.action === 'updateAdvancedSettings' && entry.message.settings.progressBar.enabled === true), 'save sends updateAdvancedSettings message');
+assert(
+  page.sentMessages.some((entry) =>
+    entry.message.action === 'updateAdvancedSettings' &&
+    !Object.prototype.hasOwnProperty.call(entry.message.settings.progressBar, 'enabled')
+  ),
+  'save sends detailed advanced settings without enable state'
+);
+assert(
+  page.analyticsMessages.some((message) =>
+    message.action === 'analytics:recordSettingsSnapshot' &&
+    message.payload.buttonSizeBucket === 'large' &&
+    !Object.prototype.hasOwnProperty.call(message.payload, 'topButtonColor')
+  ),
+  'save submits a bucketed settings snapshot without exact colors'
+);
 
 console.log('\nTest 4: Preview controls survive packaged output execution');
 assert(typeof page.elements.previewTopButton.listeners.click?.[0] === 'function', 'preview top click listener is registered');
@@ -518,9 +802,7 @@ assert(page3.syncData.advancedSettings.iconCustomization.enabled === true, 'icon
 
 console.log('\nTest 7: Progress settings update the real preview surface');
 let page4 = createOptionsPage();
-page4.elements.progressBarEnabled.checked = true;
-page4.elements.progressBarEnabled.dispatch('change');
-assert(page4.elements.previewProgressButton.style.display === 'flex', 'vertical progress preview is shown when page progress is enabled');
+assert(page4.elements.previewProgressButton.style.display === 'flex', 'vertical progress preview is always available for configuration');
 assert(
   page4.elements.previewBottomButton.style.top.includes('176'),
   `bottom preview button is offset below vertical progress preview (${page4.elements.previewBottomButton.style.top})`
@@ -536,27 +818,24 @@ page4.elements.progressHorizontalPosition.value = 'bottom';
 page4.elements.progressHorizontalPosition.dispatch('change');
 assert(page4.elements.previewHorizontalProgress.style.bottom === '0', 'horizontal progress preview follows bottom position');
 
-console.log('\nTest 8: Advanced feature previews are hidden by default and follow button geometry when enabled');
+console.log('\nTest 8: Advanced feature previews remain available and follow button geometry');
 let page5 = createOptionsPage();
-assert(page5.elements.previewBookmarkButton.style.display === 'none', 'scroll bookmark preview is hidden by default');
-assert(page5.elements.previewOutlineButton.style.display === 'none', 'outline preview is hidden by default');
-page5.elements.scrollBookmarksEnabled.checked = true;
+assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview remains visible for configuration');
+assert(page5.elements.previewOutlineButton.style.display === 'flex', 'outline preview remains visible for configuration');
 page5.elements.scrollBookmarkButtonPosition.value = 'pageBottom';
 page5.elements.scrollBookmarkButtonColorMode.value = 'followTopButton';
-page5.elements.scrollBookmarksEnabled.dispatch('change');
 assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview is shown when enabled');
 assert(page5.elements.previewBookmarkButton.style.backgroundColor === '#4A9EDD', 'scroll bookmark preview falls back to top button color');
 assert(page5.elements.previewBookmarkButton.style.bottom === '8px', 'page-bottom scroll bookmark preview uses edge distance when scroll buttons are centered');
 page5.elements.verticalAlignment.value = 'bottom';
 page5.elements.verticalAlignment.dispatch('change');
-assert(page5.elements.previewBookmarkButton.style.bottom === '104px', 'page-bottom scroll bookmark preview avoids bottom-aligned scroll buttons');
+assert(page5.elements.previewBookmarkButton.style.bottom !== page5.elements.previewOutlineButton.style.bottom, 'page-bottom feature previews do not overlap');
 page5.elements.verticalAlignment.value = 'center';
 page5.elements.verticalAlignment.dispatch('change');
 page5.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
-page5.elements.outlineNavigationEnabled.checked = true;
 page5.elements.outlineButtonPosition.value = 'betweenScrollButtons';
 page5.elements.scrollBookmarkButtonPosition.dispatch('change');
-page5.elements.outlineNavigationEnabled.dispatch('change');
+page5.elements.outlineButtonPosition.dispatch('change');
 assert(page5.elements.previewBookmarkButton.style.top.includes('calc(50%'), 'between-buttons scroll bookmark preview joins centered button group');
 assert(page5.elements.previewOutlineButton.style.top.includes('calc(50%'), 'between-buttons outline preview joins centered button group');
 assert(page5.elements.previewBookmarkButton.style.top !== page5.elements.previewOutlineButton.style.top, 'between-buttons feature previews do not overlap');
@@ -633,11 +912,7 @@ assert(page7.elements.outlineNavigationSettings.style.display === 'block', 'enab
 assert(page7.elements.outlineSourceH3.checked === true, 'saved H3 source loads into the settings page');
 assert(page7.elements.outlineMaxItems.value === 50, 'saved outline batch size loads into the settings page');
 assert(page7.elements.outlineFilterShortHeadings.checked === false, 'saved short heading filter loads into the settings page');
-page7.elements.outlineNavigationEnabled.checked = false;
-page7.elements.outlineNavigationEnabled.dispatch('change');
-assert(page7.elements.outlineNavigationSettings.style.display === 'none', 'disabled outline navigation hides its child settings');
-page7.elements.outlineNavigationEnabled.checked = true;
-page7.elements.outlineNavigationEnabled.dispatch('change');
+assert(page7.elements.outlineNavigationSettings.style.display === 'block', 'outline details remain visible without an enable switch');
 page7.elements.outlineSourceH3.checked = false;
 page7.elements.outlineSourceH3.dispatch('change');
 assert(page7.elements.outlineSourceH1.checked === true && page7.elements.outlineSourceH2.checked === true, 'clearing all outline sources restores H1 and H2');

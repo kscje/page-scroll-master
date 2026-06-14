@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="560" viewBox="0 0 1400 560">
+  <defs>
+    <linearGradient id="promoBackground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071a2a"/>
+      <stop offset="0.58" stop-color="#0c3044"/>
+      <stop offset="1" stop-color="#07615d"/>
+    </linearGradient>
+    <linearGradient id="promoWarm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#ff8e6e"/>
+    </linearGradient>
+    <filter id="promoShadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#020b12" flood-opacity="0.35"/>
+    </filter>
+    <filter id="promoSmallShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#071a2a" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="560" fill="url(#promoBackground)"/>
+  <circle cx="1260" cy="36" r="275" fill="#50d7ff" opacity="0.09"/>
+  <circle cx="65" cy="560" r="255" fill="#1fca91" opacity="0.1"/>
+  <path d="M 0 475 C 310 410, 490 570, 790 490 S 1160 410, 1400 470 V 560 H 0 Z" fill="#ffffff" opacity="0.035"/>
+
+  <g>
+    <rect x="76" y="70" width="74" height="74" rx="21" fill="#ffffff" filter="url(#promoShadow)"/>
+    <image x="89" y="83" width="48" height="48" href="data:image/png;base64,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"/>
+    <text x="174" y="99" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="31.9" font-weight="860" fill="#f7fbff" text-anchor="start" opacity="1">Smart Scroll Navigator</text>
+    <text x="176" y="136" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="17" font-weight="780" fill="#74e7ca" text-anchor="start" opacity="1">Smart Scroll Navigator · V2.1</text>
+    <text x="76" y="218" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="26.2" font-weight="880" fill="#f7fbff" text-anchor="start" opacity="1">Long pages, effortless navigation</text>
+    <text x="78" y="264" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="18.9" font-weight="620" fill="#b8d5df" text-anchor="start" opacity="1">Top/bottom jumps, progress, bookmarks, and smart sections</text>
+    
+    <rect x="78" y="314" width="158" height="44" rx="22" fill="#dff8ff"/>
+    
+    <text x="157" y="343" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="16.0" font-weight="750" fill="#0b4863" text-anchor="middle" opacity="1">Top / bottom</text>
+  
+    
+    <rect x="250" y="314" width="132" height="44" rx="22" fill="#ddf8ed"/>
+    
+    <text x="316" y="343" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#086149" text-anchor="middle" opacity="1">Progress jump</text>
+  
+    
+    <rect x="396" y="314" width="132" height="44" rx="22" fill="#fff1cf"/>
+    
+    <text x="462" y="343" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="14.2" font-weight="750" fill="#7b4d00" text-anchor="middle" opacity="1">Bookmarks</text>
+  
+    
+    <rect x="542" y="314" width="146" height="44" rx="22" fill="#f0e9ff"/>
+    
+    <text x="615" y="343" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#51328a" text-anchor="middle" opacity="1">Smart sections</text>
+  
+    <rect x="78" y="388" width="610" height="82" rx="22" fill="#ffffff" opacity="0.09" stroke="#74e7ca" stroke-width="1.5"/>
+    <circle cx="112" cy="420" r="7" fill="#74e7ca"/>
+    <text x="132" y="427" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="730" fill="#f7fbff" text-anchor="start" opacity="1">Control the extension and three advanced features from the toolbar popup</text>
+    <circle cx="112" cy="450" r="7" fill="#50bff3"/>
+    <text x="132" y="457" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="17.1" font-weight="730" fill="#f7fbff" text-anchor="start" opacity="1">Built for articles, docs, wikis, and Notion · SPA</text>
+  </g>
+
+  <g filter="url(#promoShadow)">
+    <rect x="750" y="66" width="572" height="430" rx="30" fill="#ffffff"/>
+    <rect x="750" y="66" width="572" height="68" rx="30" fill="#eaf2f8"/>
+    <rect x="750" y="110" width="572" height="24" fill="#eaf2f8"/>
+    <circle cx="784" cy="99" r="8" fill="#ff6b6b"/>
+    <circle cx="810" cy="99" r="8" fill="#ffc857"/>
+    <circle cx="836" cy="99" r="8" fill="#48c78e"/>
+    <rect x="876" y="84" width="386" height="30" rx="15" fill="#ffffff"/>
+    <text x="900" y="105" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="550" fill="#6d7e8b" text-anchor="start" opacity="1">docs.example.com/guide</text>
+    <rect x="792" y="174" width="220" height="20" rx="10" fill="#18354b"/>
+    <rect x="792" y="220" width="380" height="12" rx="6" fill="#dce9f1"/>
+    <rect x="792" y="252" width="428" height="12" rx="6" fill="#dce9f1"/>
+    <rect x="792" y="284" width="350" height="12" rx="6" fill="#dce9f1"/>
+    <rect x="792" y="316" width="404" height="12" rx="6" fill="#dce9f1"/>
+    <rect x="792" y="360" width="176" height="17" rx="9" fill="#486477"/>
+    <rect x="792" y="400" width="404" height="12" rx="6" fill="#dce9f1"/>
+    <rect x="792" y="458" width="454" height="9" rx="5" fill="#d7e3ea"/>
+    <rect x="792" y="458" width="281" height="9" rx="5" fill="#1fca91"/>
+  </g>
+
+  <g filter="url(#promoSmallShadow)">
+    <rect x="1216" y="174" width="76" height="270" rx="38" fill="#eff8fb" stroke="#d2e4ed" stroke-width="2"/>
+    <circle cx="1254" cy="214" r="31" fill="#319fe2"/>
+    <path d="M 1254 193 L 1236 216 H 1247 V 233 H 1261 V 216 H 1272 Z" fill="#ffffff"/>
+    <rect x="1233" y="253" width="42" height="66" rx="21" fill="#d2e3ea"/>
+    <rect x="1233" y="280" width="42" height="39" rx="21" fill="#1fca91"/>
+    <text x="1254" y="274" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="850" fill="#15364b" text-anchor="middle" opacity="1">62%</text>
+    <circle cx="1254" cy="351" r="31" fill="#f0a23b"/>
+    <path d="M 1241 332 H 1267 V 371 L 1254 362 L 1241 371 Z" fill="#ffffff"/>
+    <circle cx="1254" cy="414" r="31" fill="#7659d6"/>
+    <circle cx="1242" cy="403" r="3" fill="#ffffff"/>
+    <circle cx="1242" cy="414" r="3" fill="#ffffff"/>
+    <circle cx="1242" cy="425" r="3" fill="#ffffff"/>
+    <path d="M 1250 403 H 1267 M 1250 414 H 1267 M 1250 425 H 1267" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <circle cx="1254" cy="476" r="31" fill="#1ca972" filter="url(#promoSmallShadow)"/>
+  <path d="M 1254 497 L 1236 474 H 1247 V 457 H 1261 V 474 H 1272 Z" fill="#ffffff"/>
+</svg>

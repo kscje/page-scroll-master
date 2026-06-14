@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-06-13
+
+### Added
+- ✅ 新增按主域名控制插件总开关、页面进度条、滚动位置书签和智能段落跳转
+- ✅ 新安装后自动打开设置页，并提供可关闭、可重新查看的快速开始引导
+- ✅ 设置页新增本地多语言更新记录，展示 `v1.8.0` 以来的主要变化
+- ✅ 新增默认关闭的匿名使用统计，经用户主动同意后仅发送区间化设置和 UTC 日级聚合操作次数
+- ✅ 新增固定统计端点、可选主机与 `alarms` 权限、六小时批量上传和有界重试
+
+### Changed
+- ✅ 设置页高级功能区域只保留详细参数，三项高级功能的启用入口统一迁移到 Popup
+- ✅ 站点状态统一按可注册主域名保存在 `chrome.storage.local`，同一主域名下的子域名共享状态
+- ✅ 域名管理升级为插件和三项高级功能的统一状态列表
+- ✅ 隐私政策和发布资料同步说明匿名统计的数据边界、权限、保留期和退出方式
+
+### Fixed
+- ✅ 旧版 `enableStates` 和高级功能启用设置迁移时保留已有行为
+- ✅ 重复切换主域名状态时避免残留重复 DOM、滚动监听器或目录快照
+
 ## [2.0.0] - 2026-06-07
 
 ### Added
@@ -173,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.1.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.1.0
 [2.0.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.0.0
 [1.9.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.9.0
 [1.8.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.8.0

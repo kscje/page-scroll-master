@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071a2a"/>
+      <stop offset="0.58" stop-color="#0c2f43"/>
+      <stop offset="1" stop-color="#075b59"/>
+    </linearGradient>
+    <linearGradient id="aqua" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#50d7ff"/>
+      <stop offset="1" stop-color="#1fca91"/>
+    </linearGradient>
+    <linearGradient id="warm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#ff8e6e"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#020b12" flood-opacity="0.32"/>
+    </filter>
+    <filter id="smallShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#071a2a" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="800" fill="url(#background)"/>
+  <circle cx="1135" cy="100" r="260" fill="#50d7ff" opacity="0.08"/>
+  <circle cx="105" cy="745" r="260" fill="#1fca91" opacity="0.09"/>
+  <path d="M 0 670 C 280 590, 490 790, 790 690 S 1110 580, 1280 650 V 800 H 0 Z" fill="#ffffff" opacity="0.035"/>
+  <text x="72" y="70" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="17" font-weight="800" fill="#74e7ca" text-anchor="start" opacity="1">SMART SCROLL NAVIGATOR · V2.1</text>
+  <text x="72" y="130" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="43.5" font-weight="850" fill="#f7fbff" text-anchor="start" opacity="1">Progreso + marcadores + secciones</text>
+  <text x="74" y="177" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="17.5" font-weight="600" fill="#b8d5df" text-anchor="start" opacity="1">Controla el progreso, guarda tu posición y navega por secciones</text>
+  
+      <g>
+        <rect x="72" y="230" width="360" height="490" rx="30" fill="#ffffff" opacity="1" stroke="none" stroke-width="0" filter="url(#shadow)"/>
+        <rect x="72" y="230" width="360" height="82" rx="30" fill="#e5f7ff"/>
+        <rect x="72" y="282" width="360" height="30" fill="#e5f7ff"/>
+        <circle cx="116" cy="271" r="24" fill="#319fe2"/>
+        <rect x="106" y="252" width="20" height="38" rx="10" fill="#ffffff" opacity="0.35"/>
+        <rect x="106" y="268" width="20" height="22" rx="10" fill="#ffffff"/>
+        <text x="154" y="280" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13.9" font-weight="820" fill="#174b68" text-anchor="start" opacity="1">Progreso de página</text>
+        
+    <rect x="104" y="340" width="296" height="44" rx="22" fill="#c9efff"/>
+    
+    <text x="252" y="369" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13.6" font-weight="750" fill="#0b587b" text-anchor="middle" opacity="1">Progreso de lectura 62%</text>
+  
+        <text x="104" y="430" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="780" fill="#284252" text-anchor="start" opacity="1">Control vertical de progreso</text>
+        <rect x="104" y="452" width="296" height="70" rx="24" fill="#eff8fb" stroke="#d2e4ed" stroke-width="2"/>
+        <circle cx="140" cy="487" r="25" fill="#319fe2"/>
+        <path d="M 140 470 L 126 488 H 134 V 503 H 146 V 488 H 154 Z" fill="#ffffff"/>
+        <rect x="184" y="468" width="82" height="38" rx="19" fill="#d2e3ea"/>
+        <rect x="184" y="484" width="51" height="22" rx="11" fill="#1fca91"/>
+        <text x="318" y="495" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="20" font-weight="850" fill="#15364b" text-anchor="middle" opacity="1">62%</text>
+        <text x="104" y="566" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="780" fill="#284252" text-anchor="start" opacity="1">Progreso horizontal en el borde</text>
+        <rect x="104" y="590" width="296" height="14" rx="7" fill="#dce6eb"/>
+        <rect x="104" y="590" width="184" height="14" rx="7" fill="#1fca91"/>
+        <circle cx="116" cy="650" r="7" fill="#1fca91"/>
+        <text x="136" y="657" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="690" fill="#526b79" text-anchor="start" opacity="1">Mostrar porcentaje</text>
+        <circle cx="270" cy="650" r="7" fill="#50bff3"/>
+        <text x="290" y="657" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="690" fill="#526b79" text-anchor="start" opacity="1">Clic para saltar</text>
+      </g>
+      <g>
+        <rect x="460" y="230" width="360" height="490" rx="30" fill="#ffffff" opacity="1" stroke="none" stroke-width="0" filter="url(#shadow)"/>
+        <rect x="460" y="230" width="360" height="82" rx="30" fill="#fff5dd"/>
+        <rect x="460" y="282" width="360" height="30" fill="#fff5dd"/>
+        <circle cx="504" cy="271" r="24" fill="#f0a23b"/>
+        <path d="M 489 250 H 519 V 294 L 504 284 L 489 294 Z" fill="#ffffff"/>
+        <text x="542" y="280" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13.6" font-weight="820" fill="#59421b" text-anchor="start" opacity="1">Marcadores de posición</text>
+        <text x="492" y="360" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="800" fill="#284252" text-anchor="start" opacity="1">Documentación del producto</text>
+        <text x="492" y="393" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="650" fill="#738795" text-anchor="start" opacity="1">Instalación y ajustes</text>
+        <rect x="492" y="424" width="296" height="14" rx="7" fill="#dce6eb"/>
+        <rect x="492" y="424" width="184" height="14" rx="7" fill="url(#warm)"/>
+        
+    <rect x="492" y="462" width="296" height="44" rx="22" fill="#fff0cf"/>
+    
+    <text x="640" y="491" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="16.5" font-weight="750" fill="#7b4d00" text-anchor="middle" opacity="1">Guardado en el 62%</text>
+  
+        <rect x="492" y="536" width="296" height="88" rx="20" fill="#fff8e9"/>
+        <text x="516" y="568" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="700" fill="#866d42" text-anchor="start" opacity="1">Al volver a abrir la página</text>
+        <text x="516" y="598" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13.4" font-weight="760" fill="#684d1c" text-anchor="start" opacity="1">Carga automática / Aviso / Carga manual</text>
+        
+    <rect x="492" y="650" width="142" height="44" rx="22" fill="#f0a23b"/>
+    
+    <text x="563" y="679" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#ffffff" text-anchor="middle" opacity="1">Guardar posición</text>
+  
+        
+    <rect x="646" y="650" width="142" height="44" rx="22" fill="#fff0cf"/>
+    
+    <text x="717" y="679" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#7b4d00" text-anchor="middle" opacity="1">Cargar marcador</text>
+  
+      </g>
+      <g>
+        <rect x="848" y="230" width="360" height="490" rx="30" fill="#ffffff" opacity="1" stroke="none" stroke-width="0" filter="url(#shadow)"/>
+        <rect x="848" y="230" width="360" height="82" rx="30" fill="#eee9ff"/>
+        <rect x="848" y="282" width="360" height="30" fill="#eee9ff"/>
+        <circle cx="892" cy="271" r="24" fill="#7659d6"/>
+        
+    <circle cx="876" cy="256" r="3.5" fill="#ffffff"/>
+    <circle cx="876" cy="271" r="3.5" fill="#ffffff"/>
+    <circle cx="876" cy="286" r="3.5" fill="#ffffff"/>
+    <path d="M 885 256 H 910 M 885 271 H 910 M 885 286 H 910" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  
+        <text x="930" y="280" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="12.5" font-weight="820" fill="#3f3268" text-anchor="start" opacity="1">Navegación por secciones</text>
+        <rect x="880" y="340" width="296" height="64" rx="18" fill="#f7f5ff"/>
+        <circle cx="904" cy="372" r="7" fill="#7659d6"/>
+        <text x="924" y="380" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="12.8" font-weight="780" fill="#3f3268" text-anchor="start" opacity="1">1. Inicio rápido</text>
+        <rect x="880" y="416" width="296" height="56" rx="16" fill="#f5f9fb"/>
+        <circle cx="904" cy="444" r="6" fill="#a7b8c3"/>
+        <text x="924" y="452" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="15.0" font-weight="690" fill="#405767" text-anchor="start" opacity="1">2. Activar por dominio</text>
+        <rect x="880" y="484" width="296" height="56" rx="16" fill="#f5f9fb"/>
+        <circle cx="904" cy="512" r="6" fill="#a7b8c3"/>
+        <text x="924" y="520" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="13.7" font-weight="690" fill="#405767" text-anchor="start" opacity="1">3. Personalizar progreso</text>
+        <rect x="880" y="552" width="296" height="56" rx="16" fill="#f5f9fb"/>
+        <circle cx="904" cy="580" r="6" fill="#a7b8c3"/>
+        <text x="924" y="588" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="690" fill="#405767" text-anchor="start" opacity="1">4. Privacidad y estadísticas</text>
+        
+    <rect x="880" y="650" width="90" height="44" rx="22" fill="#e9eef2"/>
+    
+    <text x="925" y="679" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="12.0" font-weight="750" fill="#4d6270" text-anchor="middle" opacity="1">Anterior</text>
+  
+        
+    <rect x="978" y="650" width="90" height="44" rx="22" fill="#7659d6"/>
+    
+    <text x="1023" y="679" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#ffffff" text-anchor="middle" opacity="1">Siguiente</text>
+  
+        
+    <rect x="1076" y="650" width="100" height="44" rx="22" fill="#eee9ff"/>
+    
+    <text x="1126" y="679" font-family="system-ui, -apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif" font-size="11.0" font-weight="750" fill="#51328a" text-anchor="middle" opacity="1">Resaltar sección</text>
+  
+      </g>
+    
+</svg>

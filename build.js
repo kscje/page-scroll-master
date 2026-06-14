@@ -12,6 +12,8 @@ const MANIFEST = require('./manifest.json');
 const INCLUDED_FILES = [
   'manifest.json',
   'background.js',
+  'analytics.js',
+  'domain-utils.js',
   'content.js',
   'popup.html',
   'popup.js',
@@ -22,6 +24,7 @@ const INCLUDED_FILES = [
 const INCLUDED_DIRS = [
   'icons',
   '_locales',
+  'vendor',
 ];
 
 function ensureDir(dir) {
@@ -158,12 +161,7 @@ function minifyCSSContent(css) {
 }
 
 function minifyScriptContent(js) {
-  js = js.replace(/\/\/.*$/gm, '');
-  js = js.replace(/\/\*[\s\S]*?\*\//g, '');
-  js = js.replace(/^\s*[\r\n]/gm, '');
-  js = js.replace(/[ \t]+/g, ' ');
-  js = js.replace(/^\s+|\s+$/g, '');
-  return js;
+  return js.trim();
 }
 
 function minifyJS(filePath) {
@@ -196,61 +194,8 @@ function resolveLocalTerser() {
 }
 
 function basicMinifyJS(filePath) {
-  let content = fs.readFileSync(filePath, 'utf-8');
-
-  content = removeCommentsSafely(content);
-
-  content = content.replace(/^\s*[\r\n]/gm, '');
-  content = content.replace(/[ \t]+/g, ' ');
-
-  fs.writeFileSync(filePath, content, 'utf-8');
-}
-
-function removeCommentsSafely(code) {
-  let result = '';
-  let i = 0;
-  const len = code.length;
-
-  while (i < len) {
-    if (code[i] === '/' && code[i + 1] === '/') {
-      while (i < len && code[i] !== '\n') i++;
-      continue;
-    }
-    if (code[i] === '/' && code[i + 1] === '*') {
-      i += 2;
-      while (i < len - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++;
-      i += 2;
-      continue;
-    }
-    if (code[i] === '"' || code[i] === "'" || code[i] === '`') {
-      const quote = code[i];
-      result += quote;
-      i++;
-      while (i < len) {
-        if (code[i] === '\\') {
-          result += code[i] + code[i + 1];
-          i += 2;
-        } else if (code[i] === quote) {
-          result += quote;
-          i++;
-          break;
-        } else {
-          result += code[i];
-          i++;
-        }
-      }
-      continue;
-    }
-    if (code[i] === '/') {
-      if (i + 1 < len && (code[i + 1] === '/' || code[i + 1] === '*')) {
-        continue;
-      }
-    }
-    result += code[i];
-    i++;
-  }
-
-  return result;
+  const content = fs.readFileSync(filePath, 'utf-8');
+  fs.writeFileSync(filePath, content.trim() + '\n', 'utf-8');
 }
 
 function createPackage() {
@@ -378,6 +323,34 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-background-lifecycle.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-background-install-lifecycle.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-settings.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-payload-sanitization.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-queue.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-consent.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-upload.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-toggle-state.js')], {
     cwd: ROOT,
     stdio: 'inherit',
@@ -447,6 +420,31 @@ function runRegressionTests() {
     env: {
       ...process.env,
       CONTENT_SOURCE: path.join(BUILD_DIR, 'content.js'),
+    },
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-background-lifecycle.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      BACKGROUND_SOURCE: path.join(BUILD_DIR, 'background.js'),
+    },
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-background-install-lifecycle.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      BACKGROUND_SOURCE: path.join(BUILD_DIR, 'background.js'),
+    },
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-upload.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      BACKGROUND_SOURCE: path.join(BUILD_DIR, 'background.js'),
+      ANALYTICS_SOURCE: path.join(BUILD_DIR, 'analytics.js'),
     },
     stdio: 'inherit',
   });

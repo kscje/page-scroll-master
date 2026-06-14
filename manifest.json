@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "kscje",
   "homepage_url": "https://github.com/kscje/page-scroll-master",
   "minimum_chrome_version": "90",
   "permissions": ["storage", "activeTab"],
+  "optional_permissions": ["alarms"],
+  "optional_host_permissions": [
+    "https://page-scroll-master-analytics.kscje-apps.workers.dev/*"
+  ],
   
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -31,7 +35,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["vendor/tldts.umd.min.js", "domain-utils.js", "content.js"]
     }
   ],
   "background": {

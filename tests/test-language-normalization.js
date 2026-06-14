@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 const ROOT = path.join(__dirname, '..');
 
 function createOptionsContext() {
@@ -31,7 +32,11 @@ function createOptionsContext() {
   };
   sandbox.window.document = sandbox.document;
   vm.runInNewContext(
-    fs.readFileSync(path.join(ROOT, 'options.js'), 'utf8') + '\nthis.__translations = translations;',
+    getSharedRuntimeSource(ROOT, path.join(ROOT, 'options.js')) + '\n' +
+      fs.readFileSync(path.join(ROOT, 'options.js'), 'utf8') +
+      '\nthis.__translations = translations;' +
+      '\nthis.__releaseNotes = RELEASE_NOTES;' +
+      '\nthis.__releaseNotesTranslations = releaseNotesTranslations;',
     sandbox,
     { filename: 'options.js' }
   );
@@ -40,8 +45,12 @@ function createOptionsContext() {
 
 function createPopupContext() {
   const elements = {
-    enableToggle: { addEventListener() {}, checked: false, disabled: false },
-    toggleLabel: { textContent: '' },
+    extensionToggle: { addEventListener() {}, checked: false, disabled: false },
+    progressBarToggle: { addEventListener() {}, checked: false, disabled: false },
+    scrollBookmarksToggle: { addEventListener() {}, checked: false, disabled: false },
+    outlineNavigationToggle: { addEventListener() {}, checked: false, disabled: false },
+    currentSite: { textContent: '', style: {} },
+    unavailableMessage: { textContent: '', style: {} },
     openSettings: { addEventListener() {} }
   };
   const sandbox = {
@@ -58,15 +67,26 @@ function createPopupContext() {
     chrome: {
       storage: {
         sync: { get(key, callback) { callback({}); } },
-        local: { get(keys, callback) { callback({}); } },
+        local: {
+          get(keys, callback) { callback({}); },
+          set(data, callback) { if (callback) callback(); }
+        },
         onChanged: { addListener() {} }
       },
       runtime: { lastError: null, openOptionsPage() {} },
-      tabs: { query(queryInfo, callback) { callback([]); } },
+      tabs: {
+        query(queryInfo, callback) { callback([]); },
+        sendMessage(tabId, message, callback) { if (callback) callback(); }
+      },
       i18n: { getMessage() { return ''; } }
     }
   };
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'popup.js'), 'utf8'), sandbox, { filename: 'popup.js' });
+  const popupPath = path.join(ROOT, 'popup.js');
+  vm.runInNewContext(
+    getSharedRuntimeSource(ROOT, popupPath) + '\n' + fs.readFileSync(popupPath, 'utf8'),
+    sandbox,
+    { filename: 'popup.js' }
+  );
   return sandbox;
 }
 
@@ -116,6 +136,18 @@ assert(popupContext.popupTranslations['ko-KR'], 'popup translations include Kore
 assert(popupContext.popupTranslations['it-IT'], 'popup translations include Italian');
 
 const expectedOptionLanguages = ['zh-CN', 'zh-TW', 'en-US', 'es-ES', 'ja-JP', 'de-DE', 'fr-FR', 'pt-BR', 'ko-KR', 'it-IT'];
+const expectedButtonColorLabels = {
+  'zh-CN': '按钮颜色',
+  'zh-TW': '按鈕顏色',
+  'en-US': 'Button color',
+  'es-ES': 'Color del botón',
+  'ja-JP': 'ボタンの色',
+  'de-DE': 'Schaltflächenfarbe',
+  'fr-FR': 'Couleur du bouton',
+  'pt-BR': 'Cor do botão',
+  'ko-KR': '버튼 색상',
+  'it-IT': 'Colore del pulsante'
+};
 const englishOptionKeys = Object.keys(optionsContext.__translations['en-US']).sort();
 const outlineTranslationKeys = [
   'settings.outlineNavigationEnabled',
@@ -130,16 +162,74 @@ const outlineTranslationKeys = [
   'settings.outlineFilterShortHeadings',
   'settings.outlineHighlightCurrentSection'
 ];
+const onboardingTranslationKeys = [
+  'settings.onboardingTitle',
+  'settings.onboardingIntro',
+  'settings.onboardingCoreTitle',
+  'settings.onboardingCoreDescription',
+  'settings.onboardingPopupTitle',
+  'settings.onboardingPopupDescription',
+  'settings.onboardingSiteControlsTitle',
+  'settings.onboardingSiteControlsDescription',
+  'settings.onboardingFeatureExtension',
+  'settings.onboardingFeatureProgress',
+  'settings.onboardingFeatureBookmarks',
+  'settings.onboardingFeatureOutline',
+  'settings.onboardingPrivacyTitle',
+  'settings.onboardingPrivacyDescription',
+  'settings.onboardingPrivacyOff',
+  'settings.onboardingDismiss',
+  'settings.onboardingReopen'
+];
 expectedOptionLanguages.forEach((lang) => {
   const keys = Object.keys(optionsContext.__translations[lang]).sort();
   assert(JSON.stringify(keys) === JSON.stringify(englishOptionKeys), `${lang} options translation keys match English`);
+  assert(
+    !/feedback|回饋|反馈|フィードバック|피드백/i.test(
+      optionsContext.__translations[lang]['settings.tab.feedback']
+    ),
+    `${lang} suggestions tab title refers to about information instead of feedback`
+  );
+  assert(
+    optionsContext.__translations[lang]['settings.progressColorMode'] === expectedButtonColorLabels[lang] &&
+      optionsContext.__translations[lang]['settings.readingToolCustomColor'] === expectedButtonColorLabels[lang],
+    `${lang} uses the button color label for advanced feature colors`
+  );
   outlineTranslationKeys.forEach((key) => {
     assert(
       Object.prototype.hasOwnProperty.call(optionsContext.__translations[lang], key),
       `${lang} explicitly defines ${key}`
     );
   });
+  onboardingTranslationKeys.forEach((key) => {
+    assert(
+      typeof optionsContext.__translations[lang][key] === 'string' &&
+      optionsContext.__translations[lang][key].trim(),
+      `${lang} defines onboarding copy for ${key}`
+    );
+  });
+
+  const releaseText = optionsContext.__releaseNotesTranslations[lang];
+  assert(releaseText, `${lang} release notes exist`);
+  assert(
+    JSON.stringify(Object.keys(releaseText.categories).sort()) ===
+      JSON.stringify(['added', 'fixed', 'improved']),
+    `${lang} release notes use only the supported categories`
+  );
+  const releaseItemKeys = optionsContext.__releaseNotes
+    .flatMap((release) => Object.values(release.categories).flat())
+    .sort();
+  assert(
+    releaseItemKeys.every((key) => typeof releaseText.items[key] === 'string' && releaseText.items[key].trim()),
+    `${lang} release-note items are complete`
+  );
 });
+
+assert(optionsContext.__releaseNotes[0].version === '2.1.0', 'release notes are ordered newest first');
+assert(
+  optionsContext.__releaseNotes[optionsContext.__releaseNotes.length - 1].version === '1.8.0',
+  'release notes start at v1.8'
+);
 
 const expectedLocaleDirs = ['de', 'fr', 'pt_BR', 'zh_TW', 'ko', 'it'];
 const englishLocale = JSON.parse(fs.readFileSync(path.join(ROOT, '_locales', 'en', 'messages.json'), 'utf8'));

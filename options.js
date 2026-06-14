@@ -1,3 +1,14 @@
+const domainUtils = PageScrollMasterDomain;
+const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
+const analyticsUtils = PageScrollMasterAnalytics;
+let analyticsRuntimeState = {
+  configured: false,
+  permissionOrigin: '',
+  consent: analyticsUtils.normalizeConsent(),
+  events: []
+};
+let analyticsStatusKey = 'disabled';
+
 // 多语言翻译数据
 const translations = {
   'zh-CN': {
@@ -6,7 +17,7 @@ const translations = {
     'settings.tab.basic': '基础设置',
     'settings.tab.advanced': '高级功能',
     'settings.tab.domains': '域名管理',
-    'settings.tab.feedback': '建议&反馈',
+    'settings.tab.feedback': '建议&关于插件',
     'settings.basicIntro': '调整滚动速度、按钮位置、外观图标和快捷键。',
     'settings.advancedIntro': '配置页面进度条的显示方式和交互行为。',
     'settings.domainIntro': '管理不同网站中滚动按钮的启用或禁用状态。',
@@ -62,7 +73,7 @@ const translations = {
     'settings.tab.basic': 'Basic Settings',
     'settings.tab.advanced': 'Advanced Features',
     'settings.tab.domains': 'Domain Management',
-    'settings.tab.feedback': 'Suggestions & Feedback',
+    'settings.tab.feedback': 'Suggestions & About',
     'settings.basicIntro': 'Adjust scroll speed, button position, appearance, icons, and shortcuts.',
     'settings.advancedIntro': 'Configure page progress display and interaction behavior.',
     'settings.domainIntro': 'Manage whether scroll buttons are enabled or disabled on specific sites.',
@@ -264,7 +275,7 @@ translations['es-ES'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': 'Basico',
   'settings.tab.advanced': 'Avanzado',
   'settings.tab.domains': 'Dominios',
-  'settings.tab.feedback': 'Sugerencias',
+  'settings.tab.feedback': 'Sugerencias y acerca de',
   'settings.basicIntro': 'Ajusta velocidad, posicion, apariencia, iconos y atajos.',
   'settings.advancedIntro': 'Configura la visualizacion e interaccion del progreso de lectura.',
   'settings.domainIntro': 'Gestiona si los botones estan activos o inactivos en sitios concretos.',
@@ -329,7 +340,7 @@ translations['ja-JP'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': '基本設定',
   'settings.tab.advanced': '高度な機能',
   'settings.tab.domains': 'ドメイン管理',
-  'settings.tab.feedback': '提案とフィードバック',
+  'settings.tab.feedback': 'ご意見・拡張機能について',
   'settings.basicIntro': 'スクロール速度、ボタン位置、外観、アイコン、ショートカットを調整します。',
   'settings.advancedIntro': '読書進捗バーの表示と操作を設定します。',
   'settings.domainIntro': 'サイトごとのスクロールボタンの有効・無効を管理します。',
@@ -394,7 +405,7 @@ translations['zh-TW'] = Object.assign({}, translations['zh-CN'], {
   'settings.tab.basic': '基本設定',
   'settings.tab.advanced': '進階功能',
   'settings.tab.domains': '網域管理',
-  'settings.tab.feedback': '建議與回饋',
+  'settings.tab.feedback': '建議與關於外掛',
   'settings.basicIntro': '調整捲動速度、按鈕位置、外觀圖示和快捷鍵。',
   'settings.advancedIntro': '設定頁面進度條的顯示方式和互動行為。',
   'settings.domainIntro': '管理不同網站中捲動按鈕的啟用或停用狀態。',
@@ -514,7 +525,7 @@ translations['de-DE'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': 'Grundeinstellungen',
   'settings.tab.advanced': 'Erweiterte Funktionen',
   'settings.tab.domains': 'Domainverwaltung',
-  'settings.tab.feedback': 'Vorschläge & Feedback',
+  'settings.tab.feedback': 'Vorschläge & Info',
   'settings.basicIntro': 'Scrollgeschwindigkeit, Schaltflächenposition, Darstellung, Symbole und Tastenkürzel anpassen.',
   'settings.advancedIntro': 'Anzeige und Interaktion der Seitenfortschrittsleiste konfigurieren.',
   'settings.domainIntro': 'Verwalten Sie, ob Scroll-Schaltflächen auf bestimmten Websites aktiviert sind.',
@@ -637,7 +648,7 @@ translations['fr-FR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': 'Réglages de base',
   'settings.tab.advanced': 'Fonctions avancées',
   'settings.tab.domains': 'Gestion des domaines',
-  'settings.tab.feedback': 'Suggestions et retours',
+  'settings.tab.feedback': 'Suggestions et à propos',
   'settings.basicIntro': 'Ajustez la vitesse de défilement, la position, l’apparence, les icônes et les raccourcis.',
   'settings.advancedIntro': 'Configurez l’affichage et les interactions de la barre de progression.',
   'settings.domainIntro': 'Gérez l’activation des boutons de défilement sur des sites précis.',
@@ -760,7 +771,7 @@ translations['pt-BR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': 'Configurações básicas',
   'settings.tab.advanced': 'Recursos avançados',
   'settings.tab.domains': 'Gerenciamento de domínios',
-  'settings.tab.feedback': 'Sugestões e feedback',
+  'settings.tab.feedback': 'Sugestões e sobre',
   'settings.basicIntro': 'Ajuste velocidade de rolagem, posição, aparência, ícones e atalhos.',
   'settings.advancedIntro': 'Configure a exibição e a interação da barra de progresso da página.',
   'settings.domainIntro': 'Gerencie se os botões de rolagem ficam ativados em sites específicos.',
@@ -883,7 +894,7 @@ translations['ko-KR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': '기본 설정',
   'settings.tab.advanced': '고급 기능',
   'settings.tab.domains': '도메인 관리',
-  'settings.tab.feedback': '제안 및 피드백',
+  'settings.tab.feedback': '제안 및 확장 프로그램 정보',
   'settings.basicIntro': '스크롤 속도, 버튼 위치, 모양, 아이콘, 단축키를 조정합니다.',
   'settings.advancedIntro': '페이지 진행률 표시와 상호작용 방식을 설정합니다.',
   'settings.domainIntro': '특정 사이트에서 스크롤 버튼 사용 여부를 관리합니다.',
@@ -1006,7 +1017,7 @@ translations['it-IT'] = Object.assign({}, translations['en-US'], {
   'settings.tab.basic': 'Impostazioni base',
   'settings.tab.advanced': 'Funzioni avanzate',
   'settings.tab.domains': 'Gestione domini',
-  'settings.tab.feedback': 'Suggerimenti e feedback',
+  'settings.tab.feedback': 'Suggerimenti e informazioni',
   'settings.basicIntro': 'Regola velocità di scorrimento, posizione, aspetto, icone e scorciatoie.',
   'settings.advancedIntro': 'Configura visualizzazione e interazioni della barra di progresso.',
   'settings.domainIntro': 'Gestisci se i pulsanti di scorrimento sono attivi su siti specifici.',
@@ -1149,10 +1160,36 @@ Object.keys(translations).forEach((lang) => {
     'ko-KR': ['페이지를 다시 열 때', '최신 북마크 위치 자동 불러오기', '북마크 위치 복원 여부만 묻기', '수동으로 불러오기'],
     'it-IT': ['Quando riapri una pagina', 'Carica automaticamente il segnalibro più recente', 'Chiedi solo se ripristinare il segnalibro', 'Carica manualmente']
   }[lang] || [];
+  const buttonColorTranslations = {
+    'zh-CN': '按钮颜色',
+    'zh-TW': '按鈕顏色',
+    'en-US': 'Button color',
+    'es-ES': 'Color del botón',
+    'ja-JP': 'ボタンの色',
+    'de-DE': 'Schaltflächenfarbe',
+    'fr-FR': 'Couleur du bouton',
+    'pt-BR': 'Cor do botão',
+    'ko-KR': '버튼 색상',
+    'it-IT': 'Colore del pulsante'
+  }[lang];
+  const domainFeatureTranslations = {
+    'zh-CN': ['是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。', '插件', '页面进度条', '滚动位置书签', '智能段落跳转', '清除全部主域名记录', '配置三项高级功能的显示、位置和交互参数。', '按主域名管理插件和三项高级功能的启用状态。', '主域名', '操作'],
+    'zh-TW': ['是否啟用由工具列 Popup 依目前主網域控制，此處只設定詳細參數。', '外掛', '頁面進度條', '捲動位置書籤', '智慧段落跳轉', '清除全部主網域記錄', '設定三項進階功能的顯示、位置和互動參數。', '依主網域管理外掛和三項進階功能的啟用狀態。', '主網域', '操作'],
+    'en-US': ['Enable these features per domain from the toolbar popup. Configure details here.', 'Extension', 'Progress bar', 'Scroll bookmarks', 'Section navigation', 'Clear all domain records', 'Configure display, position, and interaction details for advanced features.', 'Manage the extension and advanced features by registrable domain.', 'Domain', 'Actions'],
+    'es-ES': ['Activa estas funciones por dominio desde el popup. Configura aquí sus detalles.', 'Extensión', 'Progreso', 'Marcadores', 'Navegación', 'Borrar todos los dominios', 'Configura la visualización, posición e interacción de las funciones avanzadas.', 'Gestiona la extensión y sus funciones por dominio principal.', 'Dominio', 'Acciones'],
+    'ja-JP': ['有効化はツールバーのポップアップでドメインごとに設定します。ここでは詳細のみ設定します。', '拡張機能', '進捗バー', '位置ブックマーク', 'セクション移動', '全ドメイン記録を消去', '高度な機能の表示、位置、操作を設定します。', '登録可能なドメインごとに拡張機能を管理します。', 'ドメイン', '操作'],
+    'de-DE': ['Aktivierung pro Domain im Toolbar-Popup; hier werden nur Details konfiguriert.', 'Erweiterung', 'Fortschritt', 'Lesezeichen', 'Navigation', 'Alle Domain-Einträge löschen', 'Anzeige, Position und Interaktion der erweiterten Funktionen konfigurieren.', 'Erweiterung und Funktionen nach registrierbarer Domain verwalten.', 'Domain', 'Aktionen'],
+    'fr-FR': ['Activez ces fonctions par domaine dans le popup. Configurez les détails ici.', 'Extension', 'Progression', 'Marque-pages', 'Navigation', 'Effacer tous les domaines', 'Configurer l’affichage, la position et les interactions des fonctions avancées.', 'Gérer l’extension et ses fonctions par domaine principal.', 'Domaine', 'Actions'],
+    'pt-BR': ['Ative por domínio no popup da barra de ferramentas. Configure os detalhes aqui.', 'Extensão', 'Progresso', 'Favoritos', 'Navegação', 'Limpar todos os domínios', 'Configure exibição, posição e interação dos recursos avançados.', 'Gerencie a extensão e os recursos por domínio registrável.', 'Domínio', 'Ações'],
+    'ko-KR': ['사용 여부는 도구 모음 팝업에서 도메인별로 설정하고 여기서는 세부 옵션만 구성합니다.', '확장 프로그램', '진행률', '위치 북마크', '구간 이동', '모든 도메인 기록 지우기', '고급 기능의 표시, 위치 및 상호작용을 설정합니다.', '등록 가능한 도메인별로 확장 프로그램과 기능을 관리합니다.', '도메인', '작업'],
+    'it-IT': ['Attiva le funzioni per dominio dal popup. Configura qui solo i dettagli.', 'Estensione', 'Progresso', 'Segnalibri', 'Navigazione', 'Cancella tutti i domini', 'Configura visualizzazione, posizione e interazione delle funzioni avanzate.', 'Gestisci estensione e funzioni per dominio registrabile.', 'Dominio', 'Azioni']
+  }[lang] || [];
   Object.assign(t, {
-    'settings.scrollBookmarks': t['settings.scrollBookmarks'] || t['settings.scrollBookmarksEnabled'],
+    'settings.progressColorMode': buttonColorTranslations,
+    'settings.readingToolCustomColor': buttonColorTranslations,
+    'settings.scrollBookmarks': domainFeatureTranslations[3],
     'settings.scrollBookmarksIntro': t['settings.scrollBookmarksIntro'] || t['settings.readingToolsIntro'],
-    'settings.outlineNavigation': t['settings.outlineNavigation'] || t['settings.outlineNavigationEnabled'],
+    'settings.outlineNavigation': domainFeatureTranslations[4],
     'settings.outlineNavigationIntro': t['settings.outlineNavigationIntro'] || t['settings.readingToolsIntro'],
     'settings.featureButtonPosition': t['settings.featureButtonPosition'] || t['settings.readingToolPosition'],
     'settings.featureButtonPosition.pageTop': t['settings.featureButtonPosition.pageTop'] || t['settings.readingToolPosition.pageTop'],
@@ -1168,9 +1205,700 @@ Object.keys(translations).forEach((lang) => {
     'settings.scrollBookmarkRestoreMode': restoreModeTranslations[0],
     'settings.scrollBookmarkRestoreMode.auto': restoreModeTranslations[1],
     'settings.scrollBookmarkRestoreMode.prompt': restoreModeTranslations[2],
-    'settings.scrollBookmarkRestoreMode.manual': restoreModeTranslations[3]
+    'settings.scrollBookmarkRestoreMode.manual': restoreModeTranslations[3],
+    'settings.advancedEnableHint': domainFeatureTranslations[0],
+    'settings.domainExtension': domainFeatureTranslations[1],
+    'settings.domainProgressBar': domainFeatureTranslations[2],
+    'settings.domainScrollBookmarks': domainFeatureTranslations[3],
+    'settings.domainOutlineNavigation': domainFeatureTranslations[4],
+    'settings.clearAllDomainStates': domainFeatureTranslations[5],
+    'settings.advancedIntro': domainFeatureTranslations[6],
+    'settings.domainIntro': domainFeatureTranslations[7],
+    'settings.domainName': domainFeatureTranslations[8],
+    'settings.domainActions': domainFeatureTranslations[9]
   });
 });
+
+const analyticsTranslations = {
+  'zh-CN': {
+    title: '隐私与统计',
+    enabled: '发送匿名使用统计',
+    description: '开启后，将发送不含身份标识的设置类别和功能操作汇总，帮助改进默认设置与功能优先级。不会发送访问网址、域名、页面标题、页面内容、书签内容或滚动位置。',
+    preview: '查看待发送数据',
+    disabled: '匿名统计当前已关闭。',
+    enabledStatus: '匿名统计已开启，可在下方检查待发送数据。',
+    unavailable: '统计服务尚未配置；待发送汇总仅保存在本机，不会发送。',
+    permissionDenied: '未获得统计服务访问权限，匿名统计保持关闭。',
+    error: '无法更新匿名统计设置，请稍后重试。'
+  },
+  'zh-TW': {
+    title: '隱私與統計',
+    enabled: '傳送匿名使用統計',
+    description: '開啟後，將傳送不含身分識別的設定類別與功能操作彙總，用於改善預設設定與功能優先順序。不會傳送網址、網域、頁面標題、頁面內容、書籤內容或捲動位置。',
+    preview: '查看待傳送資料',
+    disabled: '匿名統計目前已關閉。',
+    enabledStatus: '匿名統計已開啟，可在下方檢查待傳送資料。',
+    unavailable: '統計服務尚未設定；待傳送彙總只會保留在本機，不會傳送。',
+    permissionDenied: '未取得統計服務存取權限，匿名統計維持關閉。',
+    error: '無法更新匿名統計設定，請稍後再試。'
+  },
+  'en-US': {
+    title: 'Privacy & Analytics',
+    enabled: 'Send anonymous usage analytics',
+    description: 'When enabled, the extension sends anonymous setting categories and aggregated feature actions to improve defaults and priorities. It never sends visited URLs, domains, page titles, page content, bookmark content, or scroll positions.',
+    preview: 'View pending data',
+    disabled: 'Anonymous analytics is currently off.',
+    enabledStatus: 'Anonymous analytics is on. You can inspect pending data below.',
+    unavailable: 'The analytics service is not configured. Pending aggregates stay on this device and are not sent.',
+    permissionDenied: 'Analytics service access was not granted, so analytics remains off.',
+    error: 'The analytics setting could not be updated. Please try again.'
+  },
+  'es-ES': {
+    title: 'Privacidad y estadísticas',
+    enabled: 'Enviar estadísticas de uso anónimas',
+    description: 'Al activarlo, la extensión envía categorías de configuración y acciones agregadas sin identificadores. Nunca envía URLs, dominios, títulos, contenido de páginas, marcadores ni posiciones de desplazamiento.',
+    preview: 'Ver datos pendientes',
+    disabled: 'Las estadísticas anónimas están desactivadas.',
+    enabledStatus: 'Las estadísticas anónimas están activadas. Puedes revisar los datos pendientes abajo.',
+    unavailable: 'El servicio no está configurado. Los datos pendientes permanecen en este dispositivo y no se envían.',
+    permissionDenied: 'No se concedió acceso al servicio; las estadísticas siguen desactivadas.',
+    error: 'No se pudo actualizar la configuración de estadísticas.'
+  },
+  'ja-JP': {
+    title: 'プライバシーと統計',
+    enabled: '匿名の利用統計を送信',
+    description: '有効にすると、識別子を含まない設定カテゴリと機能操作の集計を送信します。URL、ドメイン、ページタイトル、本文、ブックマーク内容、スクロール位置は送信しません。',
+    preview: '送信待ちデータを表示',
+    disabled: '匿名統計は現在オフです。',
+    enabledStatus: '匿名統計はオンです。下で送信待ちデータを確認できます。',
+    unavailable: '統計サービスは未設定です。保留中の集計はこの端末だけに保存され、送信されません。',
+    permissionDenied: '統計サービスへのアクセスが許可されなかったため、オフのままです。',
+    error: '匿名統計の設定を更新できませんでした。'
+  },
+  'de-DE': {
+    title: 'Datenschutz und Statistik',
+    enabled: 'Anonyme Nutzungsstatistiken senden',
+    description: 'Wenn aktiviert, sendet die Erweiterung anonyme Einstellungskategorien und zusammengefasste Funktionsaktionen. URLs, Domains, Seitentitel, Seiteninhalte, Lesezeicheninhalte und Scrollpositionen werden nie gesendet.',
+    preview: 'Ausstehende Daten anzeigen',
+    disabled: 'Anonyme Statistiken sind derzeit deaktiviert.',
+    enabledStatus: 'Anonyme Statistiken sind aktiviert. Ausstehende Daten können unten geprüft werden.',
+    unavailable: 'Der Statistikdienst ist nicht konfiguriert. Ausstehende Daten bleiben auf diesem Gerät und werden nicht gesendet.',
+    permissionDenied: 'Der Zugriff wurde nicht erlaubt; die Statistiken bleiben deaktiviert.',
+    error: 'Die Statistik-Einstellung konnte nicht aktualisiert werden.'
+  },
+  'fr-FR': {
+    title: 'Confidentialité et statistiques',
+    enabled: 'Envoyer des statistiques d’utilisation anonymes',
+    description: 'Une fois activée, l’extension envoie des catégories de réglages et des actions agrégées sans identifiant. Elle n’envoie jamais les URL, domaines, titres, contenus, marque-pages ou positions de défilement.',
+    preview: 'Voir les données en attente',
+    disabled: 'Les statistiques anonymes sont désactivées.',
+    enabledStatus: 'Les statistiques anonymes sont activées. Les données en attente sont visibles ci-dessous.',
+    unavailable: 'Le service n’est pas configuré. Les données en attente restent sur cet appareil et ne sont pas envoyées.',
+    permissionDenied: 'L’accès au service a été refusé ; les statistiques restent désactivées.',
+    error: 'Impossible de mettre à jour le réglage des statistiques.'
+  },
+  'pt-BR': {
+    title: 'Privacidade e estatísticas',
+    enabled: 'Enviar estatísticas de uso anônimas',
+    description: 'Quando ativada, a extensão envia categorias de configuração e ações agregadas sem identificadores. Nunca envia URLs, domínios, títulos, conteúdo de páginas, conteúdo de favoritos ou posições de rolagem.',
+    preview: 'Ver dados pendentes',
+    disabled: 'As estatísticas anônimas estão desativadas.',
+    enabledStatus: 'As estatísticas anônimas estão ativadas. Confira os dados pendentes abaixo.',
+    unavailable: 'O serviço não está configurado. Os dados pendentes ficam neste dispositivo e não são enviados.',
+    permissionDenied: 'O acesso ao serviço não foi concedido; as estatísticas continuam desativadas.',
+    error: 'Não foi possível atualizar a configuração de estatísticas.'
+  },
+  'ko-KR': {
+    title: '개인정보 및 통계',
+    enabled: '익명 사용 통계 보내기',
+    description: '사용하면 식별자가 없는 설정 범주와 기능 동작 집계를 전송합니다. 방문 URL, 도메인, 페이지 제목과 내용, 북마크 내용, 스크롤 위치는 전송하지 않습니다.',
+    preview: '전송 대기 데이터 보기',
+    disabled: '익명 통계가 꺼져 있습니다.',
+    enabledStatus: '익명 통계가 켜져 있습니다. 아래에서 전송 대기 데이터를 확인할 수 있습니다.',
+    unavailable: '통계 서비스가 구성되지 않았습니다. 대기 중인 집계는 이 기기에만 저장되며 전송되지 않습니다.',
+    permissionDenied: '통계 서비스 접근 권한이 없어 통계가 꺼진 상태로 유지됩니다.',
+    error: '통계 설정을 업데이트할 수 없습니다.'
+  },
+  'it-IT': {
+    title: 'Privacy e statistiche',
+    enabled: 'Invia statistiche di utilizzo anonime',
+    description: 'Se attivata, l’estensione invia categorie di impostazioni e azioni aggregate senza identificatori. Non invia URL, domini, titoli, contenuti delle pagine, contenuti dei segnalibri o posizioni di scorrimento.',
+    preview: 'Mostra dati in attesa',
+    disabled: 'Le statistiche anonime sono disattivate.',
+    enabledStatus: 'Le statistiche anonime sono attive. Puoi controllare i dati in attesa qui sotto.',
+    unavailable: 'Il servizio non è configurato. I dati in attesa restano su questo dispositivo e non vengono inviati.',
+    permissionDenied: 'L’accesso al servizio non è stato concesso; le statistiche restano disattivate.',
+    error: 'Impossibile aggiornare l’impostazione delle statistiche.'
+  }
+};
+
+const onboardingTranslations = {
+  'zh-CN': {
+    title: '快速开始',
+    intro: '先了解页面按钮与工具栏 Popup，再按需要调整下方设置。',
+    coreTitle: '使用页面滚动按钮',
+    coreDescription: '网页边缘的上、下箭头可快速滚动到页面顶部或底部。',
+    popupTitle: '从 Chrome 工具栏打开 Popup',
+    popupDescription: '点击 Chrome 工具栏中的扩展图标；若图标未显示，可先在拼图菜单中固定本扩展。',
+    siteControlsTitle: '按当前网站控制功能',
+    siteControlsDescription: 'Popup 可分别启停整个扩展和三项高级功能，状态对当前主域名生效。',
+    featureExtension: '扩展',
+    featureProgress: '页面进度条',
+    featureBookmarks: '书签',
+    featureOutline: '文章大纲',
+    privacyTitle: '匿名使用分析由你决定',
+    privacyDescription: '匿名使用分析保持关闭，只有你在“建议&关于插件”的“隐私与统计”中主动选择后才会启用。',
+    privacyOff: '默认关闭',
+    dismiss: '知道了',
+    reopen: '查看快速开始'
+  },
+  'zh-TW': {
+    title: '快速開始',
+    intro: '先了解頁面按鈕與工具列 Popup，再依需要調整下方設定。',
+    coreTitle: '使用頁面捲動按鈕',
+    coreDescription: '網頁邊緣的向上、向下箭頭可快速捲動到頁面頂端或底端。',
+    popupTitle: '從 Chrome 工具列開啟 Popup',
+    popupDescription: '點擊 Chrome 工具列中的擴充功能圖示；若圖示未顯示，可先在拼圖選單中固定本擴充功能。',
+    siteControlsTitle: '依目前網站控制功能',
+    siteControlsDescription: 'Popup 可分別啟用或停用整個擴充功能與三項進階功能，狀態套用至目前主網域。',
+    featureExtension: '擴充功能',
+    featureProgress: '頁面進度條',
+    featureBookmarks: '書籤',
+    featureOutline: '文章大綱',
+    privacyTitle: '匿名使用分析由你決定',
+    privacyDescription: '匿名使用分析會保持關閉，只有你在「建議與關於外掛」的「隱私與統計」中主動選擇後才會啟用。',
+    privacyOff: '預設關閉',
+    dismiss: '知道了',
+    reopen: '查看快速開始'
+  },
+  'en-US': {
+    title: 'Quick start',
+    intro: 'Learn the page buttons and toolbar Popup, then adjust the settings below as needed.',
+    coreTitle: 'Use the page scroll buttons',
+    coreDescription: 'Use the up and down arrows at the page edge to quickly reach the top or bottom.',
+    popupTitle: 'Open the Popup from the Chrome toolbar',
+    popupDescription: 'Click the extension icon in the Chrome toolbar. If it is hidden, pin this extension from the puzzle-piece menu.',
+    siteControlsTitle: 'Control features for the current site',
+    siteControlsDescription: 'The Popup separately turns the extension and its three advanced features on or off for the current main domain.',
+    featureExtension: 'Extension',
+    featureProgress: 'Page progress',
+    featureBookmarks: 'Bookmarks',
+    featureOutline: 'Article outline',
+    privacyTitle: 'Anonymous analytics is your choice',
+    privacyDescription: 'Anonymous usage analytics stays off unless you choose to enable it under Suggestions & About, then Privacy & Analytics.',
+    privacyOff: 'Off by default',
+    dismiss: 'Got it',
+    reopen: 'View quick start'
+  },
+  'es-ES': {
+    title: 'Inicio rápido',
+    intro: 'Conoce los botones de la página y el Popup de la barra de herramientas antes de ajustar las opciones.',
+    coreTitle: 'Usa los botones de desplazamiento',
+    coreDescription: 'Las flechas del borde de la página permiten ir rápidamente al inicio o al final.',
+    popupTitle: 'Abre el Popup desde la barra de Chrome',
+    popupDescription: 'Haz clic en el icono de la extensión. Si no aparece, fíjalo desde el menú de extensiones con forma de pieza de puzle.',
+    siteControlsTitle: 'Controla las funciones del sitio actual',
+    siteControlsDescription: 'El Popup activa o desactiva por separado la extensión y sus tres funciones avanzadas para el dominio principal actual.',
+    featureExtension: 'Extensión',
+    featureProgress: 'Progreso de página',
+    featureBookmarks: 'Marcadores',
+    featureOutline: 'Esquema del artículo',
+    privacyTitle: 'Tú decides sobre las estadísticas anónimas',
+    privacyDescription: 'Las estadísticas anónimas permanecen desactivadas hasta que decidas activarlas en Sugerencias y acerca de, dentro de Privacidad y estadísticas.',
+    privacyOff: 'Desactivadas por defecto',
+    dismiss: 'Entendido',
+    reopen: 'Ver inicio rápido'
+  },
+  'ja-JP': {
+    title: 'クイックスタート',
+    intro: 'ページ上のボタンとツールバーの Popup を確認してから、必要に応じて下の設定を調整します。',
+    coreTitle: 'ページのスクロールボタンを使う',
+    coreDescription: 'ページ端の上下矢印で、ページの先頭または末尾へすばやく移動できます。',
+    popupTitle: 'Chrome ツールバーから Popup を開く',
+    popupDescription: 'Chrome ツールバーの拡張機能アイコンをクリックします。表示されない場合は、パズル形のメニューから固定してください。',
+    siteControlsTitle: '現在のサイトごとに機能を制御する',
+    siteControlsDescription: 'Popup では、現在のメインドメインに対して拡張機能全体と3つの高度な機能を個別にオン、オフできます。',
+    featureExtension: '拡張機能',
+    featureProgress: 'ページ進捗',
+    featureBookmarks: 'ブックマーク',
+    featureOutline: '記事アウトライン',
+    privacyTitle: '匿名利用統計は任意です',
+    privacyDescription: '匿名利用統計はオフのままです。「ご意見・拡張機能について」の「プライバシーと統計」で選択した場合のみ有効になります。',
+    privacyOff: '初期設定はオフ',
+    dismiss: '了解',
+    reopen: 'クイックスタートを見る'
+  },
+  'de-DE': {
+    title: 'Schnellstart',
+    intro: 'Lernen Sie die Seitenschaltflächen und das Toolbar-Popup kennen und passen Sie danach die Einstellungen an.',
+    coreTitle: 'Scroll-Schaltflächen der Seite verwenden',
+    coreDescription: 'Mit den Pfeilen am Seitenrand springen Sie schnell zum Anfang oder Ende der Seite.',
+    popupTitle: 'Popup über die Chrome-Symbolleiste öffnen',
+    popupDescription: 'Klicken Sie auf das Erweiterungssymbol in Chrome. Falls es nicht sichtbar ist, heften Sie die Erweiterung über das Puzzle-Menü an.',
+    siteControlsTitle: 'Funktionen für die aktuelle Website steuern',
+    siteControlsDescription: 'Im Popup lassen sich die Erweiterung und ihre drei erweiterten Funktionen für die aktuelle Hauptdomain getrennt ein- oder ausschalten.',
+    featureExtension: 'Erweiterung',
+    featureProgress: 'Seitenfortschritt',
+    featureBookmarks: 'Lesezeichen',
+    featureOutline: 'Artikelgliederung',
+    privacyTitle: 'Anonyme Statistiken sind Ihre Entscheidung',
+    privacyDescription: 'Anonyme Nutzungsstatistiken bleiben aus und werden nur aktiviert, wenn Sie dies unter Vorschläge & Info bei Datenschutz und Statistik auswählen.',
+    privacyOff: 'Standardmäßig aus',
+    dismiss: 'Verstanden',
+    reopen: 'Schnellstart anzeigen'
+  },
+  'fr-FR': {
+    title: 'Démarrage rapide',
+    intro: 'Découvrez les boutons de page et le Popup de la barre d’outils, puis ajustez les réglages ci-dessous.',
+    coreTitle: 'Utiliser les boutons de défilement',
+    coreDescription: 'Les flèches au bord de la page permettent d’atteindre rapidement le début ou la fin.',
+    popupTitle: 'Ouvrir le Popup depuis la barre Chrome',
+    popupDescription: 'Cliquez sur l’icône de l’extension dans Chrome. Si elle est masquée, épinglez-la depuis le menu en forme de pièce de puzzle.',
+    siteControlsTitle: 'Contrôler les fonctions du site actuel',
+    siteControlsDescription: 'Le Popup active ou désactive séparément l’extension et ses trois fonctions avancées pour le domaine principal actuel.',
+    featureExtension: 'Extension',
+    featureProgress: 'Progression de page',
+    featureBookmarks: 'Marque-pages',
+    featureOutline: 'Plan de l’article',
+    privacyTitle: 'Les statistiques anonymes restent votre choix',
+    privacyDescription: 'Les statistiques d’utilisation anonymes restent désactivées et ne sont activées que si vous les choisissez dans Suggestions et à propos, puis Confidentialité et statistiques.',
+    privacyOff: 'Désactivées par défaut',
+    dismiss: 'Compris',
+    reopen: 'Voir le démarrage rapide'
+  },
+  'pt-BR': {
+    title: 'Início rápido',
+    intro: 'Conheça os botões da página e o Popup da barra de ferramentas antes de ajustar as opções abaixo.',
+    coreTitle: 'Use os botões de rolagem da página',
+    coreDescription: 'As setas na borda da página levam rapidamente ao início ou ao fim.',
+    popupTitle: 'Abra o Popup pela barra do Chrome',
+    popupDescription: 'Clique no ícone da extensão na barra do Chrome. Se ele estiver oculto, fixe a extensão pelo menu em forma de peça de quebra-cabeça.',
+    siteControlsTitle: 'Controle os recursos do site atual',
+    siteControlsDescription: 'O Popup ativa ou desativa separadamente a extensão e seus três recursos avançados para o domínio principal atual.',
+    featureExtension: 'Extensão',
+    featureProgress: 'Progresso da página',
+    featureBookmarks: 'Favoritos',
+    featureOutline: 'Sumário do artigo',
+    privacyTitle: 'As estatísticas anônimas são sua escolha',
+    privacyDescription: 'As estatísticas de uso anônimas permanecem desativadas e só são ativadas se você escolher essa opção em Sugestões e sobre, na seção Privacidade e estatísticas.',
+    privacyOff: 'Desativadas por padrão',
+    dismiss: 'Entendi',
+    reopen: 'Ver início rápido'
+  },
+  'ko-KR': {
+    title: '빠른 시작',
+    intro: '페이지 버튼과 도구 모음 Popup을 확인한 뒤 필요에 따라 아래 설정을 조정하세요.',
+    coreTitle: '페이지 스크롤 버튼 사용',
+    coreDescription: '페이지 가장자리의 위쪽 및 아래쪽 화살표로 맨 위나 맨 아래로 빠르게 이동할 수 있습니다.',
+    popupTitle: 'Chrome 도구 모음에서 Popup 열기',
+    popupDescription: 'Chrome 도구 모음의 확장 프로그램 아이콘을 클릭하세요. 아이콘이 보이지 않으면 퍼즐 메뉴에서 이 확장 프로그램을 고정하세요.',
+    siteControlsTitle: '현재 사이트별 기능 제어',
+    siteControlsDescription: 'Popup에서 현재 기본 도메인에 대해 확장 프로그램 전체와 세 가지 고급 기능을 각각 켜거나 끌 수 있습니다.',
+    featureExtension: '확장 프로그램',
+    featureProgress: '페이지 진행률',
+    featureBookmarks: '북마크',
+    featureOutline: '문서 개요',
+    privacyTitle: '익명 사용 통계는 사용자가 선택합니다',
+    privacyDescription: '익명 사용 통계는 꺼진 상태로 유지되며, 제안 및 확장 프로그램 정보의 개인정보 및 통계에서 직접 선택한 경우에만 켜집니다.',
+    privacyOff: '기본값은 꺼짐',
+    dismiss: '확인',
+    reopen: '빠른 시작 보기'
+  },
+  'it-IT': {
+    title: 'Avvio rapido',
+    intro: 'Scopri i pulsanti della pagina e il Popup della barra degli strumenti, poi regola le impostazioni qui sotto.',
+    coreTitle: 'Usa i pulsanti di scorrimento',
+    coreDescription: 'Le frecce sul bordo della pagina permettono di raggiungere rapidamente l’inizio o la fine.',
+    popupTitle: 'Apri il Popup dalla barra di Chrome',
+    popupDescription: 'Fai clic sull’icona dell’estensione in Chrome. Se è nascosta, fissala dal menu con l’icona a forma di puzzle.',
+    siteControlsTitle: 'Controlla le funzioni del sito corrente',
+    siteControlsDescription: 'Il Popup attiva o disattiva separatamente l’estensione e le tre funzioni avanzate per il dominio principale corrente.',
+    featureExtension: 'Estensione',
+    featureProgress: 'Avanzamento pagina',
+    featureBookmarks: 'Segnalibri',
+    featureOutline: 'Struttura articolo',
+    privacyTitle: 'Le statistiche anonime sono una tua scelta',
+    privacyDescription: 'Le statistiche di utilizzo anonime restano disattivate e si attivano solo se le scegli in Suggerimenti e informazioni, nella sezione Privacy e statistiche.',
+    privacyOff: 'Disattivate per impostazione predefinita',
+    dismiss: 'Ho capito',
+    reopen: 'Mostra avvio rapido'
+  }
+};
+
+Object.keys(translations).forEach((lang) => {
+  const analyticsText = analyticsTranslations[lang] || analyticsTranslations['en-US'];
+  const onboardingText = onboardingTranslations[lang] || onboardingTranslations['en-US'];
+  Object.assign(translations[lang], {
+    'settings.onboardingTitle': onboardingText.title,
+    'settings.onboardingIntro': onboardingText.intro,
+    'settings.onboardingCoreTitle': onboardingText.coreTitle,
+    'settings.onboardingCoreDescription': onboardingText.coreDescription,
+    'settings.onboardingPopupTitle': onboardingText.popupTitle,
+    'settings.onboardingPopupDescription': onboardingText.popupDescription,
+    'settings.onboardingSiteControlsTitle': onboardingText.siteControlsTitle,
+    'settings.onboardingSiteControlsDescription': onboardingText.siteControlsDescription,
+    'settings.onboardingFeatureExtension': onboardingText.featureExtension,
+    'settings.onboardingFeatureProgress': onboardingText.featureProgress,
+    'settings.onboardingFeatureBookmarks': onboardingText.featureBookmarks,
+    'settings.onboardingFeatureOutline': onboardingText.featureOutline,
+    'settings.onboardingPrivacyTitle': onboardingText.privacyTitle,
+    'settings.onboardingPrivacyDescription': onboardingText.privacyDescription,
+    'settings.onboardingPrivacyOff': onboardingText.privacyOff,
+    'settings.onboardingDismiss': onboardingText.dismiss,
+    'settings.onboardingReopen': onboardingText.reopen,
+    'settings.analyticsTitle': analyticsText.title,
+    'settings.analyticsEnabled': analyticsText.enabled,
+    'settings.analyticsDescription': analyticsText.description,
+    'settings.analyticsPreview': analyticsText.preview,
+    'settings.releaseNotes': {
+      'zh-CN': '更新记录',
+      'zh-TW': '更新記錄',
+      'en-US': 'Release Notes',
+      'es-ES': 'Novedades',
+      'ja-JP': '更新履歴',
+      'de-DE': 'Versionshinweise',
+      'fr-FR': 'Notes de version',
+      'pt-BR': 'Notas da versão',
+      'ko-KR': '업데이트 기록',
+      'it-IT': 'Note di versione'
+    }[lang]
+  });
+});
+
+const RELEASE_NOTES = [
+  {
+    version: '2.1.0',
+    categories: {
+      added: [
+        'domainFeatureControls',
+        'installOptionsPage',
+        'releaseNotes',
+        'optionalAnalytics'
+      ],
+      improved: [
+        'advancedFeatureEntry',
+        'domainManagement'
+      ]
+    }
+  },
+  {
+    version: '2.0.0',
+    categories: {
+      added: [
+        'outlineNavigation',
+        'outlineSettings'
+      ],
+      improved: [
+        'outlineRecognition',
+        'bookmarkRestoreModes'
+      ],
+      fixed: [
+        'manualBookmarkRestore',
+        'bookmarkOpenPosition'
+      ]
+    }
+  },
+  {
+    version: '1.9.0',
+    categories: {
+      added: [
+        'scrollBookmarks',
+        'savedBookmarkManagement',
+        'additionalLanguages'
+      ],
+      improved: [
+        'bookmarkRetention'
+      ]
+    }
+  },
+  {
+    version: '1.8.0',
+    categories: {
+      added: [
+        'advancedProgressBar',
+        'iconCustomization',
+        'siteManagement',
+        'spanishJapanese'
+      ],
+      improved: [
+        'scrollJumpConsistency'
+      ]
+    }
+  }
+];
+
+const releaseNotesTranslations = {
+  'zh-CN': {
+    currentVersion: '当前版本',
+    categories: { added: '新功能', improved: '功能优化', fixed: 'Bug 修复' },
+    items: {
+      domainFeatureControls: '新增按主域名控制插件和三项高级功能。',
+      installOptionsPage: '全新安装扩展后自动打开设置页。',
+      releaseNotes: '新增扩展内更新记录。',
+      optionalAnalytics: '新增可选的匿名使用统计。',
+      advancedFeatureEntry: '页面进度条、滚动位置书签和智能段落跳转统一在工具栏中按主域名启用。',
+      domainManagement: '域名管理现在可以集中查看和调整插件及高级功能状态。',
+      outlineNavigation: '新增智能段落跳转和页面大纲导航。',
+      outlineSettings: '新增目录来源、加载数量和当前章节高亮设置。',
+      outlineRecognition: '优化长页面章节识别、过滤和跳转体验。',
+      bookmarkRestoreModes: '滚动位置书签支持自动加载、提示恢复和手动加载。',
+      manualBookmarkRestore: '修复重新打开页面后缺少手动恢复入口的问题。',
+      bookmarkOpenPosition: '修复从设置页打开书签后停留在页面顶部的问题。',
+      scrollBookmarks: '新增滚动位置书签，可保存和恢复阅读位置。',
+      savedBookmarkManagement: '新增已保存位置管理，支持打开和删除记录。',
+      additionalLanguages: '新增德语、法语、葡萄牙语、繁体中文、韩语和意大利语。',
+      bookmarkRetention: '支持按域名保留最近的阅读位置。',
+      advancedProgressBar: '新增纵向按钮和页面边缘横向页面进度条。',
+      iconCustomization: '新增按钮图标样式和图标颜色自定义。',
+      siteManagement: '新增设置页网站启用状态管理。',
+      spanishJapanese: '新增西班牙语和日语界面。',
+      scrollJumpConsistency: '优化顶部、底部和进度跳转的一致性。'
+    }
+  },
+  'zh-TW': {
+    currentVersion: '目前版本',
+    categories: { added: '新功能', improved: '功能最佳化', fixed: 'Bug 修正' },
+    items: {
+      domainFeatureControls: '新增依主網域控制外掛與三項進階功能。',
+      installOptionsPage: '全新安裝擴充功能後自動開啟設定頁。',
+      releaseNotes: '新增擴充功能內更新記錄。',
+      optionalAnalytics: '新增可選的匿名使用統計。',
+      advancedFeatureEntry: '頁面進度條、捲動位置書籤與智慧段落跳轉統一在工具列中依主網域啟用。',
+      domainManagement: '網域管理現在可集中查看與調整外掛及進階功能狀態。',
+      outlineNavigation: '新增智慧段落跳轉與頁面大綱導覽。',
+      outlineSettings: '新增目錄來源、載入數量與目前章節醒目提示設定。',
+      outlineRecognition: '最佳化長頁面的章節辨識、過濾與跳轉體驗。',
+      bookmarkRestoreModes: '捲動位置書籤支援自動載入、提示還原與手動載入。',
+      manualBookmarkRestore: '修正重新開啟頁面後缺少手動還原入口的問題。',
+      bookmarkOpenPosition: '修正從設定頁開啟書籤後停留在頁面頂部的問題。',
+      scrollBookmarks: '新增捲動位置書籤，可儲存與還原閱讀位置。',
+      savedBookmarkManagement: '新增已儲存位置管理，支援開啟與刪除記錄。',
+      additionalLanguages: '新增德語、法語、葡萄牙語、繁體中文、韓語與義大利語。',
+      bookmarkRetention: '支援依網域保留最近的閱讀位置。',
+      advancedProgressBar: '新增縱向按鈕與頁面邊緣橫向頁面進度條。',
+      iconCustomization: '新增按鈕圖示樣式與圖示顏色自訂。',
+      siteManagement: '新增設定頁網站啟用狀態管理。',
+      spanishJapanese: '新增西班牙語與日語介面。',
+      scrollJumpConsistency: '最佳化頂部、底部與進度跳轉的一致性。'
+    }
+  },
+  'en-US': {
+    currentVersion: 'Current version',
+    categories: { added: 'New features', improved: 'Feature improvements', fixed: 'Bug fixes' },
+    items: {
+      domainFeatureControls: 'Added per-domain controls for the extension and its three advanced features.',
+      installOptionsPage: 'The settings page now opens automatically after a fresh installation.',
+      releaseNotes: 'Added release notes inside the extension.',
+      optionalAnalytics: 'Added optional anonymous usage analytics.',
+      advancedFeatureEntry: 'Page progress, scroll bookmarks, and section navigation are now enabled per domain from the toolbar.',
+      domainManagement: 'Domain management now provides a central view of extension and advanced-feature states.',
+      outlineNavigation: 'Added smart section navigation and page outline controls.',
+      outlineSettings: 'Added settings for outline sources, item limits, and current-section highlighting.',
+      outlineRecognition: 'Improved section detection, filtering, and navigation on long pages.',
+      bookmarkRestoreModes: 'Scroll bookmarks now support automatic, prompted, and manual restoration.',
+      manualBookmarkRestore: 'Fixed the missing manual restore action after reopening a saved page.',
+      bookmarkOpenPosition: 'Fixed bookmarks opened from settings remaining at the top of the page.',
+      scrollBookmarks: 'Added scroll bookmarks for saving and restoring reading positions.',
+      savedBookmarkManagement: 'Added saved-position management with open and delete actions.',
+      additionalLanguages: 'Added German, French, Portuguese, Traditional Chinese, Korean, and Italian.',
+      bookmarkRetention: 'Added per-domain retention for recent reading positions.',
+      advancedProgressBar: 'Added vertical-button and horizontal page-edge progress bars.',
+      iconCustomization: 'Added button icon styles and icon color customization.',
+      siteManagement: 'Added site enable-state management to the settings page.',
+      spanishJapanese: 'Added Spanish and Japanese interfaces.',
+      scrollJumpConsistency: 'Improved consistency across top, bottom, and progress jumps.'
+    }
+  },
+  'es-ES': {
+    currentVersion: 'Versión actual',
+    categories: { added: 'Nuevas funciones', improved: 'Mejoras de funciones', fixed: 'Correcciones de errores' },
+    items: {
+      domainFeatureControls: 'Se añadieron controles por dominio para la extensión y sus tres funciones avanzadas.',
+      installOptionsPage: 'La página de ajustes ahora se abre automáticamente tras una instalación nueva.',
+      releaseNotes: 'Se añadieron novedades dentro de la extensión.',
+      optionalAnalytics: 'Se añadieron estadísticas de uso anónimas opcionales.',
+      advancedFeatureEntry: 'El progreso, los marcadores y la navegación por secciones se activan por dominio desde la barra de herramientas.',
+      domainManagement: 'La gestión de dominios ahora reúne los estados de la extensión y sus funciones avanzadas.',
+      outlineNavigation: 'Se añadió navegación inteligente por secciones y esquema de página.',
+      outlineSettings: 'Se añadieron ajustes de fuentes, límite de elementos y resaltado de la sección actual.',
+      outlineRecognition: 'Se mejoraron la detección, el filtrado y la navegación por secciones en páginas largas.',
+      bookmarkRestoreModes: 'Los marcadores admiten restauración automática, con aviso o manual.',
+      manualBookmarkRestore: 'Se corrigió la falta de una acción de restauración manual al reabrir una página.',
+      bookmarkOpenPosition: 'Se corrigió que los marcadores abiertos desde ajustes quedaran al inicio de la página.',
+      scrollBookmarks: 'Se añadieron marcadores para guardar y restaurar posiciones de lectura.',
+      savedBookmarkManagement: 'Se añadió la gestión de posiciones guardadas con acciones para abrir y eliminar.',
+      additionalLanguages: 'Se añadieron alemán, francés, portugués, chino tradicional, coreano e italiano.',
+      bookmarkRetention: 'Se añadió la conservación por dominio de las posiciones de lectura recientes.',
+      advancedProgressBar: 'Se añadieron barras de progreso verticales y horizontales en el borde de la página.',
+      iconCustomization: 'Se añadieron estilos de iconos y personalización de color.',
+      siteManagement: 'Se añadió la gestión del estado de activación de sitios en los ajustes.',
+      spanishJapanese: 'Se añadieron las interfaces en español y japonés.',
+      scrollJumpConsistency: 'Se mejoró la coherencia de los saltos al inicio, al final y por progreso.'
+    }
+  },
+  'ja-JP': {
+    currentVersion: '現在のバージョン',
+    categories: { added: '新機能', improved: '機能改善', fixed: '不具合修正' },
+    items: {
+      domainFeatureControls: 'メインドメインごとに拡張機能と3つの高度な機能を制御できるようになりました。',
+      installOptionsPage: '新規インストール後に設定ページを自動で開くようになりました。',
+      releaseNotes: '拡張機能内に更新履歴を追加しました。',
+      optionalAnalytics: '任意で有効にできる匿名利用統計を追加しました。',
+      advancedFeatureEntry: '進捗バー、位置ブックマーク、セクション移動をツールバーからドメインごとに有効化できます。',
+      domainManagement: 'ドメイン管理で拡張機能と高度な機能の状態をまとめて確認、変更できます。',
+      outlineNavigation: 'スマートセクション移動とページアウトラインを追加しました。',
+      outlineSettings: 'アウトライン対象、表示件数、現在セクションの強調設定を追加しました。',
+      outlineRecognition: '長いページでのセクション検出、除外、移動を改善しました。',
+      bookmarkRestoreModes: '位置ブックマークで自動、確認後、手動の復元方法を選べるようになりました。',
+      manualBookmarkRestore: '保存済みページを開き直した際に手動復元操作が表示されない問題を修正しました。',
+      bookmarkOpenPosition: '設定からブックマークを開いた際にページ先頭に留まる問題を修正しました。',
+      scrollBookmarks: '読書位置を保存、復元できるスクロール位置ブックマークを追加しました。',
+      savedBookmarkManagement: '保存位置を開く、削除する管理機能を追加しました。',
+      additionalLanguages: 'ドイツ語、フランス語、ポルトガル語、繁体字中国語、韓国語、イタリア語を追加しました。',
+      bookmarkRetention: 'ドメインごとに最近の読書位置を保持できるようになりました。',
+      advancedProgressBar: '縦型ボタンとページ端の横型進捗バーを追加しました。',
+      iconCustomization: 'ボタンのアイコン形式と色を変更できるようになりました。',
+      siteManagement: '設定ページにサイトの有効状態管理を追加しました。',
+      spanishJapanese: 'スペイン語と日本語の表示を追加しました。',
+      scrollJumpConsistency: '先頭、末尾、進捗位置への移動動作を統一しました。'
+    }
+  },
+  'de-DE': {
+    currentVersion: 'Aktuelle Version',
+    categories: { added: 'Neue Funktionen', improved: 'Funktionsverbesserungen', fixed: 'Fehlerbehebungen' },
+    items: {
+      domainFeatureControls: 'Steuerung der Erweiterung und ihrer drei erweiterten Funktionen pro Domain hinzugefügt.',
+      installOptionsPage: 'Nach einer Neuinstallation wird die Einstellungsseite automatisch geöffnet.',
+      releaseNotes: 'Versionshinweise innerhalb der Erweiterung hinzugefügt.',
+      optionalAnalytics: 'Optionale anonyme Nutzungsstatistiken hinzugefügt.',
+      advancedFeatureEntry: 'Fortschritt, Lesezeichen und Abschnittsnavigation werden jetzt pro Domain über die Symbolleiste aktiviert.',
+      domainManagement: 'Die Domainverwaltung zeigt zentral den Status der Erweiterung und ihrer erweiterten Funktionen.',
+      outlineNavigation: 'Intelligente Abschnittsnavigation und Seitenübersicht hinzugefügt.',
+      outlineSettings: 'Einstellungen für Quellen, Anzahl und Hervorhebung des aktuellen Abschnitts hinzugefügt.',
+      outlineRecognition: 'Abschnittserkennung, Filterung und Navigation auf langen Seiten verbessert.',
+      bookmarkRestoreModes: 'Lesezeichen unterstützen automatische, bestätigte und manuelle Wiederherstellung.',
+      manualBookmarkRestore: 'Fehlende manuelle Wiederherstellung nach erneutem Öffnen einer Seite behoben.',
+      bookmarkOpenPosition: 'Behoben, dass aus den Einstellungen geöffnete Lesezeichen am Seitenanfang blieben.',
+      scrollBookmarks: 'Scroll-Lesezeichen zum Speichern und Wiederherstellen der Leseposition hinzugefügt.',
+      savedBookmarkManagement: 'Verwaltung gespeicherter Positionen mit Öffnen und Löschen hinzugefügt.',
+      additionalLanguages: 'Deutsch, Französisch, Portugiesisch, traditionelles Chinesisch, Koreanisch und Italienisch hinzugefügt.',
+      bookmarkRetention: 'Aufbewahrung der letzten Lesepositionen pro Domain hinzugefügt.',
+      advancedProgressBar: 'Vertikale Schaltfläche und horizontalen Fortschrittsbalken am Seitenrand hinzugefügt.',
+      iconCustomization: 'Symbolstile und Anpassung der Symbolfarbe hinzugefügt.',
+      siteManagement: 'Verwaltung des Aktivierungsstatus von Websites in den Einstellungen hinzugefügt.',
+      spanishJapanese: 'Spanische und japanische Benutzeroberflächen hinzugefügt.',
+      scrollJumpConsistency: 'Sprünge nach oben, unten und zum Fortschritt vereinheitlicht.'
+    }
+  },
+  'fr-FR': {
+    currentVersion: 'Version actuelle',
+    categories: { added: 'Nouvelles fonctions', improved: 'Améliorations', fixed: 'Corrections de bugs' },
+    items: {
+      domainFeatureControls: 'Ajout du contrôle par domaine de l’extension et de ses trois fonctions avancées.',
+      installOptionsPage: 'La page des réglages s’ouvre automatiquement après une nouvelle installation.',
+      releaseNotes: 'Ajout des notes de version dans l’extension.',
+      optionalAnalytics: 'Ajout de statistiques d’utilisation anonymes et facultatives.',
+      advancedFeatureEntry: 'La progression, les marque-pages et la navigation par sections s’activent désormais par domaine depuis la barre d’outils.',
+      domainManagement: 'La gestion des domaines centralise les états de l’extension et des fonctions avancées.',
+      outlineNavigation: 'Ajout de la navigation intelligente par sections et du plan de page.',
+      outlineSettings: 'Ajout des réglages de sources, de nombre d’éléments et de mise en évidence de la section actuelle.',
+      outlineRecognition: 'Amélioration de la détection, du filtrage et de la navigation sur les longues pages.',
+      bookmarkRestoreModes: 'Les marque-pages prennent en charge la restauration automatique, avec confirmation ou manuelle.',
+      manualBookmarkRestore: 'Correction de l’absence d’action de restauration manuelle après la réouverture d’une page.',
+      bookmarkOpenPosition: 'Correction des marque-pages ouverts depuis les réglages qui restaient en haut de page.',
+      scrollBookmarks: 'Ajout de marque-pages pour enregistrer et restaurer les positions de lecture.',
+      savedBookmarkManagement: 'Ajout de la gestion des positions enregistrées avec ouverture et suppression.',
+      additionalLanguages: 'Ajout de l’allemand, du français, du portugais, du chinois traditionnel, du coréen et de l’italien.',
+      bookmarkRetention: 'Ajout de la conservation des positions récentes par domaine.',
+      advancedProgressBar: 'Ajout d’un bouton vertical et d’une barre de progression horizontale en bord de page.',
+      iconCustomization: 'Ajout de styles d’icônes et de la personnalisation de leur couleur.',
+      siteManagement: 'Ajout de la gestion de l’activation des sites dans les réglages.',
+      spanishJapanese: 'Ajout des interfaces en espagnol et en japonais.',
+      scrollJumpConsistency: 'Amélioration de la cohérence des sauts vers le haut, le bas et la progression.'
+    }
+  },
+  'pt-BR': {
+    currentVersion: 'Versão atual',
+    categories: { added: 'Novos recursos', improved: 'Melhorias de recursos', fixed: 'Correções de bugs' },
+    items: {
+      domainFeatureControls: 'Adicionados controles por domínio para a extensão e seus três recursos avançados.',
+      installOptionsPage: 'A página de configurações agora abre automaticamente após uma nova instalação.',
+      releaseNotes: 'Adicionadas notas da versão dentro da extensão.',
+      optionalAnalytics: 'Adicionadas estatísticas de uso anônimas opcionais.',
+      advancedFeatureEntry: 'Progresso, favoritos e navegação por seções agora são ativados por domínio na barra de ferramentas.',
+      domainManagement: 'O gerenciamento de domínios agora centraliza os estados da extensão e dos recursos avançados.',
+      outlineNavigation: 'Adicionadas navegação inteligente por seções e estrutura da página.',
+      outlineSettings: 'Adicionadas configurações de fontes, limite de itens e destaque da seção atual.',
+      outlineRecognition: 'Melhoradas a detecção, a filtragem e a navegação em páginas longas.',
+      bookmarkRestoreModes: 'Os favoritos agora permitem restauração automática, com aviso ou manual.',
+      manualBookmarkRestore: 'Corrigida a ausência da ação de restauração manual ao reabrir uma página.',
+      bookmarkOpenPosition: 'Corrigido o problema de favoritos abertos nas configurações permanecerem no topo.',
+      scrollBookmarks: 'Adicionados favoritos para salvar e restaurar posições de leitura.',
+      savedBookmarkManagement: 'Adicionado gerenciamento de posições salvas com ações de abrir e excluir.',
+      additionalLanguages: 'Adicionados alemão, francês, português, chinês tradicional, coreano e italiano.',
+      bookmarkRetention: 'Adicionada retenção por domínio das posições de leitura recentes.',
+      advancedProgressBar: 'Adicionados botão vertical e barra de progresso horizontal na borda da página.',
+      iconCustomization: 'Adicionados estilos e personalização da cor dos ícones.',
+      siteManagement: 'Adicionado gerenciamento do estado de ativação dos sites nas configurações.',
+      spanishJapanese: 'Adicionadas interfaces em espanhol e japonês.',
+      scrollJumpConsistency: 'Melhorada a consistência dos saltos para o topo, o fim e o progresso.'
+    }
+  },
+  'ko-KR': {
+    currentVersion: '현재 버전',
+    categories: { added: '새 기능', improved: '기능 개선', fixed: '버그 수정' },
+    items: {
+      domainFeatureControls: '기본 도메인별로 확장 프로그램과 세 가지 고급 기능을 제어할 수 있습니다.',
+      installOptionsPage: '새로 설치하면 설정 페이지가 자동으로 열립니다.',
+      releaseNotes: '확장 프로그램 안에 업데이트 기록을 추가했습니다.',
+      optionalAnalytics: '선택적으로 사용하는 익명 사용 통계를 추가했습니다.',
+      advancedFeatureEntry: '페이지 진행률, 위치 북마크, 구간 이동을 도구 모음에서 도메인별로 켤 수 있습니다.',
+      domainManagement: '도메인 관리에서 확장 프로그램과 고급 기능 상태를 한곳에서 확인하고 조정할 수 있습니다.',
+      outlineNavigation: '스마트 구간 이동과 페이지 개요 탐색을 추가했습니다.',
+      outlineSettings: '개요 출처, 항목 수, 현재 구간 강조 설정을 추가했습니다.',
+      outlineRecognition: '긴 페이지의 구간 인식, 필터링, 이동 경험을 개선했습니다.',
+      bookmarkRestoreModes: '위치 북마크에서 자동, 확인 후, 수동 복원 방식을 선택할 수 있습니다.',
+      manualBookmarkRestore: '저장된 페이지를 다시 열었을 때 수동 복원 동작이 없는 문제를 수정했습니다.',
+      bookmarkOpenPosition: '설정에서 북마크를 열면 페이지 상단에 머무는 문제를 수정했습니다.',
+      scrollBookmarks: '읽던 위치를 저장하고 복원하는 스크롤 위치 북마크를 추가했습니다.',
+      savedBookmarkManagement: '저장 위치를 열거나 삭제하는 관리 기능을 추가했습니다.',
+      additionalLanguages: '독일어, 프랑스어, 포르투갈어, 번체 중국어, 한국어, 이탈리아어를 추가했습니다.',
+      bookmarkRetention: '도메인별로 최근 읽기 위치를 보관할 수 있습니다.',
+      advancedProgressBar: '세로 버튼과 페이지 가장자리 가로 진행률 표시줄을 추가했습니다.',
+      iconCustomization: '버튼 아이콘 스타일과 아이콘 색상 설정을 추가했습니다.',
+      siteManagement: '설정 페이지에 사이트 활성화 상태 관리를 추가했습니다.',
+      spanishJapanese: '스페인어와 일본어 인터페이스를 추가했습니다.',
+      scrollJumpConsistency: '상단, 하단, 진행 위치 이동 동작의 일관성을 개선했습니다.'
+    }
+  },
+  'it-IT': {
+    currentVersion: 'Versione attuale',
+    categories: { added: 'Nuove funzioni', improved: 'Miglioramenti', fixed: 'Correzioni di bug' },
+    items: {
+      domainFeatureControls: 'Aggiunti controlli per dominio per l’estensione e le sue tre funzioni avanzate.',
+      installOptionsPage: 'La pagina delle impostazioni si apre automaticamente dopo una nuova installazione.',
+      releaseNotes: 'Aggiunte le note di versione all’interno dell’estensione.',
+      optionalAnalytics: 'Aggiunte statistiche di utilizzo anonime facoltative.',
+      advancedFeatureEntry: 'Progresso, segnalibri e navigazione per sezioni si attivano ora per dominio dalla barra degli strumenti.',
+      domainManagement: 'La gestione dei domini riunisce gli stati dell’estensione e delle funzioni avanzate.',
+      outlineNavigation: 'Aggiunte la navigazione intelligente per sezioni e la struttura della pagina.',
+      outlineSettings: 'Aggiunte impostazioni per fonti, numero di elementi ed evidenziazione della sezione corrente.',
+      outlineRecognition: 'Migliorati rilevamento, filtro e navigazione nelle pagine lunghe.',
+      bookmarkRestoreModes: 'I segnalibri supportano il ripristino automatico, con richiesta o manuale.',
+      manualBookmarkRestore: 'Corretta l’assenza dell’azione di ripristino manuale dopo la riapertura di una pagina.',
+      bookmarkOpenPosition: 'Corretto il problema dei segnalibri aperti dalle impostazioni che restavano a inizio pagina.',
+      scrollBookmarks: 'Aggiunti segnalibri per salvare e ripristinare le posizioni di lettura.',
+      savedBookmarkManagement: 'Aggiunta la gestione delle posizioni salvate con apertura ed eliminazione.',
+      additionalLanguages: 'Aggiunti tedesco, francese, portoghese, cinese tradizionale, coreano e italiano.',
+      bookmarkRetention: 'Aggiunta la conservazione per dominio delle posizioni di lettura recenti.',
+      advancedProgressBar: 'Aggiunti pulsante verticale e barra di avanzamento orizzontale sul bordo della pagina.',
+      iconCustomization: 'Aggiunti stili delle icone e personalizzazione del colore.',
+      siteManagement: 'Aggiunta la gestione dello stato di attivazione dei siti nelle impostazioni.',
+      spanishJapanese: 'Aggiunte le interfacce in spagnolo e giapponese.',
+      scrollJumpConsistency: 'Migliorata la coerenza dei salti in alto, in basso e alla posizione di avanzamento.'
+    }
+  }
+};
 
 const DEFAULT_ADVANCED_SETTINGS = {
   progressBar: {
@@ -1178,7 +1906,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     mode: 'verticalButton',
     horizontalPosition: 'top',
     colorMode: 'followTopButton',
-    customColor: '#4A9EDD',
+    customColor: '#4a9edd',
     thickness: 4,
     verticalHeight: 120,
     clickToJump: true,
@@ -1199,7 +1927,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     buttonPosition: 'pageBottom',
     buttonColorMode: 'followTopButton',
-    buttonCustomColor: '#4A9EDD',
+    buttonCustomColor: '#4a9edd',
     matchMode: 'exact',
     perDomainLimit: 1,
     globalLimit: 300,
@@ -1209,7 +1937,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     buttonPosition: 'pageBottom',
     buttonColorMode: 'followTopButton',
-    buttonCustomColor: '#4A9EDD',
+    buttonCustomColor: '#4a9edd',
     sources: {
       h1: true,
       h2: true,
@@ -1223,7 +1951,8 @@ const DEFAULT_ADVANCED_SETTINGS = {
 };
 
 let advancedSettingsState = mergeAdvancedSettings();
-let enableStates = {};
+let domainFeatureStates = {};
+let domainFeatureDefaults = domainUtils.normalizeDefaults();
 let domainSearchText = '';
 let savedBookmarks = {};
 
@@ -1373,7 +2102,7 @@ function mergeAdvancedSettings(savedSettings) {
     isPlainObject(savedSettings.readingTools.features)
     ? savedSettings.readingTools.features
     : {};
-  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4A9EDD');
+  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, 120);
   merged.iconCustomization.enabled = true;
@@ -1395,7 +2124,7 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.scrollBookmarks.buttonCustomColor = validateHexColor(
     savedScrollBookmarks.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.scrollBookmarks.buttonCustomColor,
-    '#4A9EDD'
+    '#4a9edd'
   );
   merged.outlineNavigation.enabled = outlineEnabled;
   merged.outlineNavigation.buttonPosition = normalizeFeatureButtonPosition(
@@ -1406,7 +2135,7 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.outlineNavigation.buttonCustomColor = validateHexColor(
     savedOutline.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.outlineNavigation.buttonCustomColor,
-    '#4A9EDD'
+    '#4a9edd'
   );
   merged.outlineNavigation.sources.h1 = normalizeBoolean(
     merged.outlineNavigation.sources.h1,
@@ -1548,6 +2277,8 @@ function applyTranslation(lang) {
       element.setAttribute('placeholder', translations[lang][key]);
     }
   });
+  renderReleaseNotes(lang);
+  renderAnalyticsState();
 }
 
 // 统一的间距规范（像素）
@@ -1560,7 +2291,7 @@ function getPreviewProgressColor(topButtonColor, bottomButtonColor) {
     return validateHexColor(bottomButtonColor, '#4A9EDD');
   }
   if (colorMode === 'custom') {
-    return validateHexColor(document.getElementById('progressCustomColor')?.value, '#4A9EDD');
+    return validateHexColor(document.getElementById('progressCustomColor')?.value, '#4a9edd');
   }
   return validateHexColor(topButtonColor, '#4A9EDD');
 }
@@ -1571,7 +2302,7 @@ function getPreviewFeatureButtonColor(prefix, topButtonColor, bottomButtonColor)
     return validateHexColor(bottomButtonColor, '#4A9EDD');
   }
   if (colorMode === 'custom') {
-    return validateHexColor(document.getElementById(`${prefix}ButtonCustomColor`)?.value, '#4A9EDD');
+    return validateHexColor(document.getElementById(`${prefix}ButtonCustomColor`)?.value, '#4a9edd');
   }
   return validateHexColor(topButtonColor, '#4A9EDD');
 }
@@ -1606,7 +2337,7 @@ function updatePreviewButtons() {
   const verticalAlignment = document.getElementById('verticalAlignment').value;
   const iconSet = normalizeIconSet(document.getElementById('iconSet').value);
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
-  const progressEnabled = document.getElementById('progressBarEnabled')?.checked === true;
+  const progressEnabled = true;
   const progressMode = document.getElementById('progressBarMode')?.value || 'verticalButton';
   const showProgressPercentage = document.getElementById('progressShowPercentage')?.checked === true;
   const progressHorizontalPosition = document.getElementById('progressHorizontalPosition')?.value || 'top';
@@ -1615,14 +2346,14 @@ function updatePreviewButtons() {
   const featureButtons = [
     {
       button: bookmarkButton,
-      enabled: document.getElementById('scrollBookmarksEnabled')?.checked === true,
+      enabled: true,
       position: document.getElementById('scrollBookmarkButtonPosition')?.value || 'pageBottom',
       color: getPreviewFeatureButtonColor('scrollBookmark', topButtonColor, bottomButtonColor),
       icon: getBookmarkIconSvg()
     },
     {
       button: outlineButton,
-      enabled: document.getElementById('outlineNavigationEnabled')?.checked === true,
+      enabled: true,
       position: document.getElementById('outlineButtonPosition')?.value || 'pageBottom',
       color: getPreviewFeatureButtonColor('outline', topButtonColor, bottomButtonColor),
       icon: getOutlineIconSvg()
@@ -2068,16 +2799,13 @@ function updateAdvancedVisibility() {
   const scrollBookmarkCustomColorSettings = document.getElementById('scrollBookmarkButtonCustomColorContainer');
   const outlineNavigationSettings = document.getElementById('outlineNavigationSettings');
   const outlineCustomColorSettings = document.getElementById('outlineButtonCustomColorContainer');
-  const progressEnabled = document.getElementById('progressBarEnabled');
   const progressMode = document.getElementById('progressBarMode');
   const colorMode = document.getElementById('progressColorMode');
-  const scrollBookmarksEnabled = document.getElementById('scrollBookmarksEnabled');
   const scrollBookmarkColorMode = document.getElementById('scrollBookmarkButtonColorMode');
-  const outlineNavigationEnabled = document.getElementById('outlineNavigationEnabled');
   const outlineColorMode = document.getElementById('outlineButtonColorMode');
 
-  if (progressSettings && progressEnabled) {
-    progressSettings.style.display = progressEnabled.checked ? 'block' : 'none';
+  if (progressSettings) {
+    progressSettings.style.display = 'block';
   }
   if (verticalSettings && progressMode) {
     verticalSettings.style.display = progressMode.value === 'verticalButton' ? 'block' : 'none';
@@ -2088,14 +2816,14 @@ function updateAdvancedVisibility() {
   if (customColorSettings && colorMode) {
     customColorSettings.style.display = colorMode.value === 'custom' ? 'block' : 'none';
   }
-  if (scrollBookmarksSettings && scrollBookmarksEnabled) {
-    scrollBookmarksSettings.style.display = scrollBookmarksEnabled.checked ? 'block' : 'none';
+  if (scrollBookmarksSettings) {
+    scrollBookmarksSettings.style.display = 'block';
   }
   if (scrollBookmarkCustomColorSettings && scrollBookmarkColorMode) {
     scrollBookmarkCustomColorSettings.style.display = scrollBookmarkColorMode.value === 'custom' ? 'block' : 'none';
   }
-  if (outlineNavigationSettings && outlineNavigationEnabled) {
-    outlineNavigationSettings.style.display = outlineNavigationEnabled.checked ? 'block' : 'none';
+  if (outlineNavigationSettings) {
+    outlineNavigationSettings.style.display = 'block';
   }
   if (outlineCustomColorSettings && outlineColorMode) {
     outlineCustomColorSettings.style.display = outlineColorMode.value === 'custom' ? 'block' : 'none';
@@ -2114,7 +2842,6 @@ function setAdvancedSettingsControls(settings) {
   const scrollBookmarks = advancedSettingsState.scrollBookmarks;
   const outlineNavigation = advancedSettingsState.outlineNavigation;
 
-  document.getElementById('progressBarEnabled').checked = progress.enabled;
   document.getElementById('progressBarMode').value = progress.mode;
   document.getElementById('progressHorizontalPosition').value = progress.horizontalPosition;
   document.getElementById('progressColorMode').value = progress.colorMode;
@@ -2130,12 +2857,10 @@ function setAdvancedSettingsControls(settings) {
   document.getElementById('iconColor').value = icons.iconColor;
   document.getElementById('iconColorHex').value = icons.iconColor;
 
-  document.getElementById('scrollBookmarksEnabled').checked = scrollBookmarks.enabled === true;
   document.getElementById('scrollBookmarkButtonPosition').value = scrollBookmarks.buttonPosition;
   document.getElementById('scrollBookmarkButtonColorMode').value = scrollBookmarks.buttonColorMode;
   document.getElementById('scrollBookmarkButtonCustomColor').value = scrollBookmarks.buttonCustomColor;
   document.getElementById('scrollBookmarkButtonCustomColorHex').value = scrollBookmarks.buttonCustomColor;
-  document.getElementById('outlineNavigationEnabled').checked = outlineNavigation.enabled === true;
   document.getElementById('outlineButtonPosition').value = outlineNavigation.buttonPosition;
   document.getElementById('outlineButtonColorMode').value = outlineNavigation.buttonColorMode;
   document.getElementById('outlineButtonCustomColor').value = outlineNavigation.buttonCustomColor;
@@ -2158,17 +2883,14 @@ function setAdvancedSettingsControls(settings) {
 
 function getAdvancedSettingsFromControls() {
   const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
-  const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4A9EDD');
+  const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4a9edd');
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
-  const scrollBookmarkCustomColor = validateHexColor(document.getElementById('scrollBookmarkButtonCustomColor').value, '#4A9EDD');
-  const outlineCustomColor = validateHexColor(document.getElementById('outlineButtonCustomColor').value, '#4A9EDD');
+  const scrollBookmarkCustomColor = validateHexColor(document.getElementById('scrollBookmarkButtonCustomColor').value, '#4a9edd');
+  const outlineCustomColor = validateHexColor(document.getElementById('outlineButtonCustomColor').value, '#4a9edd');
   ensureOutlineSourceSelection(false);
-  const outlineEnabled = document.getElementById('outlineNavigationEnabled').checked;
-  const scrollBookmarksEnabled = document.getElementById('scrollBookmarksEnabled').checked;
-
   return mergeAdvancedSettings({
     progressBar: {
-      enabled: document.getElementById('progressBarEnabled').checked,
+      enabled: true,
       mode: document.getElementById('progressBarMode').value,
       horizontalPosition: document.getElementById('progressHorizontalPosition').value,
       colorMode: document.getElementById('progressColorMode').value,
@@ -2190,7 +2912,7 @@ function getAdvancedSettingsFromControls() {
       }
     },
     scrollBookmarks: {
-      enabled: scrollBookmarksEnabled,
+      enabled: true,
       buttonPosition: normalizeFeatureButtonPosition(document.getElementById('scrollBookmarkButtonPosition').value),
       buttonColorMode: normalizeFeatureButtonColorMode(document.getElementById('scrollBookmarkButtonColorMode').value),
       buttonCustomColor: scrollBookmarkCustomColor,
@@ -2200,7 +2922,7 @@ function getAdvancedSettingsFromControls() {
       restoreMode: normalizeBookmarkRestoreMode(document.getElementById('scrollBookmarkRestoreMode').value)
     },
     outlineNavigation: {
-      enabled: outlineEnabled,
+      enabled: true,
       buttonPosition: normalizeFeatureButtonPosition(document.getElementById('outlineButtonPosition').value),
       buttonColorMode: normalizeFeatureButtonColorMode(document.getElementById('outlineButtonColorMode').value),
       buttonCustomColor: outlineCustomColor,
@@ -2217,64 +2939,52 @@ function getAdvancedSettingsFromControls() {
   });
 }
 
-function normalizeEnableStates(states) {
-  return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
-}
-
 function parseHostnameInput(value) {
-  const trimmed = (value || '').trim();
-  if (!trimmed) return '';
-
-  const candidates = [trimmed];
-  if (!new RegExp('^[a-z][a-z0-9+.-]*://', 'i').test(trimmed)) {
-    candidates.push('https://' + trimmed);
-  }
-
-  for (const candidate of candidates) {
-    try {
-      const parsed = new URL(candidate);
-      if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname) {
-        return parsed.hostname.toLowerCase();
-      }
-    } catch (err) {
-      // Try the next candidate.
-    }
-  }
-  return '';
+  return domainUtils.getDomainKey(value);
 }
 
-function saveEnableStates(nextStates, callback) {
-  enableStates = normalizeEnableStates(nextStates);
-  chrome.storage.local.set({ enableStates }, () => {
-    renderEnableStatesList();
+function saveDomainFeatureStates(nextStates, callback) {
+  domainFeatureStates = domainUtils.normalizeStates(nextStates, domainFeatureDefaults);
+  chrome.storage.local.set({ [DOMAIN_STORAGE_KEYS.states]: domainFeatureStates }, () => {
+    renderDomainFeatureStatesList();
     if (callback) callback();
   });
 }
 
-function saveEnableState(hostname, enabled) {
-  const nextStates = { ...enableStates, [hostname]: Boolean(enabled) };
-  saveEnableStates(nextStates);
+function saveDomainFeatureState(domainKey, updater, callback) {
+  chrome.storage.local.get([DOMAIN_STORAGE_KEYS.states], (result) => {
+    const latestStates = domainUtils.normalizeStates(
+      result[DOMAIN_STORAGE_KEYS.states],
+      domainFeatureDefaults
+    );
+    saveDomainFeatureStates(domainUtils.updateState(
+      latestStates,
+      domainKey,
+      updater,
+      domainFeatureDefaults
+    ), callback);
+  });
 }
 
-function removeEnableState(hostname) {
-  const nextStates = { ...enableStates };
-  delete nextStates[hostname];
-  saveEnableStates(nextStates);
+function removeDomainFeatureState(domainKey) {
+  const nextStates = { ...domainFeatureStates };
+  delete nextStates[domainKey];
+  saveDomainFeatureStates(nextStates);
 }
 
 function clearDisabledSites() {
   const nextStates = {};
-  Object.keys(enableStates).forEach((hostname) => {
-    if (enableStates[hostname] !== false) {
-      nextStates[hostname] = enableStates[hostname];
+  Object.keys(domainFeatureStates).forEach((domainKey) => {
+    if (domainFeatureStates[domainKey].extensionEnabled !== false) {
+      nextStates[domainKey] = domainFeatureStates[domainKey];
     }
   });
-  saveEnableStates(nextStates);
+  saveDomainFeatureStates(nextStates);
   return nextStates;
 }
 
 function restoreAllSitesEnabled() {
-  saveEnableStates({});
+  saveDomainFeatureStates({});
   return {};
 }
 
@@ -2285,7 +2995,22 @@ function showDomainError(message) {
   error.style.display = message ? 'block' : 'none';
 }
 
-function renderEnableStatesList() {
+function createDomainToggle(lang, labelKey, checked, disabled, onChange) {
+  const label = translations[lang]?.[labelKey] || labelKey;
+  const toggleLabel = document.createElement('label');
+  toggleLabel.className = 'domain-feature-toggle' + (disabled ? ' is-disabled' : '');
+  toggleLabel.setAttribute('title', label);
+  const toggle = document.createElement('input');
+  toggle.type = 'checkbox';
+  toggle.checked = checked;
+  toggle.disabled = disabled;
+  toggle.setAttribute('aria-label', label);
+  toggle.addEventListener('change', () => onChange(toggle.checked));
+  toggleLabel.appendChild(toggle);
+  return toggleLabel;
+}
+
+function renderDomainFeatureStatesList() {
   const list = document.getElementById('domainList');
   const empty = document.getElementById('domainEmpty');
   if (!list || !empty) return;
@@ -2295,47 +3020,116 @@ function renderEnableStatesList() {
     ? normalizeLanguage(navigator.language || navigator.userLanguage)
     : document.getElementById('languageSelector')?.value || 'en-US';
   const query = domainSearchText.toLowerCase();
-  const hostnames = Object.keys(enableStates).sort().filter((hostname) => hostname.toLowerCase().includes(query));
+  const domainKeys = Object.keys(domainFeatureStates)
+    .sort()
+    .filter((domainKey) => domainKey.toLowerCase().includes(query));
 
-  empty.style.display = hostnames.length === 0 ? 'block' : 'none';
-  hostnames.forEach((hostname) => {
+  empty.style.display = domainKeys.length === 0 ? 'block' : 'none';
+  if (domainKeys.length > 0) {
+    const header = document.createElement('div');
+    header.className = 'domain-header';
+    [
+      'settings.domainName',
+      'settings.domainExtension',
+      'settings.domainProgressBar',
+      'settings.domainScrollBookmarks',
+      'settings.domainOutlineNavigation',
+      'settings.domainActions'
+    ].forEach((labelKey) => {
+      const label = document.createElement('span');
+      label.textContent = translations[lang]?.[labelKey] || labelKey;
+      header.appendChild(label);
+    });
+    list.appendChild(header);
+  }
+
+  domainKeys.forEach((domainKey) => {
+    const state = domainUtils.getState(domainFeatureStates, domainKey, domainFeatureDefaults);
     const row = document.createElement('div');
     row.className = 'domain-row';
 
     const name = document.createElement('span');
     name.className = 'domain-name';
-    name.textContent = hostname;
+    name.textContent = domainKey;
 
-    const toggleLabel = document.createElement('label');
-    toggleLabel.className = 'checkbox-container';
-    toggleLabel.style.marginBottom = '0';
-    const toggle = document.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.checked = enableStates[hostname] !== false;
-    const toggleText = document.createElement('span');
-    toggleText.textContent = toggle.checked
-      ? (translations[lang]?.['settings.domainEnabled'] || 'Enabled')
-      : (translations[lang]?.['settings.domainDisabled'] || 'Disabled');
-    toggle.addEventListener('change', () => saveEnableState(hostname, toggle.checked));
-    toggleLabel.appendChild(toggle);
-    toggleLabel.appendChild(toggleText);
+    const extensionToggle = createDomainToggle(
+      lang,
+      'settings.domainExtension',
+      state.extensionEnabled,
+      false,
+      (checked) => {
+        saveDomainFeatureState(domainKey, (current) => ({
+          ...current,
+          extensionEnabled: checked
+        }), () => recordAnalyticsToggle('extension', checked));
+      }
+    );
+    const featureToggles = domainUtils.FEATURE_KEYS.map((featureKey) => {
+      const labelKeys = {
+        progressBar: 'settings.domainProgressBar',
+        scrollBookmarks: 'settings.domainScrollBookmarks',
+        outlineNavigation: 'settings.domainOutlineNavigation'
+      };
+      return createDomainToggle(
+        lang,
+        labelKeys[featureKey],
+        state.features[featureKey],
+        !state.extensionEnabled,
+        (checked) => {
+          saveDomainFeatureState(domainKey, (current) => ({
+            ...current,
+            features: {
+              ...current.features,
+              [featureKey]: checked
+            }
+          }), () => recordAnalyticsToggle(featureKey, checked));
+        }
+      );
+    });
 
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
-    deleteButton.textContent = translations[lang]?.['settings.deleteDomain'] || 'Delete';
-    deleteButton.addEventListener('click', () => removeEnableState(hostname));
+    const deleteLabel = translations[lang]?.['settings.deleteDomain'] || 'Delete';
+    deleteButton.className = 'domain-delete-button';
+    deleteButton.setAttribute('aria-label', deleteLabel);
+    deleteButton.setAttribute('title', deleteLabel);
+    deleteButton.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18"></path>
+        <path d="M8 6V4h8v2"></path>
+        <path d="M19 6l-1 14H6L5 6"></path>
+        <path d="M10 11v5"></path>
+        <path d="M14 11v5"></path>
+      </svg>
+    `;
+    deleteButton.addEventListener('click', () => removeDomainFeatureState(domainKey));
 
     row.appendChild(name);
-    row.appendChild(toggleLabel);
+    row.appendChild(extensionToggle);
+    featureToggles.forEach((toggle) => row.appendChild(toggle));
     row.appendChild(deleteButton);
     list.appendChild(row);
   });
 }
 
-function loadEnableStates() {
-  chrome.storage.local.get(['enableStates'], (result) => {
-    enableStates = normalizeEnableStates(result.enableStates);
-    renderEnableStatesList();
+function loadDomainFeatureStates() {
+  chrome.storage.sync.get(['advancedSettings'], (syncResult) => {
+    chrome.storage.local.get([
+      DOMAIN_STORAGE_KEYS.states,
+      DOMAIN_STORAGE_KEYS.defaults,
+      DOMAIN_STORAGE_KEYS.migrationVersion,
+      DOMAIN_STORAGE_KEYS.legacyStates
+    ], (localResult) => {
+      const migration = domainUtils.migrateStorage(localResult, syncResult.advancedSettings);
+      domainFeatureStates = migration.states;
+      domainFeatureDefaults = migration.defaults;
+      const finish = () => renderDomainFeatureStatesList();
+      if (!migration.needsWrite) {
+        finish();
+        return;
+      }
+      chrome.storage.local.set(domainUtils.toStorageData(migration), finish);
+    });
   });
 }
 
@@ -2362,6 +3156,7 @@ function openSavedBookmark(key, bookmark) {
       requestedAt: Date.now()
     }
   }, () => {
+    recordAnalyticsAction('bookmarkRestoreClicks');
     chrome.tabs.create({ url });
   });
 }
@@ -2446,22 +3241,58 @@ function removeSavedBookmark(key) {
   });
 }
 
-function setupTabs() {
+function activateTab(targetTab) {
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabPanels = document.querySelectorAll('.tab-panel');
+
+  tabButtons.forEach((item) => {
+    const isActive = item.getAttribute('data-tab') === targetTab;
+    item.classList.toggle('is-active', isActive);
+    item.setAttribute('aria-selected', String(isActive));
+  });
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle('is-active', panel.getAttribute('data-tab-panel') === targetTab);
+  });
+}
+
+function setupTabs() {
+  const tabButtons = document.querySelectorAll('.tab-button');
 
   tabButtons.forEach((button) => {
     button.setAttribute('aria-selected', String(button.classList.contains('is-active')));
     button.addEventListener('click', () => {
-      const targetTab = button.getAttribute('data-tab');
-      tabButtons.forEach((item) => {
-        const isActive = item === button;
-        item.classList.toggle('is-active', isActive);
-        item.setAttribute('aria-selected', String(isActive));
-      });
-      tabPanels.forEach((panel) => {
-        panel.classList.toggle('is-active', panel.getAttribute('data-tab-panel') === targetTab);
-      });
+      activateTab(button.getAttribute('data-tab'));
+    });
+  });
+}
+
+const ONBOARDING_VISIBLE_KEY = 'showOnboarding';
+
+function setOnboardingVisible(visible) {
+  const guide = document.getElementById('onboardingGuide');
+  if (!guide) return;
+  guide.style.display = visible ? 'block' : 'none';
+}
+
+function loadOnboardingState() {
+  chrome.storage.local.get([ONBOARDING_VISIBLE_KEY], (result) => {
+    setOnboardingVisible(result[ONBOARDING_VISIBLE_KEY] === true);
+  });
+}
+
+function dismissOnboarding() {
+  chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: false }, () => {
+    setOnboardingVisible(false);
+  });
+}
+
+function reopenOnboarding() {
+  chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: true }, () => {
+    setOnboardingVisible(true);
+    activateTab('basic');
+    document.getElementById('onboardingGuide')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
     });
   });
 }
@@ -2470,6 +3301,263 @@ function setManifestVersion() {
   const versionElement = document.getElementById('manifestVersion');
   if (!versionElement || typeof chrome === 'undefined' || !chrome.runtime?.getManifest) return;
   versionElement.textContent = chrome.runtime.getManifest().version || versionElement.textContent;
+}
+
+function compareVersions(left, right) {
+  const leftParts = String(left || '').split('.').map((part) => Number(part) || 0);
+  const rightParts = String(right || '').split('.').map((part) => Number(part) || 0);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index++) {
+    const difference = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+function getManifestVersion() {
+  if (typeof chrome !== 'undefined' && chrome.runtime?.getManifest) {
+    return chrome.runtime.getManifest().version || '0.0.0';
+  }
+  return document.getElementById('manifestVersion')?.textContent || '0.0.0';
+}
+
+function renderReleaseNotes(lang) {
+  const list = document.getElementById('releaseNotesList');
+  if (!list) return;
+
+  const localized = releaseNotesTranslations[lang] || releaseNotesTranslations['en-US'];
+  const manifestVersion = getManifestVersion();
+  list.innerHTML = '';
+
+  RELEASE_NOTES
+    .filter((release) => compareVersions(release.version, manifestVersion) <= 0)
+    .forEach((release) => {
+      const details = document.createElement('details');
+      details.className = 'release-version feedback-disclosure';
+      details.open = release.version === manifestVersion;
+      details.setAttribute('data-release-version', release.version);
+
+      const summary = document.createElement('summary');
+      const version = document.createElement('span');
+      version.textContent = `v${release.version}`;
+      summary.appendChild(version);
+
+      if (release.version === manifestVersion) {
+        const currentBadge = document.createElement('span');
+        currentBadge.className = 'release-current-badge';
+        currentBadge.textContent = localized.currentVersion;
+        summary.appendChild(currentBadge);
+      }
+
+      const content = document.createElement('div');
+      content.className = 'release-version-content';
+
+      ['added', 'improved', 'fixed'].forEach((categoryKey) => {
+        const itemKeys = release.categories[categoryKey] || [];
+        if (!itemKeys.length) return;
+
+        const category = document.createElement('section');
+        category.className = 'release-category';
+        const heading = document.createElement('h4');
+        heading.textContent = localized.categories[categoryKey];
+        const items = document.createElement('ul');
+
+        itemKeys.forEach((itemKey) => {
+          const item = document.createElement('li');
+          item.textContent = localized.items[itemKey];
+          items.appendChild(item);
+        });
+
+        category.appendChild(heading);
+        category.appendChild(items);
+        content.appendChild(category);
+      });
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      list.appendChild(details);
+    });
+}
+
+function getAnalyticsLanguage() {
+  const selected = document.getElementById('languageSelector')?.value;
+  if (selected && selected !== 'auto') return selected;
+  return normalizeLanguage(navigator.language || navigator.userLanguage);
+}
+
+function getAnalyticsText(key) {
+  const lang = getAnalyticsLanguage();
+  const localized = analyticsTranslations[lang] || analyticsTranslations['en-US'];
+  return localized[key] || analyticsTranslations['en-US'][key] || key;
+}
+
+function renderAnalyticsState() {
+  const toggle = document.getElementById('analyticsEnabled');
+  const status = document.getElementById('analyticsStatus');
+  const preview = document.getElementById('analyticsPreviewData');
+  if (!toggle || !status || !preview) return;
+
+  toggle.checked = analyticsRuntimeState.consent.enabled === true;
+  toggle.disabled = false;
+  if (!analyticsRuntimeState.configured && toggle.checked) {
+    analyticsStatusKey = 'unavailable';
+  } else if (analyticsStatusKey !== 'permissionDenied' && analyticsStatusKey !== 'error') {
+    analyticsStatusKey = toggle.checked ? 'enabledStatus' : 'disabled';
+  }
+  status.textContent = getAnalyticsText(analyticsStatusKey);
+  preview.textContent = JSON.stringify(analyticsRuntimeState.events || [], null, 2);
+}
+
+function sendAnalyticsMessage(message, callback) {
+  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') {
+    callback({ ok: false, reason: 'runtime_unavailable' });
+    return;
+  }
+  chrome.runtime.sendMessage(message, (response) => {
+    if (chrome.runtime.lastError) {
+      callback({ ok: false, reason: 'runtime_error' });
+      return;
+    }
+    callback(response || { ok: false, reason: 'empty_response' });
+  });
+}
+
+function recordAnalyticsAction(actionKey) {
+  sendAnalyticsMessage({
+    action: analyticsUtils.MESSAGE_ACTIONS.recordAction,
+    actionKey
+  }, () => {});
+}
+
+function recordAnalyticsToggle(feature, enabled) {
+  sendAnalyticsMessage({
+    action: analyticsUtils.MESSAGE_ACTIONS.recordToggle,
+    feature,
+    enabled: enabled === true,
+    source: 'domainManager'
+  }, () => {});
+}
+
+function refreshAnalyticsState(statusKey) {
+  if (statusKey) analyticsStatusKey = statusKey;
+  sendAnalyticsMessage({ action: analyticsUtils.MESSAGE_ACTIONS.getState }, (response) => {
+    if (response.ok && response.state) {
+      analyticsRuntimeState = response.state;
+    }
+    renderAnalyticsState();
+  });
+}
+
+function getAnalyticsSettingsSnapshotPayload(buttonSettings, advancedSettings, language) {
+  const manifest = chrome.runtime?.getManifest ? chrome.runtime.getManifest() : { version: 'unknown' };
+  return analyticsUtils.buildSettingsSnapshotPayload({
+    locale: language === 'auto' ? getAnalyticsLanguage() : language,
+    extensionVersion: manifest.version,
+    buttonSettings,
+    advancedSettings
+  });
+}
+
+function recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, callback) {
+  const payload = getAnalyticsSettingsSnapshotPayload(buttonSettings, advancedSettings, language);
+  sendAnalyticsMessage({
+    action: analyticsUtils.MESSAGE_ACTIONS.recordSettingsSnapshot,
+    payload
+  }, (response) => {
+    if (typeof callback === 'function') callback(response);
+  });
+}
+
+function getCurrentAnalyticsSettingsSnapshotPayload() {
+  return getAnalyticsSettingsSnapshotPayload({
+    horizontalPosition: document.getElementById('horizontalPosition').value,
+    verticalAlignment: document.getElementById('verticalAlignment').value,
+    buttonSize: Number(document.getElementById('buttonSize').value),
+    buttonShape: document.getElementById('buttonShape').value,
+    buttonSpacing: Number(document.getElementById('buttonSpacing').value),
+    edgeDistance: Number(document.getElementById('edgeDistance').value),
+    topButtonColor: document.getElementById('topButtonColor').value,
+    bottomButtonColor: document.getElementById('bottomButtonColor').value,
+    opacity: Number(document.getElementById('opacity').value),
+    enableHoverHide: document.getElementById('enableHoverHide').checked
+  }, domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls()), getAnalyticsLanguage());
+}
+
+function removeAnalyticsPermission(callback) {
+  if (!analyticsRuntimeState.permissionOrigin ||
+      !chrome.permissions ||
+      typeof chrome.permissions.remove !== 'function') {
+    callback();
+    return;
+  }
+  chrome.permissions.remove({
+    permissions: ['alarms'],
+    origins: [analyticsRuntimeState.permissionOrigin]
+  }, callback);
+}
+
+function disableAnalytics() {
+  sendAnalyticsMessage({
+    action: analyticsUtils.MESSAGE_ACTIONS.setConsent,
+    enabled: false
+  }, (response) => {
+    removeAnalyticsPermission(() => {
+      refreshAnalyticsState(response.ok ? 'disabled' : 'error');
+    });
+  });
+}
+
+function enableAnalytics() {
+  const persistConsent = () => {
+    sendAnalyticsMessage({
+      action: analyticsUtils.MESSAGE_ACTIONS.setConsent,
+      enabled: true
+    }, (response) => {
+      if (!response.ok) {
+        analyticsStatusKey = 'error';
+        renderAnalyticsState();
+        return;
+      }
+      sendAnalyticsMessage({
+        action: analyticsUtils.MESSAGE_ACTIONS.recordSettingsSnapshot,
+        payload: getCurrentAnalyticsSettingsSnapshotPayload()
+      }, () => refreshAnalyticsState(
+        analyticsRuntimeState.configured ? 'enabledStatus' : 'unavailable'
+      ));
+    });
+  };
+
+  if (!analyticsRuntimeState.configured) {
+    persistConsent();
+    return;
+  }
+  if (!analyticsRuntimeState.permissionOrigin ||
+      !chrome.permissions ||
+      typeof chrome.permissions.request !== 'function') {
+    analyticsStatusKey = 'error';
+    renderAnalyticsState();
+    return;
+  }
+
+  chrome.permissions.request({
+    permissions: ['alarms'],
+    origins: [analyticsRuntimeState.permissionOrigin]
+  }, (granted) => {
+    if (!granted || chrome.runtime.lastError) {
+      analyticsStatusKey = 'permissionDenied';
+      renderAnalyticsState();
+      return;
+    }
+    persistConsent();
+  });
+}
+
+function handleAnalyticsToggle(event) {
+  if (event.target.checked) {
+    enableAnalytics();
+  } else {
+    disableAnalytics();
+  }
 }
 
 // 加载保存的设置
@@ -2514,7 +3602,7 @@ function loadSettings() {
     // 应用语言设置
     getCurrentLanguage().then(lang => {
       applyTranslation(lang);
-      renderEnableStatesList();
+      renderDomainFeatureStatesList();
       renderSavedBookmarksList();
     });
   });
@@ -2574,9 +3662,13 @@ function saveSettings() {
     hoverHideKey: document.getElementById('hoverHideKey').value
   };
   const language = document.getElementById('languageSelector').value;
-  const advancedSettings = getAdvancedSettingsFromControls();
+  const advancedSettings = domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls());
 
   chrome.storage.sync.set({scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, advancedSettings: advancedSettings, language: language}, () => {
+    recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, () => {
+      refreshAnalyticsState();
+    });
+
     // 显示保存成功提示
     const saveButton = document.getElementById('saveButton');
     const originalText = saveButton.textContent;
@@ -2622,9 +3714,12 @@ function saveSettings() {
 function init() {
   setupTabs();
   setManifestVersion();
+  renderReleaseNotes(normalizeLanguage(navigator.language || navigator.userLanguage));
+  loadOnboardingState();
   loadSettings();
-  loadEnableStates();
+  loadDomainFeatureStates();
   loadSavedBookmarks();
+  refreshAnalyticsState();
 
   // 更新快捷键显示（根据操作系统平台）
   updateShortcutKeyDisplay();
@@ -2663,17 +3758,14 @@ function init() {
     }
   });
 
-  document.getElementById('progressBarEnabled').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressVerticalHeight').addEventListener('input', updatePreviewButtons);
   document.getElementById('progressColorMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressShowPercentage').addEventListener('change', updatePreviewButtons);
-  document.getElementById('scrollBookmarksEnabled').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('scrollBookmarkButtonPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('scrollBookmarkButtonColorMode').addEventListener('change', updateAdvancedPreviewControls);
-  document.getElementById('outlineNavigationEnabled').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('outlineButtonPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('outlineButtonColorMode').addEventListener('change', updateAdvancedPreviewControls);
   getOutlineSourceControls().forEach((control) => {
@@ -2727,19 +3819,26 @@ function init() {
 
   document.getElementById('domainSearch').addEventListener('input', (e) => {
     domainSearchText = e.target.value || '';
-    renderEnableStatesList();
+    renderDomainFeatureStatesList();
   });
   document.getElementById('addDomainButton').addEventListener('click', () => {
     const input = document.getElementById('domainInput');
-    const hostname = parseHostnameInput(input.value);
-    if (!hostname) {
+    const domainKey = parseHostnameInput(input.value);
+    if (!domainKey) {
       getCurrentLanguage().then(lang => {
         showDomainError(translations[lang]?.['settings.invalidDomain'] || 'Enter a valid http/https website hostname.');
       });
       return;
     }
     showDomainError('');
-    saveEnableState(hostname, document.getElementById('domainInitialState').value === 'true');
+    saveDomainFeatureState(domainKey, {
+      extensionEnabled: document.getElementById('domainInitialState').value === 'true',
+      features: {
+        progressBar: false,
+        scrollBookmarks: false,
+        outlineNavigation: false
+      }
+    });
     input.value = '';
   });
   document.getElementById('clearDisabledSitesButton').addEventListener('click', clearDisabledSites);
@@ -2926,18 +4025,21 @@ function init() {
     if (lang === 'auto') {
       getCurrentLanguage().then(detectedLang => {
         applyTranslation(detectedLang);
-        renderEnableStatesList();
+        renderDomainFeatureStatesList();
         renderSavedBookmarksList();
       });
     } else {
       applyTranslation(lang);
-      renderEnableStatesList();
+      renderDomainFeatureStatesList();
       renderSavedBookmarksList();
     }
   });
 
   // 保存按钮点击事件
   document.getElementById('saveButton').addEventListener('click', saveSettings);
+  document.getElementById('analyticsEnabled').addEventListener('change', handleAnalyticsToggle);
+  document.getElementById('dismissOnboardingButton').addEventListener('click', dismissOnboarding);
+  document.getElementById('reopenOnboardingButton').addEventListener('click', reopenOnboarding);
 
   // 设置预览按钮交互
   setupPreviewButtonInteractions();
@@ -2949,6 +4051,26 @@ function init() {
     resizeTimeout = setTimeout(() => {
       updatePreviewButtons();
     }, 100); // 防抖处理，100ms后更新
+  });
+}
+
+if (chrome.storage.onChanged && chrome.storage.onChanged.addListener) {
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace !== 'local') return;
+    if (changes[DOMAIN_STORAGE_KEYS.defaults]) {
+      domainFeatureDefaults = domainUtils.normalizeDefaults(
+        changes[DOMAIN_STORAGE_KEYS.defaults].newValue
+      );
+    }
+    if (changes[DOMAIN_STORAGE_KEYS.states]) {
+      domainFeatureStates = domainUtils.normalizeStates(
+        changes[DOMAIN_STORAGE_KEYS.states].newValue,
+        domainFeatureDefaults
+      );
+    }
+    if (changes[DOMAIN_STORAGE_KEYS.defaults] || changes[DOMAIN_STORAGE_KEYS.states]) {
+      renderDomainFeatureStatesList();
+    }
   });
 }
 

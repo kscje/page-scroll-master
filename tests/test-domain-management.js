@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
+
 const ROOT = path.join(__dirname, '..');
 
 function createContext() {
@@ -53,35 +55,58 @@ function createContext() {
     }
   };
   sandbox.window.document = sandbox.document;
-  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'options.js'), 'utf8'), sandbox, { filename: 'options.js' });
+  const optionsPath = path.join(ROOT, 'options.js');
+  vm.runInNewContext(
+    getSharedRuntimeSource(ROOT, optionsPath) + '\n' + fs.readFileSync(optionsPath, 'utf8'),
+    sandbox,
+    { filename: 'options.js' }
+  );
   return { sandbox, localData };
 }
 
 function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message);
-  }
+  if (!condition) throw new Error(message);
 }
 
 const { sandbox, localData } = createContext();
 
 assert(sandbox.parseHostnameInput('example.com') === 'example.com', 'bare hostname is accepted');
-assert(sandbox.parseHostnameInput('https://example.com/a') === 'example.com', 'https URL is normalized to hostname');
-assert(sandbox.parseHostnameInput('http://sub.example.com/path') === 'sub.example.com', 'http URL subdomain is preserved');
+assert(sandbox.parseHostnameInput('https://docs.example.com/a') === 'example.com', 'subdomain URL resolves to the main domain');
+assert(sandbox.parseHostnameInput('http://sub.example.co.uk/path') === 'example.co.uk', 'multi-label public suffix resolves correctly');
+assert(sandbox.parseHostnameInput('http://localhost:3000/path') === 'localhost', 'localhost uses the full hostname');
 assert(sandbox.parseHostnameInput('chrome://extensions') === '', 'non-http URL is rejected');
-assert(sandbox.parseHostnameInput('') === '', 'empty input is rejected');
 
-sandbox.saveEnableStates({
-  'disabled.example': false,
-  'enabled.example': true,
-  'also-disabled.example': false
+sandbox.saveDomainFeatureStates({
+  'disabled.example': {
+    extensionEnabled: false,
+    features: { progressBar: true }
+  },
+  'enabled.example': {
+    extensionEnabled: true,
+    features: { scrollBookmarks: true }
+  }
 });
 const remaining = sandbox.clearDisabledSites();
-assert(remaining['enabled.example'] === true, 'clear disabled sites preserves true entries');
-assert(!Object.prototype.hasOwnProperty.call(remaining, 'disabled.example'), 'clear disabled sites removes false entries');
+assert(remaining['enabled.example'].extensionEnabled === true, 'clear disabled sites preserves enabled records');
+assert(!Object.prototype.hasOwnProperty.call(remaining, 'disabled.example'), 'clear disabled sites removes disabled records');
 
 const restored = sandbox.restoreAllSitesEnabled();
-assert(Object.keys(restored).length === 0, 'restore all enabled returns empty state object');
-assert(Object.keys(localData.enableStates).length === 0, 'restore all enabled clears local enableStates');
+assert(Object.keys(restored).length === 0, 'clear all returns an empty state object');
+assert(Object.keys(localData.domainFeatureStates).length === 0, 'clear all removes every domain record');
+
+const migration = sandbox.PageScrollMasterDomain.migrateStorage({
+  enableStates: {
+    'docs.example.co.uk': false,
+    'app.example.co.uk': true
+  }
+}, {
+  progressBar: { enabled: true },
+  scrollBookmarks: { enabled: true },
+  outlineNavigation: { enabled: false }
+});
+assert(Object.keys(migration.states).length === 1, 'legacy subdomains merge into one main-domain record');
+assert(migration.states['example.co.uk'].extensionEnabled === false, 'an explicit legacy disabled state wins during merge');
+assert(migration.defaults.features.progressBar === true, 'legacy progress behavior is preserved in migration defaults');
+assert(migration.defaults.features.scrollBookmarks === true, 'legacy bookmark behavior is preserved in migration defaults');
 
 console.log('domain management tests passed');

@@ -1,8 +1,13 @@
 // 默认设置
+const domainUtils = PageScrollMasterDomain;
+const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 let scrollSpeed = 100; // 默认滚动速度为100ms
 let isExtensionEnabled = false; // 当前网站插件启用状态
 let hasLoadedExtensionEnabledState = false; // 站点启用状态加载完成前不初始化按钮
-const currentHostname = window.location.hostname; // 当前页面域名
+const currentDomainKey = domainUtils.getDomainKey(window.location.href || window.location.hostname);
+let domainFeatureStates = {};
+let domainFeatureDefaults = domainUtils.normalizeDefaults();
+let currentDomainFeatureState = domainUtils.getState({}, currentDomainKey, domainFeatureDefaults);
 let currentScrollContainer = null; // 当前页面的滚动容器
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const DEFAULT_ICON_COLOR = '#FFFFFF';
@@ -31,15 +36,26 @@ let outlineHighlightMenu = null;
 let outlineHighlightModel = null;
 let outlineSnapshotGeneration = 0;
 let outlineLastKnownUrl = window.location.href;
+let outlineRouteChangeTimer = null;
 const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to Top';
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
+
+function recordAnalyticsAction(actionKey) {
+  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
+  chrome.runtime.sendMessage({
+    action: 'analytics:recordAction',
+    actionKey
+  }, () => {
+    if (chrome.runtime.lastError) return;
+  });
+}
 const DEFAULT_ADVANCED_SETTINGS = {
   progressBar: {
     enabled: false,
     mode: 'verticalButton',
     horizontalPosition: 'top',
     colorMode: 'followTopButton',
-    customColor: DEFAULT_BUTTON_COLOR,
+    customColor: '#4a9edd',
     thickness: 4,
     verticalHeight: DEFAULT_PROGRESS_VERTICAL_HEIGHT,
     clickToJump: true,
@@ -60,7 +76,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     buttonPosition: 'pageBottom',
     buttonColorMode: 'followTopButton',
-    buttonCustomColor: DEFAULT_BUTTON_COLOR,
+    buttonCustomColor: '#4a9edd',
     matchMode: 'exact',
     perDomainLimit: 1,
     globalLimit: 300,
@@ -70,7 +86,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     buttonPosition: 'pageBottom',
     buttonColorMode: 'followTopButton',
-    buttonCustomColor: DEFAULT_BUTTON_COLOR,
+    buttonCustomColor: '#4a9edd',
     sources: {
       h1: true,
       h2: true,
@@ -97,10 +113,13 @@ const SPA_DETECTION_CONFIG = {
 let spaDetectionState = {
   retryCount: 0,
   observer: null,
+  initialTimer: null,
   debounceTimer: null,
   retryTimer: null,
+  domReadyHandler: null,
   isInitialized: false
 };
+let initializationRetryTimer = null;
 let buttonSettings = {
   horizontalPosition: 'right',
   verticalAlignment: 'center',
@@ -181,7 +200,7 @@ function mergeAdvancedSettings(savedSettings) {
     isPlainObject(savedSettings.readingTools.features)
     ? savedSettings.readingTools.features
     : {};
-  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, DEFAULT_BUTTON_COLOR);
+  merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT);
   merged.iconCustomization.enabled = true;
@@ -203,7 +222,7 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.scrollBookmarks.buttonCustomColor = validateHexColor(
     savedScrollBookmarks.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.scrollBookmarks.buttonCustomColor,
-    DEFAULT_BUTTON_COLOR
+    '#4a9edd'
   );
   merged.outlineNavigation.enabled = outlineEnabled;
   merged.outlineNavigation.buttonPosition = normalizeFeatureButtonPosition(
@@ -214,7 +233,7 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.outlineNavigation.buttonCustomColor = validateHexColor(
     savedOutline.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.outlineNavigation.buttonCustomColor,
-    DEFAULT_BUTTON_COLOR
+    '#4a9edd'
   );
   merged.outlineNavigation.sources.h1 = normalizeBoolean(
     merged.outlineNavigation.sources.h1,
@@ -888,6 +907,7 @@ function handleOutlineSettingsChange(previousSettings, nextSettings) {
 function applyAdvancedSettingsUpdate(nextSettings) {
   const previousSettings = advancedSettings;
   advancedSettings = mergeAdvancedSettings(nextSettings);
+  applyEffectiveDomainFeatures();
   applyAdvancedSettings();
   handleOutlineSettingsChange(previousSettings, advancedSettings);
 }
@@ -898,7 +918,13 @@ function setupOutlineRouteChangeDetection() {
   outlineLastKnownUrl = window.location.href;
 
   const dispatchRouteCheck = () => {
-    setTimeout(handleOutlineRouteChange, 0);
+    if (outlineRouteChangeTimer) {
+      clearTimeout(outlineRouteChangeTimer);
+    }
+    outlineRouteChangeTimer = setTimeout(() => {
+      outlineRouteChangeTimer = null;
+      handleOutlineRouteChange();
+    }, 0);
   };
 
   ['pushState', 'replaceState'].forEach((methodName) => {
@@ -917,6 +943,26 @@ function setupOutlineRouteChangeDetection() {
 
   window.addEventListener('popstate', handleOutlineRouteChange);
   window.addEventListener('hashchange', handleOutlineRouteChange);
+}
+
+function teardownOutlineRouteChangeDetection() {
+  if (!setupOutlineRouteChangeDetection.initialized) return;
+  if (outlineRouteChangeTimer) {
+    clearTimeout(outlineRouteChangeTimer);
+    outlineRouteChangeTimer = null;
+  }
+  ['pushState', 'replaceState'].forEach((methodName) => {
+    if (!window.history || typeof window.history[methodName] !== 'function') return;
+    const wrapped = window.history[methodName];
+    if (wrapped.__psmOutlineWrapped && wrapped.__psmOutlineOriginal) {
+      window.history[methodName] = wrapped.__psmOutlineOriginal;
+    }
+  });
+  if (typeof window.removeEventListener === 'function') {
+    window.removeEventListener('popstate', handleOutlineRouteChange);
+    window.removeEventListener('hashchange', handleOutlineRouteChange);
+  }
+  setupOutlineRouteChangeDetection.initialized = false;
 }
 
 function getScrollRoot() {
@@ -967,25 +1013,61 @@ function loadSettings() {
       buttonSettings = { ...buttonSettings, ...result.buttonSettings };
     }
     advancedSettings = mergeAdvancedSettings(result.advancedSettings);
-    loadExtensionEnabledState();
+    loadDomainFeatureState(result.advancedSettings);
   });
 }
 
-function loadExtensionEnabledState() {
-  chrome.storage.local.get(['enableStates'], function (result) {
-    var states = normalizeEnableStates(result.enableStates);
-    isExtensionEnabled = states[currentHostname] !== false;
-    hasLoadedExtensionEnabledState = true;
-    if (isExtensionEnabled) {
-      initializeButton();
-    } else {
-      removeButton();
+function getDomainStorageKeys() {
+  return [
+    DOMAIN_STORAGE_KEYS.states,
+    DOMAIN_STORAGE_KEYS.defaults,
+    DOMAIN_STORAGE_KEYS.migrationVersion,
+    DOMAIN_STORAGE_KEYS.legacyStates
+  ];
+}
+
+function applyEffectiveDomainFeatures() {
+  const state = domainUtils.normalizeState(currentDomainFeatureState, domainFeatureDefaults);
+  advancedSettings.progressBar.enabled = state.extensionEnabled && state.features.progressBar;
+  advancedSettings.scrollBookmarks.enabled = state.extensionEnabled && state.features.scrollBookmarks;
+  advancedSettings.outlineNavigation.enabled = state.extensionEnabled && state.features.outlineNavigation;
+}
+
+function applyDomainFeatureState(nextState) {
+  const wasEnabled = isExtensionEnabled;
+  currentDomainFeatureState = domainUtils.normalizeState(nextState, domainFeatureDefaults);
+  isExtensionEnabled = currentDomainFeatureState.extensionEnabled;
+  hasLoadedExtensionEnabledState = true;
+  applyEffectiveDomainFeatures();
+
+  if (!isExtensionEnabled) {
+    removeButton();
+    return;
+  }
+  if (!wasEnabled || !document.getElementById(HOST_ID)) {
+    initializeButton();
+    return;
+  }
+  applyAdvancedSettings();
+}
+
+function loadDomainFeatureState(legacyAdvancedSettings) {
+  chrome.storage.local.get(getDomainStorageKeys(), function (result) {
+    const migration = domainUtils.migrateStorage(result, legacyAdvancedSettings);
+    domainFeatureStates = migration.states;
+    domainFeatureDefaults = migration.defaults;
+    const finish = () => {
+      applyDomainFeatureState(
+        domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults)
+      );
+    };
+
+    if (!migration.needsWrite || !chrome.storage.local.set) {
+      finish();
+      return;
     }
+    chrome.storage.local.set(domainUtils.toStorageData(migration), finish);
   });
-}
-
-function normalizeEnableStates(states) {
-  return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
 }
 
 function smoothScrollTo(container, targetTop, options = {}) {
@@ -1057,6 +1139,9 @@ function navigateOutlineMenuToItem(item, snapshot, menu) {
   });
   if (!didStart && menu && menu.__psmHighlightLockId === item.id) {
     menu.__psmHighlightLockId = '';
+  }
+  if (didStart) {
+    recordAnalyticsAction('outlineJumpClicks');
   }
   return didStart;
 }
@@ -1155,7 +1240,7 @@ function getProgressColor() {
     return validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
   }
   if (progressSettings.colorMode === 'custom') {
-    return validateHexColor(progressSettings.customColor, DEFAULT_BUTTON_COLOR);
+    return validateHexColor(progressSettings.customColor, '#4a9edd');
   }
   return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
 }
@@ -1173,7 +1258,7 @@ function getFeatureToolColor(settings) {
     return validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
   }
   if (settings.buttonColorMode === 'custom') {
-    return validateHexColor(settings.buttonCustomColor, DEFAULT_BUTTON_COLOR);
+    return validateHexColor(settings.buttonCustomColor, '#4a9edd');
   }
   return validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
 }
@@ -1184,6 +1269,17 @@ function getBookmarkToolColor() {
 
 function getOutlineToolColor() {
   return getFeatureToolColor(advancedSettings.outlineNavigation);
+}
+
+function getBookmarkMenuActionLabel(label, scrollPct) {
+  if (scrollPct === null || scrollPct === undefined || scrollPct === '') {
+    return label;
+  }
+  const value = Number(scrollPct);
+  if (!Number.isFinite(value)) {
+    return label;
+  }
+  return `${label}（${Math.round(clamp(value, 0, 1) * 100)}%）`;
 }
 
 function createFeatureToolButton({ className, title, iconSvg, handler }) {
@@ -1223,7 +1319,7 @@ function registerReadingToolMenuContributor(contributor) {
   }
 }
 
-function getScrollBookmarkMenuContribution() {
+function getScrollBookmarkMenuContribution(options = {}) {
   if (!advancedSettings.scrollBookmarks.enabled) {
     return null;
   }
@@ -1231,7 +1327,7 @@ function getScrollBookmarkMenuContribution() {
     fixedActions: [
       {
         action: 'save-bookmark',
-        label: '保存当前位置',
+        label: getBookmarkMenuActionLabel('保存当前位置', options.currentScrollPct),
         handler: () => {
           hideReadingToolMenu();
           saveScrollBookmark();
@@ -1239,7 +1335,7 @@ function getScrollBookmarkMenuContribution() {
       },
       {
         action: 'restore-bookmark',
-        label: '加载已保存位置',
+        label: getBookmarkMenuActionLabel('加载已保存位置', options.savedScrollPct),
         handler: () => {
           hideReadingToolMenu();
           restoreCurrentScrollBookmark();
@@ -1746,14 +1842,14 @@ function openFeatureToolMenu({ event, button, menu, model }) {
   if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
-  if (!menu || !button) return;
+  if (!menu || !button) return false;
   const willOpen = !menu.classList.contains('psm-open');
   if (willOpen) {
     hideReadingToolMenu();
     renderReadingToolMenu(menu, { model });
     if (!hasReadingToolMenuContent(model)) {
       hideReadingToolMenu();
-      return;
+      return false;
     }
     menu.classList.add('psm-open');
     positionReadingToolMenu(button, menu, model);
@@ -1761,28 +1857,57 @@ function openFeatureToolMenu({ event, button, menu, model }) {
   } else {
     hideReadingToolMenu();
   }
+  return willOpen;
 }
 
 function handleBookmarkToolClick(event) {
   const { root, bookmarkButton } = getButtonElements();
   const menu = getBookmarkToolMenu(root);
-  openFeatureToolMenu({
-    event,
-    button: bookmarkButton,
-    menu,
-    model: getScrollBookmarkMenuModel({ resolveOutline: false })
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  if (!menu || !bookmarkButton) return;
+  if (menu.classList.contains('psm-open')) {
+    openFeatureToolMenu({
+      button: bookmarkButton,
+      menu,
+      model: getScrollBookmarkMenuModel({ resolveOutline: false })
+    });
+    return;
+  }
+
+  const currentScrollPct = getScrollProgress(resolveScrollContainer());
+  const key = getCurrentBookmarkKey();
+  chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    const bookmark = key ? normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY])[key] : null;
+    const savedScrollPct = bookmark && typeof bookmark.scrollPct === 'number'
+      ? bookmark.scrollPct
+      : null;
+    const elements = getButtonElements();
+    openFeatureToolMenu({
+      button: elements.bookmarkButton,
+      menu: getBookmarkToolMenu(elements.root),
+      model: getScrollBookmarkMenuModel({
+        resolveOutline: false,
+        currentScrollPct,
+        savedScrollPct
+      })
+    });
   });
 }
 
 function handleOutlineToolClick(event) {
   const { root, outlineButton } = getButtonElements();
   const menu = getOutlineToolMenu(root);
-  openFeatureToolMenu({
+  const didOpen = openFeatureToolMenu({
     event,
     button: outlineButton,
     menu,
     model: getOutlineMenuModel({ resolveOutline: true })
   });
+  if (didOpen) {
+    recordAnalyticsAction('outlineOpenClicks');
+  }
 }
 
 function handleReadingToolClick(event) {
@@ -1958,6 +2083,7 @@ function handleHorizontalProgressClick(event) {
   const ratio = rect.width <= 0 ? 0 : (event.clientX - rect.left) / rect.width;
   const container = resolveScrollContainer();
   smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+  recordAnalyticsAction('progressJumpClicks');
 }
 
 function handleVerticalProgressClick(event) {
@@ -1966,6 +2092,7 @@ function handleVerticalProgressClick(event) {
   const ratio = rect.height <= 0 ? 0 : (event.clientY - rect.top) / rect.height;
   const container = resolveScrollContainer();
   smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+  recordAnalyticsAction('progressJumpClicks');
 }
 
 function getPointerTargetRatio(event, orientation) {
@@ -2414,6 +2541,7 @@ function saveScrollBookmark() {
 
     const limitedBookmarks = enforceBookmarkLimits(bookmarks, key);
     chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: limitedBookmarks }, () => {
+      recordAnalyticsAction('bookmarkSaveClicks');
       if (previous) {
         showReadingToast(`已更新位置到 ${roundedPct}%（原 ${Math.round((previous.scrollPct || 0) * 100)}%）`);
       } else {
@@ -2482,7 +2610,9 @@ function restoreCurrentScrollBookmark(options = {}) {
 
     if (!restoreScrollBookmark(bookmark)) {
       showReadingToast('当前页面暂时无法加载已保存位置');
+      return;
     }
+    recordAnalyticsAction('bookmarkRestoreClicks');
   });
 }
 
@@ -2698,8 +2828,14 @@ function createScrollButton() {
   }
 
   // 添加事件监听器
-  topButton.addEventListener('click', scrollToTop);
-  bottomButton.addEventListener('click', scrollToBottom);
+  topButton.addEventListener('click', () => {
+    recordAnalyticsAction('floatingTopClicks');
+    scrollToTop();
+  });
+  bottomButton.addEventListener('click', () => {
+    recordAnalyticsAction('floatingBottomClicks');
+    scrollToBottom();
+  });
   document.addEventListener('click', handleReadingToolDocumentClick, true);
 
   // 添加鼠标悬停+快捷键隐藏功能
@@ -2721,15 +2857,58 @@ function createScrollButton() {
 // 移除滚动按钮
 function removeButton() {
   const host = document.getElementById(HOST_ID);
-  if (!host) return;
   unbindProgressContainer();
   unbindOutlineHighlightUpdates();
+  if (typeof document.removeEventListener === 'function') {
+    document.removeEventListener('click', handleReadingToolDocumentClick, true);
+  }
+
+  if (spaDetectionState.observer && typeof spaDetectionState.observer.disconnect === 'function') {
+    spaDetectionState.observer.disconnect();
+  }
+  if (spaDetectionState.initialTimer) {
+    clearTimeout(spaDetectionState.initialTimer);
+  }
+  if (spaDetectionState.debounceTimer) {
+    clearTimeout(spaDetectionState.debounceTimer);
+  }
+  if (spaDetectionState.retryTimer) {
+    clearTimeout(spaDetectionState.retryTimer);
+  }
+  if (spaDetectionState.domReadyHandler &&
+      typeof document.removeEventListener === 'function') {
+    document.removeEventListener('DOMContentLoaded', spaDetectionState.domReadyHandler);
+  }
+  if (initializationRetryTimer) {
+    clearTimeout(initializationRetryTimer);
+    initializationRetryTimer = null;
+  }
+  spaDetectionState = {
+    retryCount: 0,
+    observer: null,
+    initialTimer: null,
+    debounceTimer: null,
+    retryTimer: null,
+    domReadyHandler: null,
+    isInitialized: false
+  };
+  teardownOutlineRouteChangeDetection();
+  fullscreenManager.cleanup();
+  if (activeHoverHideCleanup) {
+    activeHoverHideCleanup();
+  }
+
+  if (!host) return;
 
   const root = host.shadowRoot;
   if (root) {
-    const state = hoverHideStateMap.get(root.getElementById(CONTAINER_ID));
+    const buttonContainer = root.getElementById(CONTAINER_ID);
+    const state = hoverHideStateMap.get(buttonContainer);
     if (state && state.cleanup) {
       state.cleanup();
+    }
+    if (buttonContainer) {
+      hoverHideStateMap.delete(buttonContainer);
     }
   }
 
@@ -3155,6 +3334,7 @@ function addButtonStyles(root) {
 
 // 全局状态管理 - 使用WeakMap避免内存泄漏
 const hoverHideStateMap = new WeakMap();
+let activeHoverHideCleanup = null;
 
 // 检测是否为macOS系统
 function isMac() {
@@ -3338,6 +3518,15 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
   
   chrome.storage.onChanged.addListener(storageChangeHandler);
   state.storageHandler = storageChangeHandler;
+
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      state.isKeyPressed = false;
+      state.isHovering = false;
+      state.isHidden = false;
+      showButtons();
+    }
+  }
   
   // 页面卸载时清理
   const cleanup = () => {
@@ -3349,15 +3538,19 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     
     document.removeEventListener('keydown', boundKeyDown, true);
     document.removeEventListener('keyup', boundKeyUp, true);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', cleanup);
     
     // 移除存储监听器
     if (state.storageHandler) {
       chrome.storage.onChanged.removeListener(state.storageHandler);
+      state.storageHandler = null;
     }
     
     // 清除定时器
     if (state.hideTimeout) {
       cancelAnimationFrame(state.hideTimeout);
+      state.hideTimeout = null;
     }
     
     // 重置状态
@@ -3365,6 +3558,10 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     state.isKeyPressed = false;
     state.isHidden = false;
     state.initialized = false;
+    state.cleanup = null;
+    if (activeHoverHideCleanup === cleanup) {
+      activeHoverHideCleanup = null;
+    }
     
     // 显示按钮
     showButtons();
@@ -3373,16 +3570,10 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
   // 页面卸载时清理
   window.addEventListener('beforeunload', cleanup);
   state.cleanup = cleanup;
+  activeHoverHideCleanup = cleanup;
   
   // 页面隐藏时重置状态
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      state.isKeyPressed = false;
-      state.isHovering = false;
-      state.isHidden = false;
-      showButtons();
-    }
-  });
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 }
 
 // 更新按钮位置
@@ -3637,6 +3828,7 @@ function initializeButton() {
 
   if (buttonCreated) {
     fullscreenManager.buttonContainer = getButtonContainer();
+    fullscreenManager.init();
     updateButtonStyle();
     ensureProgressControls();
     ensureReadingToolControls();
@@ -3649,7 +3841,9 @@ function initializeButton() {
   } else {
     // body 未准备好，延迟重试
     console.warn('[Page Scroll Master] Button creation failed, will retry...');
-    setTimeout(() => {
+    if (initializationRetryTimer) return;
+    initializationRetryTimer = setTimeout(() => {
+      initializationRetryTimer = null;
       if (isExtensionEnabled && !document.getElementById(HOST_ID)) {
         initializeButton();
       }
@@ -3662,7 +3856,8 @@ function setupSpaDetection() {
   setupOutlineRouteChangeDetection();
 
   // 延迟检测，给 SPA 应用足够的渲染时间
-  setTimeout(() => {
+  spaDetectionState.initialTimer = setTimeout(() => {
+    spaDetectionState.initialTimer = null;
     detectAndUpdateScrollContainer();
   }, SPA_DETECTION_CONFIG.initialDelay);
   
@@ -3696,14 +3891,17 @@ function setupSpaDetection() {
       });
     } else {
       // 如果 body 还不存在，等待 DOMContentLoaded
-      document.addEventListener('DOMContentLoaded', () => {
+      spaDetectionState.domReadyHandler = () => {
+        document.removeEventListener('DOMContentLoaded', spaDetectionState.domReadyHandler);
+        spaDetectionState.domReadyHandler = null;
         if (spaDetectionState.observer && document.body) {
           spaDetectionState.observer.observe(document.body, {
             childList: true,
             subtree: true
           });
         }
-      });
+      };
+      document.addEventListener('DOMContentLoaded', spaDetectionState.domReadyHandler);
     }
   }
 }
@@ -3728,8 +3926,14 @@ function detectAndUpdateScrollContainer() {
       bottomButton.parentNode.replaceChild(newBottomButton, bottomButton);
 
       // 重新绑定点击事件
-      newTopButton.addEventListener('click', scrollToTop);
-      newBottomButton.addEventListener('click', scrollToBottom);
+      newTopButton.addEventListener('click', () => {
+        recordAnalyticsAction('floatingTopClicks');
+        scrollToTop();
+      });
+      newBottomButton.addEventListener('click', () => {
+        recordAnalyticsAction('floatingBottomClicks');
+        scrollToBottom();
+      });
       applyButtonIcons();
 
       // 重新设置悬停隐藏功能 - 先重置初始化状态
@@ -3782,6 +3986,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     updateButtonStyle();
   } else if (message.action === 'updateAdvancedSettings') {
     applyAdvancedSettingsUpdate(message.settings);
+  } else if (message.action === 'updateDomainFeatureState') {
+    if (!message.domainKey || message.domainKey === currentDomainKey) {
+      applyDomainFeatureState(message.state);
+    }
   }
 });
 
@@ -3799,22 +4007,22 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.advancedSettings) {
     applyAdvancedSettingsUpdate(changes.advancedSettings.newValue);
   }
-  if (namespace === 'local' && changes.enableStates) {
-    var newStates = normalizeEnableStates(changes.enableStates.newValue);
-    var newEnabled = newStates[currentHostname] !== false;
-
-    if (newEnabled !== isExtensionEnabled) {
-      isExtensionEnabled = newEnabled;
-      if (isExtensionEnabled) {
-        if (!document.getElementById(HOST_ID)) {
-          initializeButton();
-        }
-      } else {
-        removeButton();
-      }
-    } else if (!newEnabled) {
-      removeButton();
-    }
+  if (namespace === 'local' && changes[DOMAIN_STORAGE_KEYS.defaults]) {
+    domainFeatureDefaults = domainUtils.normalizeDefaults(
+      changes[DOMAIN_STORAGE_KEYS.defaults].newValue
+    );
+  }
+  if (namespace === 'local' && changes[DOMAIN_STORAGE_KEYS.states]) {
+    domainFeatureStates = domainUtils.normalizeStates(
+      changes[DOMAIN_STORAGE_KEYS.states].newValue,
+      domainFeatureDefaults
+    );
+  }
+  if (namespace === 'local' &&
+      (changes[DOMAIN_STORAGE_KEYS.defaults] || changes[DOMAIN_STORAGE_KEYS.states])) {
+    applyDomainFeatureState(
+      domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults)
+    );
   }
 });
 
@@ -3822,6 +4030,14 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 const fullscreenManager = {
   isFullscreen: false,
   buttonContainer: null,
+  initialized: false,
+  events: [
+    'fullscreenchange',
+    'webkitfullscreenchange',
+    'mozfullscreenchange',
+    'MSFullscreenChange'
+  ],
+  boundHandler: null,
   
   // 检测当前是否处于全屏模式
   checkFullscreen() {
@@ -3880,20 +4096,26 @@ const fullscreenManager = {
   
   // 初始化全屏检测
   init() {
-    // 监听各种浏览器的全屏变化事件
-    const fullscreenEvents = [
-      'fullscreenchange',
-      'webkitfullscreenchange',
-      'mozfullscreenchange',
-      'MSFullscreenChange'
-    ];
-    
-    fullscreenEvents.forEach(event => {
-      document.addEventListener(event, () => this.handleFullscreenChange(), false);
+    if (this.initialized) return;
+    this.initialized = true;
+    this.boundHandler = () => this.handleFullscreenChange();
+    this.events.forEach(event => {
+      document.addEventListener(event, this.boundHandler, false);
     });
-    
-    // 初始检查
     this.handleFullscreenChange();
+  },
+
+  cleanup() {
+    if (!this.initialized) return;
+    if (typeof document.removeEventListener === 'function') {
+      this.events.forEach(event => {
+        document.removeEventListener(event, this.boundHandler, false);
+      });
+    }
+    this.initialized = false;
+    this.boundHandler = null;
+    this.isFullscreen = false;
+    this.buttonContainer = null;
   }
 };
 
@@ -3905,7 +4127,6 @@ function safeInitialize() {
     return;
   }
   loadSettings();
-  fullscreenManager.init();
 }
 
 // 页面加载完成后初始化

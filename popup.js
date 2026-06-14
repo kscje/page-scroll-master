@@ -1,54 +1,122 @@
-var STATES_KEY = 'enableStates';
+var domainUtils = PageScrollMasterDomain;
+var STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 
-var toggleEl = document.getElementById('enableToggle');
-var toggleLabelEl = document.getElementById('toggleLabel');
+var extensionToggleEl = document.getElementById('extensionToggle');
+var featureToggleEls = {
+  progressBar: document.getElementById('progressBarToggle'),
+  scrollBookmarks: document.getElementById('scrollBookmarksToggle'),
+  outlineNavigation: document.getElementById('outlineNavigationToggle')
+};
+var currentSiteEl = document.getElementById('currentSite');
+var unavailableEl = document.getElementById('unavailableMessage');
 var settingsBtn = document.getElementById('openSettings');
-var currentHostname = '';
-var allStates = {};
-var _ignoreChange = false;
-var _pendingLocalChange = false;
+var currentDomainKey = '';
+var currentTabId = null;
+var domainFeatureStates = {};
+var domainFeatureDefaults = domainUtils.normalizeDefaults();
+var ignoreChanges = false;
+var pendingLocalChange = false;
 
-// 弹窗页面翻译数据（与设置页面保持一致）
 var popupTranslations = {
   'zh-CN': {
-    'popupSettings': '设置',
-    'popupEnableToggle': '在该网站启用'
+    'popupSettings': '打开设置',
+    'popupEnableToggle': '在此主域名启用插件',
+    'popupCurrentSite': '当前网站：',
+    'popupAdvancedFeatures': '高级功能',
+    'popupProgressBar': '页面进度条',
+    'popupScrollBookmarks': '滚动位置书签',
+    'popupOutlineNavigation': '智能段落跳转',
+    'popupUnavailable': '当前页面不支持扩展功能控制'
   },
   'en-US': {
-    'popupSettings': 'Settings',
-    'popupEnableToggle': 'Enable on this site'
+    'popupSettings': 'Open settings',
+    'popupEnableToggle': 'Enable extension on this domain',
+    'popupCurrentSite': 'Current site: ',
+    'popupAdvancedFeatures': 'Advanced features',
+    'popupProgressBar': 'Page progress bar',
+    'popupScrollBookmarks': 'Scroll position bookmarks',
+    'popupOutlineNavigation': 'Smart section navigation',
+    'popupUnavailable': 'Extension controls are unavailable on this page'
   },
   'es-ES': {
-    'popupSettings': 'Configuracion',
-    'popupEnableToggle': 'Activar en este sitio'
+    'popupSettings': 'Abrir configuración',
+    'popupEnableToggle': 'Activar extensión en este dominio',
+    'popupCurrentSite': 'Sitio actual: ',
+    'popupAdvancedFeatures': 'Funciones avanzadas',
+    'popupProgressBar': 'Barra de progreso',
+    'popupScrollBookmarks': 'Marcadores de posición',
+    'popupOutlineNavigation': 'Navegación por secciones',
+    'popupUnavailable': 'Los controles no están disponibles en esta página'
   },
   'ja-JP': {
-    'popupSettings': '設定',
-    'popupEnableToggle': 'このサイトで有効'
+    'popupSettings': '設定を開く',
+    'popupEnableToggle': 'このドメインで拡張機能を有効化',
+    'popupCurrentSite': '現在のサイト：',
+    'popupAdvancedFeatures': '高度な機能',
+    'popupProgressBar': 'ページ進捗バー',
+    'popupScrollBookmarks': 'スクロール位置ブックマーク',
+    'popupOutlineNavigation': 'スマートセクション移動',
+    'popupUnavailable': 'このページでは拡張機能を制御できません'
   },
   'de-DE': {
-    'popupSettings': 'Einstellungen',
-    'popupEnableToggle': 'Auf dieser Website aktivieren'
+    'popupSettings': 'Einstellungen öffnen',
+    'popupEnableToggle': 'Erweiterung für diese Domain aktivieren',
+    'popupCurrentSite': 'Aktuelle Website: ',
+    'popupAdvancedFeatures': 'Erweiterte Funktionen',
+    'popupProgressBar': 'Seitenfortschritt',
+    'popupScrollBookmarks': 'Scrollpositions-Lesezeichen',
+    'popupOutlineNavigation': 'Abschnittsnavigation',
+    'popupUnavailable': 'Steuerung auf dieser Seite nicht verfügbar'
   },
   'fr-FR': {
-    'popupSettings': 'Paramètres',
-    'popupEnableToggle': 'Activer sur ce site'
+    'popupSettings': 'Ouvrir les paramètres',
+    'popupEnableToggle': 'Activer l’extension sur ce domaine',
+    'popupCurrentSite': 'Site actuel : ',
+    'popupAdvancedFeatures': 'Fonctions avancées',
+    'popupProgressBar': 'Progression de page',
+    'popupScrollBookmarks': 'Marque-pages de position',
+    'popupOutlineNavigation': 'Navigation par sections',
+    'popupUnavailable': 'Commandes indisponibles sur cette page'
   },
   'pt-BR': {
-    'popupSettings': 'Configurações',
-    'popupEnableToggle': 'Ativar neste site'
+    'popupSettings': 'Abrir configurações',
+    'popupEnableToggle': 'Ativar extensão neste domínio',
+    'popupCurrentSite': 'Site atual: ',
+    'popupAdvancedFeatures': 'Recursos avançados',
+    'popupProgressBar': 'Progresso da página',
+    'popupScrollBookmarks': 'Favoritos de posição',
+    'popupOutlineNavigation': 'Navegação por seções',
+    'popupUnavailable': 'Controles indisponíveis nesta página'
   },
   'zh-TW': {
-    'popupSettings': '設定',
-    'popupEnableToggle': '在此網站啟用'
+    'popupSettings': '開啟設定',
+    'popupEnableToggle': '在此主網域啟用外掛',
+    'popupCurrentSite': '目前網站：',
+    'popupAdvancedFeatures': '進階功能',
+    'popupProgressBar': '頁面進度條',
+    'popupScrollBookmarks': '捲動位置書籤',
+    'popupOutlineNavigation': '智慧段落跳轉',
+    'popupUnavailable': '目前頁面不支援外掛功能控制'
   },
   'ko-KR': {
-    'popupSettings': '설정',
-    'popupEnableToggle': '이 사이트에서 사용'
+    'popupSettings': '설정 열기',
+    'popupEnableToggle': '이 도메인에서 확장 프로그램 사용',
+    'popupCurrentSite': '현재 사이트: ',
+    'popupAdvancedFeatures': '고급 기능',
+    'popupProgressBar': '페이지 진행률 표시줄',
+    'popupScrollBookmarks': '스크롤 위치 북마크',
+    'popupOutlineNavigation': '스마트 구간 이동',
+    'popupUnavailable': '이 페이지에서는 확장 기능을 제어할 수 없습니다'
   },
   'it-IT': {
-    'popupSettings': 'Impostazioni',
-    'popupEnableToggle': 'Attiva su questo sito'
+    'popupSettings': 'Apri impostazioni',
+    'popupEnableToggle': 'Attiva l’estensione su questo dominio',
+    'popupCurrentSite': 'Sito corrente: ',
+    'popupAdvancedFeatures': 'Funzioni avanzate',
+    'popupProgressBar': 'Progresso pagina',
+    'popupScrollBookmarks': 'Segnalibri posizione',
+    'popupOutlineNavigation': 'Navigazione sezioni',
+    'popupUnavailable': 'Controlli non disponibili in questa pagina'
   }
 };
 
@@ -67,28 +135,20 @@ function normalizeLanguage(browserLang) {
   return 'en-US';
 }
 
-// 获取当前语言设置
 function getCurrentLanguage(callback) {
   function resolveFromBrowser() {
-    var browserLang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'en-US';
-    callback(normalizeLanguage(browserLang));
+    callback(normalizeLanguage(navigator.language || navigator.userLanguage || 'en-US'));
   }
-
   if (!chrome.storage || !chrome.storage.sync || !chrome.storage.sync.get) {
     resolveFromBrowser();
     return;
   }
-
   chrome.storage.sync.get('language', function (result) {
-    if (chrome.runtime.lastError) {
+    if (chrome.runtime.lastError || !result.language || result.language === 'auto') {
       resolveFromBrowser();
       return;
     }
-    if (result.language && result.language !== 'auto') {
-      callback(result.language);
-    } else {
-      resolveFromBrowser();
-    }
+    callback(result.language);
   });
 }
 
@@ -96,135 +156,186 @@ function applyI18n() {
   getCurrentLanguage(function (lang) {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       var key = el.dataset.i18n;
-      var message;
-      if (popupTranslations[lang] && popupTranslations[lang][key]) {
-        message = popupTranslations[lang][key];
-      } else {
+      var message = popupTranslations[lang] && popupTranslations[lang][key];
+      if (!message && chrome.i18n && chrome.i18n.getMessage) {
         message = chrome.i18n.getMessage(key);
       }
-      if (message) {
-        el.textContent = message;
-      }
+      if (message) el.textContent = message;
     });
   });
 }
 
-function extractHostname(url) {
-  try {
-    var parsedUrl = new URL(url);
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return '';
-    }
-    return parsedUrl.hostname;
-  } catch (e) {
-    return '';
-  }
-}
-
-function setCheckboxSilently(checked) {
-  _ignoreChange = true;
-  try {
-    toggleEl.checked = Boolean(checked);
-  } finally {
-    _ignoreChange = false;
-  }
-}
-
-function normalizeStates(states) {
-  return states && typeof states === 'object' && !Array.isArray(states) ? states : {};
-}
-
-function isHostEnabled(states, hostname) {
-  if (!hostname) return true;
-  return normalizeStates(states)[hostname] !== false;
-}
-
-function updateUI(enabled, canToggle) {
-  setCheckboxSilently(enabled);
-  toggleEl.disabled = canToggle === false;
-
-  getCurrentLanguage(function (lang) {
-    var label = (popupTranslations[lang] && popupTranslations[lang]['popupEnableToggle']) || chrome.i18n.getMessage('popupEnableToggle') || 'Enable on this site';
-    toggleLabelEl.textContent = label;
+function setControlsDisabled(disabled) {
+  extensionToggleEl.disabled = disabled;
+  Object.keys(featureToggleEls).forEach(function (key) {
+    featureToggleEls[key].disabled = disabled || !extensionToggleEl.checked;
   });
 }
 
-function persistState(enabled) {
-  if (!currentHostname) return;
-  var hostname = currentHostname;
-  allStates[hostname] = enabled;
-  _pendingLocalChange = true;
+function renderState(state, canEdit) {
+  ignoreChanges = true;
+  extensionToggleEl.checked = state.extensionEnabled;
+  Object.keys(featureToggleEls).forEach(function (key) {
+    featureToggleEls[key].checked = state.features[key];
+  });
+  ignoreChanges = false;
+  setControlsDisabled(!canEdit);
+}
 
-  chrome.storage.local.get([STATES_KEY], function (result) {
-    var latestStates = allStates;
-    if (chrome.runtime.lastError) {
-      console.error('Page Scroll Master: Failed to reload toggle state before save:', chrome.runtime.lastError.message);
-    } else {
-      latestStates = normalizeStates(result[STATES_KEY]);
-    }
+function showUnavailable() {
+  currentSiteEl.style.display = 'none';
+  unavailableEl.style.display = 'block';
+  renderState(domainUtils.normalizeState(null, domainFeatureDefaults), false);
+}
 
-    allStates = Object.assign({}, latestStates);
-    allStates[hostname] = enabled;
+function notifyCurrentTab(state) {
+  if (!currentTabId || !chrome.tabs || !chrome.tabs.sendMessage) return;
+  chrome.tabs.sendMessage(currentTabId, {
+    action: 'updateDomainFeatureState',
+    domainKey: currentDomainKey,
+    state: state
+  }, function () {
+    if (chrome.runtime.lastError) return;
+  });
+}
 
+function recordAnalyticsToggle(feature, enabled) {
+  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
+  chrome.runtime.sendMessage({
+    action: 'analytics:recordToggle',
+    feature: feature,
+    enabled: enabled === true,
+    source: 'popup'
+  }, function () {
+    if (chrome.runtime.lastError) return;
+  });
+}
+
+function persistCurrentState(nextState, analyticsChange) {
+  if (!currentDomainKey) return;
+  pendingLocalChange = true;
+  chrome.storage.local.get([STORAGE_KEYS.states], function (result) {
+    var latestStates = domainUtils.normalizeStates(result[STORAGE_KEYS.states], domainFeatureDefaults);
+    domainFeatureStates = domainUtils.updateState(
+      latestStates,
+      currentDomainKey,
+      nextState,
+      domainFeatureDefaults
+    );
     var data = {};
-    data[STATES_KEY] = allStates;
+    data[STORAGE_KEYS.states] = domainFeatureStates;
     chrome.storage.local.set(data, function () {
-      if (chrome.runtime.lastError) {
-        console.error('Page Scroll Master: Failed to save toggle state:', chrome.runtime.lastError.message);
+      pendingLocalChange = false;
+      if (chrome.runtime.lastError) return;
+      if (analyticsChange) {
+        recordAnalyticsToggle(analyticsChange.feature, analyticsChange.enabled);
       }
-      _pendingLocalChange = false;
+      notifyCurrentTab(domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults));
     });
   });
 }
 
-function loadAndUpdateUI() {
-  toggleEl.disabled = true;
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    var tab = tabs[0];
-    if (!tab || !tab.url) {
-      updateUI(true, false);
-      return;
+function readStateFromControls() {
+  return domainUtils.normalizeState({
+    extensionEnabled: extensionToggleEl.checked,
+    features: {
+      progressBar: featureToggleEls.progressBar.checked,
+      scrollBookmarks: featureToggleEls.scrollBookmarks.checked,
+      outlineNavigation: featureToggleEls.outlineNavigation.checked
     }
-    currentHostname = extractHostname(tab.url);
-    if (!currentHostname) {
-      updateUI(true, false);
-      return;
-    }
-    chrome.storage.local.get([STATES_KEY], function (result) {
-      if (chrome.runtime.lastError) {
-        console.error('Page Scroll Master: Failed to load toggle state:', chrome.runtime.lastError.message);
-        updateUI(true, false);
+  }, domainFeatureDefaults);
+}
+
+function handleControlChange(feature) {
+  if (ignoreChanges || !currentDomainKey) return;
+  setControlsDisabled(false);
+  var state = readStateFromControls();
+  persistCurrentState(state, {
+    feature: feature,
+    enabled: feature === 'extension'
+      ? state.extensionEnabled
+      : state.features[feature]
+  });
+}
+
+function loadStorageAndRender() {
+  var localKeys = [
+    STORAGE_KEYS.states,
+    STORAGE_KEYS.defaults,
+    STORAGE_KEYS.migrationVersion,
+    STORAGE_KEYS.legacyStates
+  ];
+  chrome.storage.sync.get(['advancedSettings'], function (syncResult) {
+    chrome.storage.local.get(localKeys, function (localResult) {
+      var migration = domainUtils.migrateStorage(localResult, syncResult.advancedSettings);
+      domainFeatureStates = migration.states;
+      domainFeatureDefaults = migration.defaults;
+      var finish = function () {
+        renderState(
+          domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults),
+          true
+        );
+      };
+      if (!migration.needsWrite) {
+        finish();
         return;
       }
-      allStates = normalizeStates(result[STATES_KEY]);
-      updateUI(isHostEnabled(allStates, currentHostname), true);
+      pendingLocalChange = true;
+      chrome.storage.local.set(domainUtils.toStorageData(migration), function () {
+        pendingLocalChange = false;
+        finish();
+      });
     });
   });
 }
 
-applyI18n();
+function loadPopup() {
+  setControlsDisabled(true);
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tab = tabs[0];
+    currentDomainKey = tab && tab.url ? domainUtils.getDomainKey(tab.url) : '';
+    currentTabId = tab && tab.id ? tab.id : null;
+    if (!currentDomainKey) {
+      showUnavailable();
+      return;
+    }
+    currentSiteEl.textContent = currentDomainKey;
+    currentSiteEl.style.display = 'block';
+    unavailableEl.style.display = 'none';
+    loadStorageAndRender();
+  });
+}
 
-toggleEl.addEventListener('change', function () {
-  if (_ignoreChange) return;
-  if (!currentHostname) return;
-  var enabled = toggleEl.checked;
-  allStates[currentHostname] = enabled;
-  persistState(enabled);
+extensionToggleEl.addEventListener('change', function () {
+  handleControlChange('extension');
 });
-
+Object.keys(featureToggleEls).forEach(function (key) {
+  featureToggleEls[key].addEventListener('change', function () {
+    handleControlChange(key);
+  });
+});
 settingsBtn.addEventListener('click', function () {
   chrome.runtime.openOptionsPage();
 });
 
 chrome.storage.onChanged.addListener(function (changes, namespace) {
-  if (namespace !== 'local') return;
-  if (!changes[STATES_KEY]) return;
-  if (!currentHostname) return;
-  if (_pendingLocalChange) return;
-
-  var newStates = normalizeStates(changes[STATES_KEY].newValue);
-  allStates = newStates;
-  updateUI(isHostEnabled(allStates, currentHostname), true);
+  if (namespace !== 'local' || pendingLocalChange || !currentDomainKey) return;
+  if (changes[STORAGE_KEYS.defaults]) {
+    domainFeatureDefaults = domainUtils.normalizeDefaults(changes[STORAGE_KEYS.defaults].newValue);
+  }
+  if (changes[STORAGE_KEYS.states]) {
+    domainFeatureStates = domainUtils.normalizeStates(
+      changes[STORAGE_KEYS.states].newValue,
+      domainFeatureDefaults
+    );
+  }
+  if (changes[STORAGE_KEYS.defaults] || changes[STORAGE_KEYS.states]) {
+    renderState(
+      domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults),
+      true
+    );
+  }
 });
 
-loadAndUpdateUI();
+applyI18n();
+loadPopup();

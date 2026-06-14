@@ -3,3 +3,6 @@ dist/
 *.zip
 *.crx
 *.pem
+.playwright-cli/
+.wrangler/
+analytics-backend/.wrangler/

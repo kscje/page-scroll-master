@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 const ROOT = path.join(__dirname, '..');
 const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(ROOT, 'content.js');
 
@@ -388,6 +389,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
   };
 
   vm.createContext(sandbox);
+  vm.runInContext(getSharedRuntimeSource(ROOT, CONTENT_SOURCE_PATH), sandbox);
   vm.runInContext(fs.readFileSync(CONTENT_SOURCE_PATH, 'utf8'), sandbox);
   sandbox.__localData = localData;
   sandbox.__documentListeners = documentListeners;
@@ -443,7 +445,9 @@ function testAdvancedSettingsMergeAndProgressMath() {
   assert(merged.progressBar.enabled === true, 'partial advanced settings are merged');
   assert(merged.progressBar.verticalHeight === 400, 'vertical height is clamped');
   assert(merged.progressBar.thickness === 4, 'invalid horizontal thickness falls back to 4');
-  assert(merged.progressBar.customColor === '#4A9EDD', 'invalid progress color falls back');
+  assert(merged.progressBar.customColor === '#4a9edd', 'invalid progress color falls back');
+  assert(merged.scrollBookmarks.buttonCustomColor === '#4a9edd', 'bookmark custom color defaults to #4a9edd');
+  assert(merged.outlineNavigation.buttonCustomColor === '#4a9edd', 'outline custom color defaults to #4a9edd');
   assert(merged.iconCustomization.iconColor === '#FFFFFF', 'invalid icon color falls back');
   assert(merged.outlineNavigation.enabled === false, 'outline navigation is disabled by default');
   assert(merged.outlineNavigation.sources.h1 === true && merged.outlineNavigation.sources.h2 === true, 'old settings receive default H1 and H2 sources');
@@ -628,6 +632,9 @@ function testReadingToolMenuSaveAndRestorePrompt() {
   assert(!fixedSection.children.some((child) => child.getAttribute('data-action') === 'manage-bookmarks'), 'bookmark menu does not include a manage bookmarks action');
   assert(outlineSection.children.length === 0, 'outline section remains empty until outline actions are implemented');
   const saveButton = fixedSection.children.find((child) => child.getAttribute('data-action') === 'save-bookmark');
+  const restoreWithoutBookmarkButton = fixedSection.children.find((child) => child.getAttribute('data-action') === 'restore-bookmark');
+  assert(saveButton.textContent === '保存当前位置（30%）', 'bookmark menu shows the current scroll percentage on the save action');
+  assert(restoreWithoutBookmarkButton.textContent === '加载已保存位置', 'bookmark menu omits a saved percentage when no matching bookmark exists');
   menu.listeners.click[0]({ stopPropagation() {}, target: saveButton });
   assert(Object.keys(sandbox.__localData.bookmarks || {}).length === 1, 'bookmark menu save action stores the current position');
 
@@ -645,6 +652,11 @@ function testReadingToolMenuSaveAndRestorePrompt() {
 
   sandbox.handleBookmarkToolClick({ stopPropagation() {} });
   const restoreButton = fixedSection.children.find((child) => child.getAttribute('data-action') === 'restore-bookmark');
+  assert(
+    fixedSection.children.find((child) => child.getAttribute('data-action') === 'save-bookmark').textContent === '保存当前位置（0%）',
+    'bookmark menu refreshes the current percentage each time it opens'
+  );
+  assert(restoreButton.textContent === '加载已保存位置（25%）', 'bookmark menu shows the latest matching saved percentage on the restore action');
   menu.listeners.click[0]({ stopPropagation() {}, target: restoreButton });
   assert(sandbox.window.pageYOffset === 300, 'manual restore loads the saved percentage after reopening the page');
 
@@ -1483,10 +1495,14 @@ function testDisablingOutlineSettingsRefreshesOpenBookmarkMenu() {
   assert(outlineMenu.querySelector('.psm-reading-menu-outline').children.length === 2, 'outline menu includes outline content before disabling outline');
 
   sandbox.__runtimeMessageListeners[0]({
-    action: 'updateAdvancedSettings',
-    settings: {
-      scrollBookmarks: { enabled: true },
-      outlineNavigation: { enabled: false }
+    action: 'updateDomainFeatureState',
+    state: {
+      extensionEnabled: true,
+      features: {
+        progressBar: false,
+        scrollBookmarks: true,
+        outlineNavigation: false
+      }
     }
   });
 

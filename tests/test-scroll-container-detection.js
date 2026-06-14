@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { getSharedRuntimeSource } = require('./runtime-loader');
 const ROOT = path.join(__dirname, '..');
 
 class FakeElement {
@@ -97,7 +98,9 @@ function createContext(elements, options = {}) {
   };
 
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8'), sandbox);
+  const contentPath = path.join(ROOT, 'content.js');
+  vm.runInContext(getSharedRuntimeSource(ROOT, contentPath), sandbox);
+  vm.runInContext(fs.readFileSync(contentPath, 'utf8'), sandbox);
   return sandbox;
 }
 

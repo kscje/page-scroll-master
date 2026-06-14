@@ -5,7 +5,7 @@
   <title>Smart Scroll Navigator</title>
   <style>
     body {
-      width: 220px;
+      width: 300px;
       padding: 12px;
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
@@ -15,6 +15,20 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+    .site-label {
+      padding: 0 2px;
+      font-size: 12px;
+      color: #666;
+      overflow-wrap: anywhere;
+    }
+    .section-title {
+      margin: 2px 2px -4px;
+      color: #666;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .toggle-row {
       display: flex;
@@ -76,6 +90,19 @@
       outline: 2px solid #4CAF50;
       outline-offset: 2px;
     }
+    .toggle-switch input:disabled + .toggle-slider {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    .unavailable {
+      display: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 12px;
+      line-height: 1.45;
+    }
     .settings-button {
       padding: 10px;
       border: none;
@@ -95,15 +122,43 @@
 </head>
 <body>
   <div class="container">
+    <div class="site-label">
+      <span data-i18n="popupCurrentSite">Current site: </span><strong id="currentSite"></strong>
+    </div>
+    <div id="unavailableMessage" class="unavailable" data-i18n="popupUnavailable">Extension controls are unavailable on this page</div>
     <div class="toggle-row">
-      <span class="toggle-label" id="toggleLabel">Enable Extension</span>
+      <span class="toggle-label" data-i18n="popupEnableToggle">Enable extension on this domain</span>
       <label class="toggle-switch" title="Toggle extension on/off">
-        <input type="checkbox" id="enableToggle" checked disabled>
+        <input type="checkbox" id="extensionToggle" checked disabled>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="section-title" data-i18n="popupAdvancedFeatures">Advanced features</div>
+    <div class="toggle-row">
+      <span class="toggle-label" data-i18n="popupProgressBar">Page progress bar</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="progressBarToggle" disabled>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label" data-i18n="popupScrollBookmarks">Scroll position bookmarks</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="scrollBookmarksToggle" disabled>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label" data-i18n="popupOutlineNavigation">Smart section navigation</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="outlineNavigationToggle" disabled>
         <span class="toggle-slider"></span>
       </label>
     </div>
     <button class="settings-button" id="openSettings" data-i18n="popupSettings">Settings</button>
   </div>
+  <script src="vendor/tldts.umd.min.js"></script>
+  <script src="domain-utils.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

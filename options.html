@@ -183,6 +183,123 @@
       grid-column: 1 / -1;
     }
 
+    .onboarding-guide {
+      display: none;
+      margin-bottom: 24px;
+      padding: 22px;
+      border: 1px solid rgba(74, 158, 221, 0.28);
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg, rgba(74, 158, 221, 0.1), rgba(63, 189, 157, 0.07)),
+        #ffffff;
+    }
+
+    .onboarding-guide-header {
+      margin-bottom: 16px;
+    }
+
+    .onboarding-guide-header h3 {
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .onboarding-guide-header p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .onboarding-steps {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .onboarding-step {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(228, 233, 241, 0.95);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .onboarding-step-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(74, 158, 221, 0.13);
+      color: var(--primary-dark);
+    }
+
+    .onboarding-step-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .onboarding-step-copy h4 {
+      margin: 1px 0 5px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .onboarding-step-copy p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .onboarding-feature-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .onboarding-feature {
+      padding: 3px 7px;
+      border: 1px solid rgba(74, 158, 221, 0.22);
+      border-radius: 999px;
+      background: rgba(74, 158, 221, 0.08);
+      color: #35536b;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .onboarding-off-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(53, 64, 82, 0.08);
+      color: #4c586b;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .onboarding-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .onboarding-actions button,
+    .onboarding-reopen-button {
+      width: auto;
+      margin-top: 0;
+    }
+
     label {
       display: block;
       margin-bottom: 8px;
@@ -252,6 +369,11 @@
       padding: 14px 0 0 28px;
       border-top: 1px solid var(--line);
     }
+
+    .tab-panel[data-tab-panel="advanced"] .sub-setting {
+      padding-left: 0;
+    }
+
     #iconCustomizationSettings {
       padding-left: 0;
     }
@@ -276,11 +398,28 @@
       margin-top: 10px;
     }
 
+    .domain-header,
     .domain-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(140px, 1fr) 72px 120px 140px 140px 44px;
       gap: 8px;
       align-items: center;
+      min-width: 704px;
+    }
+
+    .domain-header {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .domain-header span:not(:first-child) {
+      text-align: center;
+    }
+
+    .domain-row {
       padding: 8px 0;
       border-bottom: 1px solid var(--line);
     }
@@ -288,6 +427,49 @@
     .domain-name {
       overflow-wrap: anywhere;
       color: var(--text);
+    }
+
+    .domain-list {
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    .domain-feature-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .domain-feature-toggle.is-disabled {
+      opacity: 0.55;
+    }
+
+    .domain-delete-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      margin-top: 0;
+      border-radius: 8px;
+      background: rgba(220, 38, 38, 0.1);
+      color: var(--danger);
+    }
+
+    .domain-delete-button:hover {
+      background: rgba(220, 38, 38, 0.18);
+    }
+
+    .domain-delete-button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .bookmark-row {
@@ -444,9 +626,12 @@
       color: var(--muted);
     }
 
-    .about-card {
-      background: linear-gradient(135deg, rgba(74, 158, 221, 0.12), rgba(63, 189, 157, 0.08));
-      border-left: 4px solid var(--primary);
+    .feedback-card {
+      background: var(--panel-soft);
+    }
+
+    .feedback-card h3 {
+      margin-bottom: 16px;
     }
 
     .about-card a {
@@ -457,6 +642,147 @@
 
     .about-card a:hover {
       text-decoration: underline;
+    }
+
+    .about-card a:focus-visible {
+      border-radius: 4px;
+      outline: 3px solid rgba(74, 158, 221, 0.28);
+      outline-offset: 3px;
+    }
+
+    .release-notes-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .feedback-disclosure {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .feedback-disclosure summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+      list-style: none;
+      overflow-wrap: anywhere;
+    }
+
+    .feedback-disclosure summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .feedback-disclosure summary::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-right: 2px solid var(--primary-dark);
+      border-bottom: 2px solid var(--primary-dark);
+      transform: rotate(-45deg);
+      transition: transform 0.18s ease;
+    }
+
+    .feedback-disclosure[open] summary::before {
+      transform: rotate(45deg);
+    }
+
+    .feedback-disclosure summary:hover {
+      background: rgba(74, 158, 221, 0.08);
+    }
+
+    .feedback-disclosure summary:focus-visible {
+      outline: 3px solid rgba(74, 158, 221, 0.28);
+      outline-offset: -3px;
+    }
+
+    .release-current-badge {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(74, 158, 221, 0.14);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .release-version-content {
+      padding: 0 16px 14px 42px;
+      border-top: 1px solid var(--line);
+    }
+
+    .release-category {
+      margin-top: 14px;
+    }
+
+    .release-category h4 {
+      margin: 0 0 6px;
+      color: #354052;
+      font-size: 13px;
+    }
+
+    .release-category ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .release-category li {
+      margin: 5px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .analytics-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .analytics-toggle-row label {
+      margin: 0;
+    }
+
+    .analytics-description {
+      margin: 8px 0 0 30px;
+      font-size: 13px;
+    }
+
+    .analytics-status {
+      margin: 10px 0 0 30px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .analytics-preview {
+      margin-top: 16px;
+    }
+
+    .analytics-preview pre {
+      max-height: 280px;
+      margin: 0;
+      overflow: auto;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+      background: #111827;
+      color: #dbeafe;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    input[type="checkbox"]:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
     }
 
     @media (max-width: 760px) {
@@ -488,6 +814,10 @@
         grid-template-columns: 1fr;
       }
 
+      .onboarding-steps {
+        grid-template-columns: 1fr;
+      }
+
       .inline-control {
         align-items: stretch;
         flex-direction: column;
@@ -499,6 +829,15 @@
 
       .bookmark-actions {
         justify-content: flex-start;
+      }
+
+      .release-version summary {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .release-version-content {
+        padding-left: 24px;
       }
     }
     
@@ -687,7 +1026,7 @@
       <button type="button" class="tab-button is-active" data-tab="basic" data-i18n="settings.tab.basic">基础设置</button>
       <button type="button" class="tab-button" data-tab="advanced" data-i18n="settings.tab.advanced">高级功能</button>
       <button type="button" class="tab-button" data-tab="domains" data-i18n="settings.tab.domains">域名管理</button>
-      <button type="button" class="tab-button" data-tab="feedback" data-i18n="settings.tab.feedback">建议&反馈</button>
+      <button type="button" class="tab-button" data-tab="feedback" data-i18n="settings.tab.feedback">建议&关于插件</button>
     </nav>
 
     <div class="tab-panels">
@@ -696,6 +1035,83 @@
           <h2 data-i18n="settings.tab.basic">基础设置</h2>
           <p data-i18n="settings.basicIntro">调整滚动速度、按钮位置、外观图标和快捷键。</p>
         </div>
+
+        <section id="onboardingGuide" class="onboarding-guide" aria-labelledby="onboardingGuideTitle">
+          <div class="onboarding-guide-header">
+            <h3 id="onboardingGuideTitle" data-i18n="settings.onboardingTitle">快速开始</h3>
+            <p data-i18n="settings.onboardingIntro">先了解页面按钮与工具栏 Popup，再按需要调整下方设置。</p>
+          </div>
+
+          <ol class="onboarding-steps">
+            <li class="onboarding-step">
+              <div class="onboarding-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 10l5-5 5 5"></path>
+                  <path d="M12 5v14"></path>
+                  <path d="M7 14l5 5 5-5"></path>
+                </svg>
+              </div>
+              <div class="onboarding-step-copy">
+                <h4 data-i18n="settings.onboardingCoreTitle">使用页面滚动按钮</h4>
+                <p data-i18n="settings.onboardingCoreDescription">网页边缘的上、下箭头可快速滚动到页面顶部或底部。</p>
+              </div>
+            </li>
+
+            <li class="onboarding-step">
+              <div class="onboarding-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 6h16v12H4z"></path>
+                  <path d="M7 9h4"></path>
+                  <path d="M16 9h1"></path>
+                  <path d="M16 13h1"></path>
+                </svg>
+              </div>
+              <div class="onboarding-step-copy">
+                <h4 data-i18n="settings.onboardingPopupTitle">从 Chrome 工具栏打开 Popup</h4>
+                <p data-i18n="settings.onboardingPopupDescription">点击 Chrome 工具栏中的扩展图标；若图标未显示，可先在拼图菜单中固定本扩展。</p>
+              </div>
+            </li>
+
+            <li class="onboarding-step">
+              <div class="onboarding-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                  <path d="M8 9h5"></path>
+                  <path d="M8 13h5"></path>
+                  <path d="M16 9h.01"></path>
+                  <path d="M16 13h.01"></path>
+                </svg>
+              </div>
+              <div class="onboarding-step-copy">
+                <h4 data-i18n="settings.onboardingSiteControlsTitle">按当前网站控制功能</h4>
+                <p data-i18n="settings.onboardingSiteControlsDescription">Popup 可分别启停整个扩展和三项高级功能，状态对当前主域名生效。</p>
+                <div class="onboarding-feature-list">
+                  <span class="onboarding-feature" data-i18n="settings.onboardingFeatureExtension">扩展</span>
+                  <span class="onboarding-feature" data-i18n="settings.onboardingFeatureProgress">页面进度条</span>
+                  <span class="onboarding-feature" data-i18n="settings.onboardingFeatureBookmarks">书签</span>
+                  <span class="onboarding-feature" data-i18n="settings.onboardingFeatureOutline">文章大纲</span>
+                </div>
+              </div>
+            </li>
+
+            <li class="onboarding-step">
+              <div class="onboarding-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 3l7 3v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6z"></path>
+                  <path d="M9 12l2 2 4-4"></path>
+                </svg>
+              </div>
+              <div class="onboarding-step-copy">
+                <h4 data-i18n="settings.onboardingPrivacyTitle">匿名使用分析由你决定</h4>
+                <p data-i18n="settings.onboardingPrivacyDescription">匿名使用分析保持关闭，只有你在“建议&关于插件”的“隐私与统计”中主动选择后才会启用。</p>
+                <span class="onboarding-off-badge" data-i18n="settings.onboardingPrivacyOff">默认关闭</span>
+              </div>
+            </li>
+          </ol>
+          <div class="onboarding-actions">
+            <button type="button" id="dismissOnboardingButton" data-i18n="settings.onboardingDismiss">知道了</button>
+          </div>
+        </section>
 
         <div class="setting-grid">
           <div class="setting-group">
@@ -806,16 +1222,12 @@
       <section class="tab-panel" data-tab-panel="advanced">
         <div class="panel-heading">
           <h2 data-i18n="settings.advancedFeatures">高级功能</h2>
-          <p data-i18n="settings.advancedIntro">配置页面进度条的显示方式和交互行为。</p>
+          <p data-i18n="settings.advancedIntro">配置三项高级功能的显示、位置和交互参数。</p>
         </div>
 
         <div class="setting-group full-width">
           <h3 data-i18n="settings.progressBar">页面进度条</h3>
-
-          <div class="checkbox-container">
-            <input type="checkbox" id="progressBarEnabled">
-            <label for="progressBarEnabled" data-i18n="settings.progressBarEnabled">启用页面进度条</label>
-          </div>
+          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
 
           <div id="progressBarSettings" class="sub-setting">
             <label for="progressBarMode" data-i18n="settings.progressBarMode">显示样式</label>
@@ -848,7 +1260,7 @@
               </select>
             </div>
 
-            <label for="progressColorMode" data-i18n="settings.progressColorMode">进度颜色</label>
+            <label for="progressColorMode" data-i18n="settings.progressColorMode">按钮颜色</label>
             <select id="progressColorMode">
               <option value="followTopButton" data-i18n="settings.progressColorMode.followTopButton">跟随顶部按钮</option>
               <option value="followBottomButton" data-i18n="settings.progressColorMode.followBottomButton">跟随底部按钮</option>
@@ -858,8 +1270,8 @@
             <div id="progressCustomColorContainer">
               <label data-i18n="settings.progressCustomColor">自定义进度颜色</label>
               <div class="color-input-container">
-                <input type="color" id="progressCustomColor" value="#4A9EDD">
-                <input type="text" id="progressCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+                <input type="color" id="progressCustomColor" value="#4a9edd">
+                <input type="text" id="progressCustomColorHex" value="#4a9edd" placeholder="#4a9edd">
               </div>
             </div>
 
@@ -881,11 +1293,7 @@
 
         <div class="setting-group full-width">
           <h3 data-i18n="settings.scrollBookmarks">滚动位置书签</h3>
-
-          <div class="checkbox-container">
-            <input type="checkbox" id="scrollBookmarksEnabled">
-            <label for="scrollBookmarksEnabled" data-i18n="settings.scrollBookmarksEnabled">启用滚动位置书签</label>
-          </div>
+          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
 
           <div id="scrollBookmarksSettings" class="sub-setting">
             <label for="scrollBookmarkButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
@@ -905,8 +1313,8 @@
             <div id="scrollBookmarkButtonCustomColorContainer">
               <label data-i18n="settings.scrollBookmarkButtonCustomColor">自定义书签按钮颜色</label>
               <div class="color-input-container">
-                <input type="color" id="scrollBookmarkButtonCustomColor" value="#4A9EDD">
-                <input type="text" id="scrollBookmarkButtonCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+                <input type="color" id="scrollBookmarkButtonCustomColor" value="#4a9edd">
+                <input type="text" id="scrollBookmarkButtonCustomColorHex" value="#4a9edd" placeholder="#4a9edd">
               </div>
             </div>
 
@@ -923,7 +1331,6 @@
               <option value="prompt" selected data-i18n="settings.scrollBookmarkRestoreMode.prompt">仅提示恢复到书签位置</option>
               <option value="manual" data-i18n="settings.scrollBookmarkRestoreMode.manual">手动加载</option>
             </select>
-            <p class="muted-note" data-i18n="settings.scrollBookmarksIntro">默认关闭。启用后可手动保存当前位置，并选择再次打开页面时的加载方式。</p>
           </div>
 
           <details class="sub-setting saved-bookmarks-details">
@@ -935,11 +1342,7 @@
 
         <div class="setting-group full-width">
           <h3 data-i18n="settings.outlineNavigation">智能段落跳转</h3>
-
-          <div class="checkbox-container">
-            <input type="checkbox" id="outlineNavigationEnabled">
-            <label for="outlineNavigationEnabled" data-i18n="settings.outlineNavigationEnabled">启用智能段落跳转</label>
-          </div>
+          <p class="muted-note" data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。</p>
 
           <div id="outlineNavigationSettings" class="sub-setting">
             <label for="outlineButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
@@ -959,8 +1362,8 @@
             <div id="outlineButtonCustomColorContainer">
               <label data-i18n="settings.outlineButtonCustomColor">自定义段落跳转按钮颜色</label>
               <div class="color-input-container">
-                <input type="color" id="outlineButtonCustomColor" value="#4A9EDD">
-                <input type="text" id="outlineButtonCustomColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+                <input type="color" id="outlineButtonCustomColor" value="#4a9edd">
+                <input type="text" id="outlineButtonCustomColorHex" value="#4a9edd" placeholder="#4a9edd">
               </div>
             </div>
 
@@ -995,7 +1398,6 @@
               <input type="checkbox" id="outlineHighlightCurrentSection" checked>
               <label for="outlineHighlightCurrentSection" data-i18n="settings.outlineHighlightCurrentSection">当前章节高亮</label>
             </div>
-            <p class="muted-note" data-i18n="settings.outlineNavigationIntro">默认关闭。启用后通过独立按钮打开页面目录并进行上一段、下一段跳转。</p>
           </div>
         </div>
       </section>
@@ -1003,7 +1405,7 @@
       <section class="tab-panel" data-tab-panel="domains">
         <div class="panel-heading">
           <h2 data-i18n="settings.tab.domains">域名管理</h2>
-          <p data-i18n="settings.domainIntro">管理不同网站中滚动按钮的启用或禁用状态。</p>
+          <p data-i18n="settings.domainIntro">按主域名管理插件和三项高级功能的启用状态。</p>
         </div>
 
         <div class="setting-group full-width">
@@ -1019,29 +1421,49 @@
           </div>
           <div id="domainError" class="domain-error"></div>
 
-          <div id="domainList" style="margin-top: 10px;"></div>
+          <div id="domainList" class="domain-list"></div>
           <p id="domainEmpty" class="muted-note" data-i18n="settings.domainEmpty">暂无手动设置的网站。</p>
 
           <div class="domain-toolbar">
             <button type="button" id="addDomainButton" data-i18n="settings.addDomain">添加域名</button>
             <button type="button" id="clearDisabledSitesButton" data-i18n="settings.clearDisabledSites">清除已关闭站点</button>
-            <button type="button" id="restoreAllSitesButton" data-i18n="settings.restoreAllSites">恢复全部启用</button>
+            <button type="button" id="restoreAllSitesButton" data-i18n="settings.clearAllDomainStates">清除全部主域名记录</button>
           </div>
         </div>
       </section>
 
       <section class="tab-panel" data-tab-panel="feedback">
         <div class="panel-heading">
-          <h2 data-i18n="settings.tab.feedback">建议&反馈</h2>
+          <h2 data-i18n="settings.tab.feedback">建议&关于插件</h2>
         </div>
 
-        <div class="setting-group about-card">
+        <div class="setting-group feedback-card">
+          <h3 data-i18n="settings.analyticsTitle">隐私与统计</h3>
+          <div class="analytics-toggle-row">
+            <input type="checkbox" id="analyticsEnabled">
+            <label for="analyticsEnabled" data-i18n="settings.analyticsEnabled">发送匿名使用统计</label>
+          </div>
+          <p class="analytics-description" data-i18n="settings.analyticsDescription">开启后，将发送不含身份标识的设置类别和功能操作汇总，帮助改进默认设置与功能优先级。不会发送访问网址、域名、页面标题、页面内容、书签内容或滚动位置。</p>
+          <p id="analyticsStatus" class="analytics-status"></p>
+          <details class="analytics-preview feedback-disclosure">
+            <summary data-i18n="settings.analyticsPreview">查看待发送数据</summary>
+            <pre id="analyticsPreviewData">[]</pre>
+          </details>
+        </div>
+
+        <div class="setting-group feedback-card about-card">
           <h3 data-i18n="settings.about">关于插件</h3>
           <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.0.0</span></p>
+          <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.1.0</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
+        </div>
+
+        <div class="setting-group feedback-card release-notes-card">
+          <h3 data-i18n="settings.releaseNotes">更新记录</h3>
+          <div id="releaseNotesList" class="release-notes-list"></div>
         </div>
       </section>
     </div>
@@ -1069,6 +1491,9 @@
     <span class="preview-horizontal-progress-label"></span>
   </div>
   
+  <script src="vendor/tldts.umd.min.js"></script>
+  <script src="domain-utils.js"></script>
+  <script src="analytics.js"></script>
   <script src="options.js"></script>
 </body>
 </html>
