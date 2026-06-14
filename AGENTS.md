@@ -10,7 +10,7 @@
 2. `README.md`，确认当前功能、版本和项目结构。
 3. 与任务直接相关的 `doc/` 规格、实施计划或发布文档。
 4. 对应源码及其 `tests/test-*.js` 回归测试。
-5. 发布任务再读取 `doc/CHANGELOG.md`、`doc/PUBLISH_CHECKLIST.md` 和 `doc/CHROME_WEB_STORE_PUBLISH_GUIDE.md`。
+5. 发布任务再读取 `doc/CHANGELOG.md`、`chrome-web-store/publish-checklist.md` 和 `chrome-web-store/publish-guide.md`。
 
 显式用户要求优先。若旧计划与当前实现冲突，以当前源码、`manifest.json` 和最新变更记录为事实依据，不要照搬过期方案。
 
@@ -34,7 +34,7 @@
 - `_locales/*/messages.json`：Manifest、内容脚本和 Chrome 原生界面的 locale 文案。
 - `tests/`：Node + `vm` 模拟环境回归测试，不是扩展运行时资源。
 - `build.js`：清理、复制、压缩、产物校验、源码与打包后回归测试、ZIP 生成的统一入口。
-- `store-assets/`：Chrome Web Store 截图和宣传图的 SVG 源文件、生成脚本和 PNG 产物。
+- `chrome-web-store/`：Chrome Web Store 文案、隐私政策、发布清单、最终图片和生成工具的统一入口。
 
 ## Runtime Contracts
 

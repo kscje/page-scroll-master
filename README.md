@@ -101,7 +101,7 @@
 
 ## 隐私
 
-匿名使用统计默认关闭。用户主动开启后，扩展只会向开发者运营的固定 HTTPS 端点发送 allowlist 内的枚举化设置和日级聚合操作次数，不包含访问网址、域名、页面标题、页面正文、书签内容、站点启停列表、精确自定义颜色或长期用户 ID。详细规则见 `doc/privacy-policy-zh.md`。
+匿名使用统计默认关闭。用户主动开启后，扩展只会向开发者运营的固定 HTTPS 端点发送 allowlist 内的枚举化设置和日级聚合操作次数，不包含访问网址、域名、页面标题、页面正文、书签内容、站点启停列表、精确自定义颜色或长期用户 ID。详细规则见 `chrome-web-store/privacy/zh-CN.md`。
 
 ## 项目结构
 
@@ -111,6 +111,7 @@
 - `options.html` / `options.js`：设置页
 - `background.js`：快捷键处理
 - `_locales/`：多语言文案
+- `chrome-web-store/`：商店文案、隐私政策、发布清单和最终上传图片
 - `create-icons.html` / `create-icons.js`：图标生成工具
 
 ## 兼容性
