@@ -4,7 +4,7 @@
 
 ## Raccolta dei dati
 
-Smart Scroll Navigator **non** raccoglie né trasmette cronologia di navigazione, URL o domini visitati, titoli o contenuti delle pagine, termini di ricerca, dati inseriti nei moduli, posizioni di scorrimento, contenuto dei segnalibri salvati, informazioni sull'account o altri contenuti personali.
+Durante il normale uso dello scorrimento, Smart Scroll Navigator **non** raccoglie né trasmette cronologia, URL o domini visitati, titoli o contenuti delle pagine, ricerche, moduli, posizioni, segnalibri o account. L'unica eccezione riguarda i dati inviati esplicitamente tramite il modulo facoltativo descritto sotto.
 
 L'estensione include statistiche anonime facoltative sull'utilizzo. La funzione è disattivata per impostazione predefinita sia per i nuovi utenti sia per quelli esistenti. I dati vengono raccolti e trasmessi solo dopo l'attivazione esplicita di **Invia statistiche anonime sull'utilizzo** nella pagina delle opzioni.
 
@@ -44,6 +44,12 @@ I lotti accettati vengono convertiti immediatamente in contatori giornalieri agg
 Cloudflare può elaborare normali metadati di rete, inclusi indirizzo IP e intestazioni della richiesta, per fornire e proteggere il servizio secondo le proprie politiche infrastrutturali. L'estensione non aggiunge URL delle pagine, referrer, dati personalizzati dello user agent o identificatori persistenti alle richieste. Lo sviluppatore non usa i metadati di rete per identificare gli utenti o creare profili.
 
 I dati vengono usati solo per valutare l'utilizzo delle funzioni, la distribuzione delle impostazioni, i valori predefiniti e le priorità del prodotto. Non vengono venduti, utilizzati per la pubblicità o condivisi per la profilazione.
+
+## Suggerimenti e feedback
+
+Il modulo facoltativo invia dati solo dopo la conferma. Vengono trasmessi tipo, messaggio, versione dell'estensione e lingua dell'interfaccia. Il contatto e fino a tre immagini JPEG, PNG o WebP vengono inviati solo se forniti. Il modulo non raccoglie l'URL corrente né la lingua del browser. L'estensione non salva il contenuto.
+
+Il servizio usa Cloudflare Workers e D1 e Resend per l'inoltro email. Per il limite orario viene usato solo un hash con salt dell'indirizzo di rete; l'IP in chiaro non viene memorizzato. Solo log privi di contenuto vengono conservati per un massimo di 30 giorni. Messaggio, contatto e immagini non vengono salvati in D1. L'autorizzazione host facoltativa viene richiesta all'invio e poi revocata.
 
 ## Uso limitato del Chrome Web Store
 

@@ -4,7 +4,7 @@
 
 ## Data Collection
 
-Smart Scroll Navigator does **not** collect or transmit your browsing history, visited URLs or domains, page titles, page content, search terms, form input, scroll positions, saved bookmark content, account information, or other personal content.
+During normal scrolling use, Smart Scroll Navigator does **not** collect or transmit your browsing history, visited URLs or domains, page titles, page content, search terms, form input, scroll positions, saved bookmark content, account information, or other personal content. The only exception is information you explicitly submit through the optional feedback form described below.
 
 The extension includes optional anonymous usage analytics. This feature is disabled by default for new and existing users. Data is collected and transmitted only after you explicitly enable **Send anonymous usage statistics** in the Options page.
 
@@ -44,6 +44,16 @@ Accepted batches are immediately converted into aggregate daily counters. Indivi
 Cloudflare may process ordinary network metadata, including an IP address and request headers, to deliver and protect the service under its own infrastructure policies. The extension does not add page URLs, referrers, custom user-agent data, or persistent identifiers to analytics requests, and the developer does not use network metadata to identify users or build profiles.
 
 Analytics data is used only to evaluate feature usage, setting distributions, defaults, and product priorities. It is not sold, used for advertising, or shared for profiling.
+
+## Suggestions And Feedback
+
+The Options page includes an optional feedback form. Data is sent only after you submit it. A submission includes the feedback type, message, extension version, and selected interface language. Contact details and up to three JPEG, PNG, or WebP images are sent only when you provide them. The form does not collect the current page URL or browser language. Feedback is not written to extension storage.
+
+The developer operates the endpoint with Cloudflare Workers and Cloudflare D1 and uses Resend to forward the content and images to the developer's email. The service uses a salted hash of the network address for hourly rate limiting and does not store plain IP addresses. It retains only content-free logs such as request ID, feedback type, image count, delivery result, and timestamps for up to 30 days. Feedback text, contact details, and images are not stored in D1. Cloudflare and Resend may process data needed to deliver and protect their services under their respective policies.
+
+The feedback host permission is optional, requested only when you submit feedback, and revoked after that submission finishes:
+
+`https://page-scroll-master-feedback.kscje-apps.workers.dev/v1/feedback`
 
 ## Chrome Web Store Limited Use
 

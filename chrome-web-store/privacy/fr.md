@@ -4,7 +4,7 @@
 
 ## Collecte de données
 
-Smart Scroll Navigator ne collecte ni ne transmet **aucun** historique de navigation, URL ou domaine visité, titre ou contenu de page, terme de recherche, saisie de formulaire, position de défilement, contenu de marque-page enregistré, information de compte ou autre contenu personnel.
+Pendant l'utilisation normale du défilement, Smart Scroll Navigator ne collecte ni ne transmet historique, URL ou domaine visité, titre ou contenu de page, recherche, formulaire, position, marque-page ou compte. La seule exception concerne les données que vous envoyez explicitement avec le formulaire facultatif décrit ci-dessous.
 
 L'extension propose des statistiques d'utilisation anonymes facultatives. Cette fonction est désactivée par défaut pour les nouveaux utilisateurs comme pour les utilisateurs existants. Les données ne sont collectées et transmises qu'après activation explicite de l'option **Envoyer des statistiques d'utilisation anonymes** dans la page des options.
 
@@ -44,6 +44,12 @@ Les lots acceptés sont immédiatement convertis en compteurs quotidiens agrég�
 Cloudflare peut traiter des métadonnées réseau ordinaires, notamment l'adresse IP et les en-têtes de requête, afin de fournir et protéger le service conformément à ses politiques d'infrastructure. L'extension n'ajoute ni URL de page, ni référent, ni donnée d'agent utilisateur personnalisée, ni identifiant persistant aux requêtes. Le développeur n'utilise pas ces métadonnées pour identifier les utilisateurs ou créer des profils.
 
 Les statistiques servent uniquement à évaluer l'utilisation des fonctions, la répartition des réglages, les valeurs par défaut et les priorités du produit. Elles ne sont ni vendues, ni utilisées pour la publicité, ni partagées à des fins de profilage.
+
+## Suggestions et avis
+
+Le formulaire facultatif n'envoie des données qu'après votre validation. Le type, le message, la version de l'extension et la langue de l'interface sont transmis. Le contact et jusqu'à trois images JPEG, PNG ou WebP ne sont envoyés que si vous les fournissez. Le formulaire ne collecte ni l'URL actuelle ni la langue du navigateur. L'extension ne conserve pas le contenu.
+
+Le service utilise Cloudflare Workers et D1, puis Resend pour l'envoi par e-mail. Une empreinte salée de l'adresse réseau sert uniquement à la limitation horaire; l'adresse IP en clair n'est pas conservée. Seuls des journaux sans contenu sont gardés jusqu'à 30 jours. Message, contact et images ne sont pas stockés dans D1. L'autorisation d'hôte facultative est demandée lors de l'envoi puis révoquée.
 
 ## Utilisation limitée de Chrome Web Store
 

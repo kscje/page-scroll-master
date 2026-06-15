@@ -10,7 +10,8 @@
   "permissions": ["storage", "activeTab"],
   "optional_permissions": ["alarms"],
   "optional_host_permissions": [
-    "https://page-scroll-master-analytics.kscje-apps.workers.dev/*"
+    "https://page-scroll-master-analytics.kscje-apps.workers.dev/*",
+    "https://page-scroll-master-feedback.kscje-apps.workers.dev/*"
   ],
   
   "content_security_policy": {

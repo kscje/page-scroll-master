@@ -4,7 +4,7 @@
 
 ## Datenerhebung
 
-Smart Scroll Navigator erhebt oder überträgt **keinen** Browserverlauf, besuchte URLs oder Domains, Seitentitel, Seiteninhalte, Suchbegriffe, Formulareingaben, Scrollpositionen, Inhalte gespeicherter Lesezeichen, Kontoinformationen oder sonstige persönliche Inhalte.
+Bei der normalen Scroll-Nutzung erhebt oder überträgt Smart Scroll Navigator **keinen** Browserverlauf, besuchte URLs oder Domains, Seitentitel, Seiteninhalte, Suchbegriffe, Formulareingaben, Scrollpositionen, Lesezeicheninhalte oder Kontoinformationen. Die einzige Ausnahme sind Daten, die Sie ausdrücklich über das unten beschriebene optionale Feedback-Formular senden.
 
 Die Erweiterung enthält eine optionale anonyme Nutzungsstatistik. Sie ist für neue und bestehende Nutzer standardmäßig deaktiviert. Daten werden erst erhoben und übertragen, nachdem Sie auf der Optionsseite **Anonyme Nutzungsstatistiken senden** ausdrücklich aktiviert haben.
 
@@ -44,6 +44,12 @@ Akzeptierte Stapel werden sofort in aggregierte Tageszähler umgewandelt. Einzel
 Cloudflare kann gemäß seinen Infrastruktur-Richtlinien gewöhnliche Netzwerkmetadaten wie IP-Adresse und Anfrage-Header verarbeiten, um den Dienst bereitzustellen und zu schützen. Die Erweiterung fügt Statistik-Anfragen keine Seiten-URLs, Referrer, benutzerdefinierten User-Agent-Daten oder dauerhaften Kennungen hinzu. Der Entwickler verwendet Netzwerkmetadaten nicht zur Identifizierung oder Profilbildung.
 
 Die Statistik dient ausschließlich zur Bewertung von Funktionsnutzung, Einstellungsverteilungen, Standardwerten und Produktprioritäten. Sie wird nicht verkauft, für Werbung verwendet oder zur Profilbildung weitergegeben.
+
+## Vorschläge und Feedback
+
+Das optionale Feedback-Formular sendet Daten nur nach dem Absenden. Feedbacktyp, Nachricht, Erweiterungsversion und Oberflächensprache werden übertragen. Kontaktangaben und bis zu drei JPEG-, PNG- oder WebP-Bilder werden nur auf ausdrückliche Auswahl gesendet. Das Formular erfasst weder die Seiten-URL noch die Browsersprache. Die Erweiterung speichert das Feedback nicht.
+
+Der Entwickler betreibt den Endpunkt mit Cloudflare Workers und D1 und nutzt Resend zur E-Mail-Weiterleitung. Zur stündlichen Begrenzung wird nur ein gesalzener Hash der Netzwerkadresse verwendet; Klartext-IP-Adressen werden nicht gespeichert. Inhaltsfreie Protokolle werden höchstens 30 Tage aufbewahrt. Nachricht, Kontakt und Bilder werden nicht in D1 gespeichert. Die optionale Host-Berechtigung wird nur beim Absenden angefordert und danach widerrufen.
 
 ## Eingeschränkte Nutzung im Chrome Web Store
 

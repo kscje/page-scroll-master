@@ -4,7 +4,7 @@
 
 ## Recopilación de datos
 
-Navegador Scroll Inteligente **no** recopila ni transmite el historial de navegación, las URL o los dominios visitados, los títulos o el contenido de las páginas, los términos de búsqueda, los datos introducidos en formularios, las posiciones de desplazamiento, el contenido de marcadores guardados, la información de cuentas ni otro contenido personal.
+Durante el uso normal de desplazamiento, Navegador Scroll Inteligente **no** recopila ni transmite historial, URL o dominios visitados, títulos o contenido de páginas, búsquedas, formularios, posiciones, marcadores ni cuentas. La única excepción son los datos que usted envía expresamente mediante el formulario opcional descrito abajo.
 
 La extensión incluye estadísticas de uso anónimas opcionales. Esta función está desactivada de forma predeterminada para usuarios nuevos y existentes. Solo se recopilan y transmiten datos después de activar expresamente **Enviar estadísticas de uso anónimas** en la página de opciones.
 
@@ -44,6 +44,12 @@ Los lotes aceptados se convierten inmediatamente en contadores diarios agregados
 Cloudflare puede procesar metadatos de red habituales, como la dirección IP y los encabezados de solicitud, para prestar y proteger el servicio conforme a sus políticas de infraestructura. La extensión no añade URL de páginas, referentes, datos personalizados del agente de usuario ni identificadores persistentes, y el desarrollador no utiliza esos metadatos para identificar usuarios o crear perfiles.
 
 Los datos se utilizan únicamente para evaluar el uso de funciones, la distribución de ajustes, los valores predeterminados y las prioridades del producto. No se venden, no se usan para publicidad ni se comparten para elaborar perfiles.
+
+## Sugerencias y comentarios
+
+El formulario opcional solo envía datos cuando usted confirma el envío. Se incluyen el tipo, el mensaje, la versión y el idioma de la interfaz. El contacto y hasta tres imágenes JPEG, PNG o WebP se envían solo si usted los proporciona. El formulario no recopila la URL actual ni el idioma del navegador. La extensión no guarda el contenido.
+
+El endpoint funciona con Cloudflare Workers y D1 y usa Resend para reenviar el correo. Para limitar la frecuencia se utiliza un hash con sal de la dirección de red; no se guarda la IP en texto claro. Solo se conservan registros sin contenido durante un máximo de 30 días. El mensaje, contacto e imágenes no se almacenan en D1. El permiso opcional del host se solicita al enviar y se revoca al terminar.
 
 ## Uso limitado de Chrome Web Store
 

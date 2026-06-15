@@ -1,6 +1,7 @@
 const domainUtils = PageScrollMasterDomain;
 const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 const analyticsUtils = PageScrollMasterAnalytics;
+const feedbackUtils = PageScrollMasterFeedback;
 let analyticsRuntimeState = {
   configured: false,
   permissionOrigin: '',
@@ -8,6 +9,8 @@ let analyticsRuntimeState = {
   events: []
 };
 let analyticsStatusKey = 'disabled';
+let feedbackStatusKey = '';
+let feedbackSubmitting = false;
 
 // 多语言翻译数据
 const translations = {
@@ -1436,6 +1439,201 @@ const analyticsTranslations = {
   }
 };
 
+const feedbackTranslations = {
+  'zh-CN': {
+    title: '提交建议与反馈',
+    type: '反馈类型',
+    typeFeature: '功能建议',
+    typeBug: '问题反馈',
+    typeCompatibility: '兼容性问题',
+    typeTranslation: '翻译问题',
+    typeOther: '其他',
+    message: '你的建议或问题',
+    messagePlaceholder: '请描述你的建议、遇到的问题或复现步骤',
+    contact: '联系方式（可选）',
+    contactPlaceholder: '邮箱或其他联系方式',
+    images: '选择图片（可选）',
+    imagesHint: '最多 3 张 JPEG、PNG 或 WebP 图片，每张不超过 5MB。',
+    imagesSelected: '已选择 {count} 张图片：{names}',
+    privacyNote: '反馈内容仅在提交时发送，不会保存到扩展存储。图片和联系方式仅在你主动提供时发送。',
+    submit: '提交反馈',
+    submitting: '正在提交…',
+    success: '反馈已提交，感谢你的帮助。',
+    invalidType: '请选择有效的反馈类型。',
+    messageTooShort: '反馈内容至少需要 10 个字符。',
+    messageTooLong: '反馈内容不能超过 5000 个字符。',
+    invalidContact: '联系方式不能超过 200 个字符或包含换行。',
+    tooManyImages: '最多只能选择 3 张图片。',
+    invalidImageType: '图片仅支持 JPEG、PNG 或 WebP。',
+    imageTooLarge: '每张图片不能超过 5MB。',
+    permissionDenied: '未获得反馈服务网络权限，无法提交。',
+    rateLimited: '提交过于频繁，请稍后重试。',
+    deliveryFailed: '服务暂时无法转发反馈，请稍后重试。',
+    networkError: '无法连接反馈服务，请检查网络后重试。',
+    unavailable: '反馈服务尚未配置。'
+  },
+  'en-US': {
+    title: 'Submit suggestions and feedback',
+    type: 'Feedback type',
+    typeFeature: 'Feature suggestion',
+    typeBug: 'Bug report',
+    typeCompatibility: 'Compatibility issue',
+    typeTranslation: 'Translation issue',
+    typeOther: 'Other',
+    message: 'Your suggestion or issue',
+    messagePlaceholder: 'Describe your suggestion, issue, or reproduction steps',
+    contact: 'Contact (optional)',
+    contactPlaceholder: 'Email or another contact method',
+    images: 'Choose images (optional)',
+    imagesHint: 'Up to 3 JPEG, PNG, or WebP images, no more than 5MB each.',
+    imagesSelected: '{count} image(s) selected: {names}',
+    privacyNote: 'Feedback is sent only when you submit it and is not saved in extension storage. Images and contact details are sent only when you provide them.',
+    submit: 'Submit feedback',
+    submitting: 'Submitting…',
+    success: 'Feedback submitted. Thank you for helping.',
+    invalidType: 'Select a valid feedback type.',
+    messageTooShort: 'Feedback must contain at least 10 characters.',
+    messageTooLong: 'Feedback cannot exceed 5,000 characters.',
+    invalidContact: 'Contact details cannot exceed 200 characters or contain line breaks.',
+    tooManyImages: 'You can select no more than 3 images.',
+    invalidImageType: 'Images must be JPEG, PNG, or WebP.',
+    imageTooLarge: 'Each image must be no larger than 5MB.',
+    permissionDenied: 'Network permission for the feedback service was not granted.',
+    rateLimited: 'Too many submissions. Please try again later.',
+    deliveryFailed: 'The service could not forward the feedback. Please try again later.',
+    networkError: 'The feedback service could not be reached. Check your connection and retry.',
+    unavailable: 'The feedback service is not configured.'
+  },
+  'zh-TW': {
+    title: '提交建議與回饋', type: '回饋類型', typeFeature: '功能建議', typeBug: '問題回報',
+    typeCompatibility: '相容性問題', typeTranslation: '翻譯問題', typeOther: '其他',
+    message: '你的建議或問題', messagePlaceholder: '請描述你的建議、遇到的問題或重現步驟',
+    contact: '聯絡方式（選填）', contactPlaceholder: '電子郵件或其他聯絡方式',
+    images: '選擇圖片（選填）', imagesHint: '最多 3 張 JPEG、PNG 或 WebP 圖片，每張不超過 5MB。',
+    imagesSelected: '已選擇 {count} 張圖片：{names}',
+    privacyNote: '回饋內容只會在提交時傳送，不會儲存在擴充功能中。圖片和聯絡方式只會在你主動提供時傳送。',
+    submit: '提交回饋', submitting: '正在提交…', success: '回饋已提交，感謝你的協助。',
+    invalidType: '請選擇有效的回饋類型。', messageTooShort: '回饋內容至少需要 10 個字元。',
+    messageTooLong: '回饋內容不能超過 5000 個字元。', invalidContact: '聯絡方式不能超過 200 個字元或包含換行。',
+    tooManyImages: '最多只能選擇 3 張圖片。', invalidImageType: '圖片僅支援 JPEG、PNG 或 WebP。',
+    imageTooLarge: '每張圖片不能超過 5MB。', permissionDenied: '未取得回饋服務網路權限，無法提交。',
+    rateLimited: '提交過於頻繁，請稍後再試。', deliveryFailed: '服務暫時無法轉寄回饋，請稍後再試。',
+    networkError: '無法連線回饋服務，請檢查網路後再試。', unavailable: '回饋服務尚未設定。'
+  },
+  'es-ES': {
+    title: 'Enviar sugerencias y comentarios', type: 'Tipo', typeFeature: 'Sugerencia', typeBug: 'Error',
+    typeCompatibility: 'Compatibilidad', typeTranslation: 'Traducción', typeOther: 'Otro',
+    message: 'Sugerencia o problema', messagePlaceholder: 'Describe la sugerencia, el problema o los pasos para reproducirlo',
+    contact: 'Contacto (opcional)', contactPlaceholder: 'Correo u otro medio de contacto',
+    images: 'Imágenes (opcional)', imagesHint: 'Hasta 3 imágenes JPEG, PNG o WebP de 5MB como máximo.',
+    imagesSelected: '{count} imagen(es): {names}',
+    privacyNote: 'Los datos se envían solo al pulsar Enviar y no se guardan en la extensión. Las imágenes y el contacto solo se envían si los proporcionas.',
+    submit: 'Enviar', submitting: 'Enviando…', success: 'Comentarios enviados. Gracias.',
+    invalidType: 'Selecciona un tipo válido.', messageTooShort: 'Escribe al menos 10 caracteres.',
+    messageTooLong: 'El texto no puede superar 5000 caracteres.', invalidContact: 'El contacto no puede superar 200 caracteres ni contener saltos de línea.',
+    tooManyImages: 'Selecciona como máximo 3 imágenes.', invalidImageType: 'Solo se admiten JPEG, PNG o WebP.',
+    imageTooLarge: 'Cada imagen debe tener 5MB o menos.', permissionDenied: 'No se concedió permiso de red para el servicio.',
+    rateLimited: 'Demasiados envíos. Inténtalo más tarde.', deliveryFailed: 'No se pudo reenviar. Inténtalo más tarde.',
+    networkError: 'No se pudo conectar con el servicio.', unavailable: 'El servicio no está configurado.'
+  },
+  'ja-JP': {
+    title: '提案・フィードバックを送信', type: '種類', typeFeature: '機能提案', typeBug: '不具合報告',
+    typeCompatibility: '互換性の問題', typeTranslation: '翻訳の問題', typeOther: 'その他',
+    message: '提案または問題', messagePlaceholder: '提案、問題、再現手順を入力してください',
+    contact: '連絡先（任意）', contactPlaceholder: 'メールなどの連絡先',
+    images: '画像（任意）', imagesHint: 'JPEG、PNG、WebP を最大3枚、各5MBまで。',
+    imagesSelected: '{count}枚を選択：{names}',
+    privacyNote: '内容は送信時のみ送られ、拡張機能には保存されません。画像と連絡先は指定した場合のみ送信されます。',
+    submit: '送信', submitting: '送信中…', success: '送信しました。ありがとうございます。',
+    invalidType: '有効な種類を選択してください。', messageTooShort: '10文字以上入力してください。',
+    messageTooLong: '5000文字以内で入力してください。', invalidContact: '連絡先は200文字以内で、改行は使用できません。',
+    tooManyImages: '画像は最大3枚です。', invalidImageType: 'JPEG、PNG、WebPのみ対応しています。',
+    imageTooLarge: '画像は1枚5MB以下にしてください。', permissionDenied: 'フィードバックサービスの通信権限がありません。',
+    rateLimited: '送信回数が多すぎます。後でもう一度お試しください。', deliveryFailed: '転送できませんでした。後でもう一度お試しください。',
+    networkError: 'サービスに接続できませんでした。', unavailable: 'サービスが設定されていません。'
+  },
+  'de-DE': {
+    title: 'Vorschlag oder Feedback senden', type: 'Feedbacktyp', typeFeature: 'Funktionsvorschlag', typeBug: 'Fehlerbericht',
+    typeCompatibility: 'Kompatibilitätsproblem', typeTranslation: 'Übersetzungsproblem', typeOther: 'Sonstiges',
+    message: 'Vorschlag oder Problem', messagePlaceholder: 'Beschreiben Sie Vorschlag, Problem oder Schritte zur Reproduktion',
+    contact: 'Kontakt (optional)', contactPlaceholder: 'E-Mail oder anderer Kontakt',
+    images: 'Bilder (optional)', imagesHint: 'Bis zu 3 JPEG-, PNG- oder WebP-Bilder mit jeweils höchstens 5MB.',
+    imagesSelected: '{count} Bild(er): {names}',
+    privacyNote: 'Feedback wird nur beim Absenden übertragen und nicht in der Erweiterung gespeichert. Bilder und Kontaktdaten werden nur auf Ihre Auswahl hin gesendet.',
+    submit: 'Feedback senden', submitting: 'Wird gesendet…', success: 'Feedback wurde gesendet. Vielen Dank.',
+    invalidType: 'Wählen Sie einen gültigen Typ.', messageTooShort: 'Mindestens 10 Zeichen sind erforderlich.',
+    messageTooLong: 'Maximal 5000 Zeichen sind erlaubt.', invalidContact: 'Kontaktdaten dürfen höchstens 200 Zeichen und keine Zeilenumbrüche enthalten.',
+    tooManyImages: 'Es sind höchstens 3 Bilder möglich.', invalidImageType: 'Nur JPEG, PNG oder WebP sind erlaubt.',
+    imageTooLarge: 'Jedes Bild darf höchstens 5MB groß sein.', permissionDenied: 'Die Netzwerkberechtigung wurde nicht erteilt.',
+    rateLimited: 'Zu viele Einsendungen. Bitte später erneut versuchen.', deliveryFailed: 'Das Feedback konnte nicht weitergeleitet werden.',
+    networkError: 'Der Feedbackdienst ist nicht erreichbar.', unavailable: 'Der Feedbackdienst ist nicht konfiguriert.'
+  },
+  'fr-FR': {
+    title: 'Envoyer une suggestion ou un avis', type: 'Type', typeFeature: 'Suggestion', typeBug: 'Problème',
+    typeCompatibility: 'Compatibilité', typeTranslation: 'Traduction', typeOther: 'Autre',
+    message: 'Suggestion ou problème', messagePlaceholder: 'Décrivez votre suggestion, le problème ou les étapes de reproduction',
+    contact: 'Contact (facultatif)', contactPlaceholder: 'E-mail ou autre moyen de contact',
+    images: 'Images (facultatif)', imagesHint: 'Jusqu’à 3 images JPEG, PNG ou WebP de 5Mo maximum chacune.',
+    imagesSelected: '{count} image(s) : {names}',
+    privacyNote: 'Le contenu est envoyé uniquement lors de la soumission et n’est pas enregistré dans l’extension. Les images et le contact ne sont envoyés que si vous les fournissez.',
+    submit: 'Envoyer', submitting: 'Envoi…', success: 'Avis envoyé. Merci.',
+    invalidType: 'Sélectionnez un type valide.', messageTooShort: 'Saisissez au moins 10 caractères.',
+    messageTooLong: 'Le texte ne peut pas dépasser 5000 caractères.', invalidContact: 'Le contact ne peut pas dépasser 200 caractères ni contenir de saut de ligne.',
+    tooManyImages: 'Sélectionnez au maximum 3 images.', invalidImageType: 'Seuls JPEG, PNG et WebP sont acceptés.',
+    imageTooLarge: 'Chaque image doit faire 5Mo ou moins.', permissionDenied: 'L’autorisation réseau n’a pas été accordée.',
+    rateLimited: 'Trop d’envois. Réessayez plus tard.', deliveryFailed: 'Impossible de transférer le message.',
+    networkError: 'Impossible de joindre le service.', unavailable: 'Le service n’est pas configuré.'
+  },
+  'pt-BR': {
+    title: 'Enviar sugestão ou feedback', type: 'Tipo', typeFeature: 'Sugestão', typeBug: 'Problema',
+    typeCompatibility: 'Compatibilidade', typeTranslation: 'Tradução', typeOther: 'Outro',
+    message: 'Sugestão ou problema', messagePlaceholder: 'Descreva a sugestão, o problema ou os passos para reproduzir',
+    contact: 'Contato (opcional)', contactPlaceholder: 'E-mail ou outro contato',
+    images: 'Imagens (opcional)', imagesHint: 'Até 3 imagens JPEG, PNG ou WebP, com no máximo 5MB cada.',
+    imagesSelected: '{count} imagem(ns): {names}',
+    privacyNote: 'O conteúdo é enviado apenas ao confirmar e não fica salvo na extensão. Imagens e contato só são enviados quando você os fornece.',
+    submit: 'Enviar', submitting: 'Enviando…', success: 'Feedback enviado. Obrigado.',
+    invalidType: 'Selecione um tipo válido.', messageTooShort: 'Digite pelo menos 10 caracteres.',
+    messageTooLong: 'O texto não pode passar de 5000 caracteres.', invalidContact: 'O contato não pode passar de 200 caracteres nem conter quebras de linha.',
+    tooManyImages: 'Selecione no máximo 3 imagens.', invalidImageType: 'Use apenas JPEG, PNG ou WebP.',
+    imageTooLarge: 'Cada imagem deve ter até 5MB.', permissionDenied: 'A permissão de rede não foi concedida.',
+    rateLimited: 'Muitos envios. Tente mais tarde.', deliveryFailed: 'Não foi possível encaminhar o feedback.',
+    networkError: 'Não foi possível acessar o serviço.', unavailable: 'O serviço não está configurado.'
+  },
+  'ko-KR': {
+    title: '제안 및 피드백 보내기', type: '유형', typeFeature: '기능 제안', typeBug: '문제 신고',
+    typeCompatibility: '호환성 문제', typeTranslation: '번역 문제', typeOther: '기타',
+    message: '제안 또는 문제', messagePlaceholder: '제안, 문제 또는 재현 단계를 설명하세요',
+    contact: '연락처(선택)', contactPlaceholder: '이메일 또는 다른 연락 방법',
+    images: '이미지(선택)', imagesHint: 'JPEG, PNG, WebP 이미지를 최대 3개, 각 5MB 이하로 선택하세요.',
+    imagesSelected: '{count}개 선택: {names}',
+    privacyNote: '내용은 제출할 때만 전송되며 확장 프로그램 저장소에 저장되지 않습니다. 이미지와 연락처는 직접 제공한 경우에만 전송됩니다.',
+    submit: '피드백 제출', submitting: '제출 중…', success: '피드백을 제출했습니다. 감사합니다.',
+    invalidType: '올바른 유형을 선택하세요.', messageTooShort: '10자 이상 입력하세요.',
+    messageTooLong: '5000자를 초과할 수 없습니다.', invalidContact: '연락처는 200자 이하이며 줄바꿈을 포함할 수 없습니다.',
+    tooManyImages: '이미지는 최대 3개입니다.', invalidImageType: 'JPEG, PNG, WebP만 지원합니다.',
+    imageTooLarge: '각 이미지는 5MB 이하여야 합니다.', permissionDenied: '피드백 서비스 네트워크 권한이 없습니다.',
+    rateLimited: '제출이 너무 많습니다. 나중에 다시 시도하세요.', deliveryFailed: '피드백을 전달하지 못했습니다.',
+    networkError: '피드백 서비스에 연결할 수 없습니다.', unavailable: '피드백 서비스가 설정되지 않았습니다.'
+  },
+  'it-IT': {
+    title: 'Invia suggerimento o feedback', type: 'Tipo', typeFeature: 'Suggerimento', typeBug: 'Problema',
+    typeCompatibility: 'Compatibilità', typeTranslation: 'Traduzione', typeOther: 'Altro',
+    message: 'Suggerimento o problema', messagePlaceholder: 'Descrivi il suggerimento, il problema o i passaggi per riprodurlo',
+    contact: 'Contatto (facoltativo)', contactPlaceholder: 'Email o altro contatto',
+    images: 'Immagini (facoltative)', imagesHint: 'Fino a 3 immagini JPEG, PNG o WebP, massimo 5MB ciascuna.',
+    imagesSelected: '{count} immagine/i: {names}',
+    privacyNote: 'Il contenuto viene inviato solo alla conferma e non viene salvato nell’estensione. Immagini e contatto vengono inviati solo se forniti.',
+    submit: 'Invia', submitting: 'Invio…', success: 'Feedback inviato. Grazie.',
+    invalidType: 'Seleziona un tipo valido.', messageTooShort: 'Inserisci almeno 10 caratteri.',
+    messageTooLong: 'Il testo non può superare 5000 caratteri.', invalidContact: 'Il contatto non può superare 200 caratteri o contenere righe nuove.',
+    tooManyImages: 'Seleziona al massimo 3 immagini.', invalidImageType: 'Sono accettati solo JPEG, PNG o WebP.',
+    imageTooLarge: 'Ogni immagine deve essere di 5MB o meno.', permissionDenied: 'Il permesso di rete non è stato concesso.',
+    rateLimited: 'Troppi invii. Riprova più tardi.', deliveryFailed: 'Impossibile inoltrare il feedback.',
+    networkError: 'Impossibile raggiungere il servizio.', unavailable: 'Il servizio non è configurato.'
+  }
+};
+
 const onboardingTranslations = {
   'zh-CN': {
     title: '快速开始',
@@ -1632,6 +1830,7 @@ const onboardingTranslations = {
 Object.keys(translations).forEach((lang) => {
   const analyticsText = analyticsTranslations[lang] || analyticsTranslations['en-US'];
   const onboardingText = onboardingTranslations[lang] || onboardingTranslations['en-US'];
+  const feedbackText = feedbackTranslations[lang] || feedbackTranslations['en-US'];
   Object.assign(translations[lang], {
     'settings.onboardingTitle': onboardingText.title,
     'settings.onboardingIntro': onboardingText.intro,
@@ -1654,6 +1853,21 @@ Object.keys(translations).forEach((lang) => {
     'settings.analyticsEnabled': analyticsText.enabled,
     'settings.analyticsDescription': analyticsText.description,
     'settings.analyticsPreview': analyticsText.preview,
+    'settings.feedbackFormTitle': feedbackText.title,
+    'settings.feedbackType': feedbackText.type,
+    'settings.feedbackType.feature': feedbackText.typeFeature,
+    'settings.feedbackType.bug': feedbackText.typeBug,
+    'settings.feedbackType.compatibility': feedbackText.typeCompatibility,
+    'settings.feedbackType.translation': feedbackText.typeTranslation,
+    'settings.feedbackType.other': feedbackText.typeOther,
+    'settings.feedbackMessage': feedbackText.message,
+    'settings.feedbackMessagePlaceholder': feedbackText.messagePlaceholder,
+    'settings.feedbackContact': feedbackText.contact,
+    'settings.feedbackContactPlaceholder': feedbackText.contactPlaceholder,
+    'settings.feedbackImages': feedbackText.images,
+    'settings.feedbackImagesHint': feedbackText.imagesHint,
+    'settings.feedbackPrivacyNote': feedbackText.privacyNote,
+    'settings.feedbackSubmit': feedbackText.submit,
     'settings.releaseNotes': {
       'zh-CN': '更新记录',
       'zh-TW': '更新記錄',
@@ -2447,6 +2661,8 @@ function applyTranslation(lang) {
   });
   renderReleaseNotes(lang);
   renderAnalyticsState();
+  renderFeedbackImages();
+  renderFeedbackStatus();
 }
 
 // 统一的间距规范（像素）
@@ -3801,6 +4017,144 @@ function handleAnalyticsToggle(event) {
   }
 }
 
+function getFeedbackText(key) {
+  const lang = getAnalyticsLanguage();
+  const localized = feedbackTranslations[lang] || feedbackTranslations['en-US'];
+  return localized[key] || feedbackTranslations['en-US'][key] || key;
+}
+
+function renderFeedbackImages() {
+  const input = document.getElementById('feedbackImages');
+  const summary = document.getElementById('feedbackImageSummary');
+  if (!input || !summary) return;
+  const files = Array.from(input.files || []);
+  if (!files.length) {
+    summary.textContent = getFeedbackText('imagesHint');
+    return;
+  }
+  summary.textContent = getFeedbackText('imagesSelected')
+    .replace('{count}', String(files.length))
+    .replace('{names}', files.map((file) => file.name).join(', '));
+}
+
+function renderFeedbackStatus() {
+  const status = document.getElementById('feedbackSubmitStatus');
+  const submit = document.getElementById('feedbackSubmitButton');
+  if (!status || !submit) return;
+  submit.disabled = feedbackSubmitting;
+  status.textContent = feedbackStatusKey ? getFeedbackText(feedbackStatusKey) : '';
+  const state = feedbackStatusKey === 'success'
+    ? 'success'
+    : (feedbackStatusKey && feedbackStatusKey !== 'submitting' ? 'error' : '');
+  status.setAttribute('data-state', state);
+}
+
+function setFeedbackStatus(key, submitting = false) {
+  feedbackStatusKey = key;
+  feedbackSubmitting = submitting;
+  renderFeedbackStatus();
+}
+
+function requestFeedbackPermission(callback) {
+  if (!feedbackUtils.isConfigured() ||
+      !chrome.permissions ||
+      typeof chrome.permissions.request !== 'function') {
+    callback(false);
+    return;
+  }
+  chrome.permissions.request({
+    origins: [feedbackUtils.CONFIG.permissionOrigin]
+  }, (granted) => callback(Boolean(granted) && !chrome.runtime.lastError));
+}
+
+function removeFeedbackPermission() {
+  if (!chrome.permissions || typeof chrome.permissions.remove !== 'function') return;
+  chrome.permissions.remove({
+    origins: [feedbackUtils.CONFIG.permissionOrigin]
+  }, () => {});
+}
+
+function fetchFeedback(formData) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeout = setTimeout(() => {
+    if (controller) controller.abort();
+  }, 20000);
+  return fetch(feedbackUtils.CONFIG.endpoint, {
+    method: 'POST',
+    body: formData,
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
+    signal: controller ? controller.signal : undefined
+  }).finally(() => clearTimeout(timeout));
+}
+
+async function sendFeedback(validated) {
+  const form = new FormData();
+  form.append('type', validated.type);
+  form.append('message', validated.message);
+  form.append('contact', validated.contact);
+  form.append('extensionVersion', getManifestVersion());
+  form.append('language', getAnalyticsLanguage());
+  form.append('website', document.getElementById('feedbackWebsite').value || '');
+  validated.files.forEach((file) => form.append('images[]', file, file.name));
+
+  try {
+    const response = await fetchFeedback(form);
+    let body = {};
+    try {
+      body = await response.json();
+    } catch {
+      body = {};
+    }
+    if (response.ok && body.accepted === true) {
+      document.getElementById('feedbackForm').reset();
+      renderFeedbackImages();
+      setFeedbackStatus('success');
+      return;
+    }
+    if (response.status === 429 || body.error === 'rate_limited') {
+      setFeedbackStatus('rateLimited');
+    } else if (body.error === 'delivery_failed') {
+      setFeedbackStatus('deliveryFailed');
+    } else {
+      setFeedbackStatus('networkError');
+    }
+  } catch {
+    setFeedbackStatus('networkError');
+  } finally {
+    removeFeedbackPermission();
+  }
+}
+
+function handleFeedbackSubmit(event) {
+  event.preventDefault();
+  if (feedbackSubmitting) return;
+  if (!feedbackUtils.isConfigured()) {
+    setFeedbackStatus('unavailable');
+    return;
+  }
+
+  const result = feedbackUtils.validateSubmission({
+    type: document.getElementById('feedbackType').value,
+    message: document.getElementById('feedbackMessage').value,
+    contact: document.getElementById('feedbackContact').value,
+    files: document.getElementById('feedbackImages').files
+  });
+  if (!result.ok) {
+    setFeedbackStatus(result.reason);
+    return;
+  }
+
+  setFeedbackStatus('submitting', true);
+  requestFeedbackPermission((granted) => {
+    if (!granted) {
+      setFeedbackStatus('permissionDenied');
+      return;
+    }
+    sendFeedback(result.value);
+  });
+}
+
 // 加载保存的设置
 function loadSettings() {
   chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
@@ -4290,6 +4644,12 @@ function init() {
   // 保存按钮点击事件
   document.getElementById('saveButton').addEventListener('click', saveSettings);
   document.getElementById('analyticsEnabled').addEventListener('change', handleAnalyticsToggle);
+  document.getElementById('feedbackForm').addEventListener('submit', handleFeedbackSubmit);
+  document.getElementById('feedbackImages').addEventListener('change', () => {
+    feedbackStatusKey = '';
+    renderFeedbackImages();
+    renderFeedbackStatus();
+  });
   document.getElementById('dismissOnboardingButton').addEventListener('click', dismissOnboarding);
   document.getElementById('reopenOnboardingButton').addEventListener('click', reopenOnboarding);
   document.getElementById('manageGlobalShortcuts').addEventListener('click', openGlobalShortcutManager);

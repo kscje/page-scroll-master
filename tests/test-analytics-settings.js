@@ -39,8 +39,9 @@ assert(
 assert(!JSON.stringify(manifest).includes('<analytics-domain>'), 'manifest has no placeholder analytics domain');
 assert(!manifest.host_permissions, 'no analytics host permission is declared before endpoint confirmation');
 assert(
-  JSON.stringify(manifest.optional_host_permissions) ===
-    JSON.stringify(['https://page-scroll-master-analytics.kscje-apps.workers.dev/*']),
+  manifest.optional_host_permissions.includes(
+    'https://page-scroll-master-analytics.kscje-apps.workers.dev/*'
+  ),
   'analytics uses one fixed optional host permission'
 );
 assert(

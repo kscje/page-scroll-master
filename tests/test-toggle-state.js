@@ -77,6 +77,8 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   const listeners = [];
   const sentMessages = [];
   const runtimeMessages = [];
+  const createdTabs = [];
+  let openOptionsPageCount = 0;
   const elements = {
     extensionToggle: createElement('extensionToggle'),
     progressBarToggle: createElement('progressBarToggle'),
@@ -89,7 +91,12 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   };
   const runtime = {
     lastError: null,
-    openOptionsPage() {},
+    openOptionsPage() {
+      openOptionsPageCount++;
+    },
+    getURL(pathname) {
+      return `chrome-extension://test-extension/${pathname}`;
+    },
     sendMessage(message, callback) {
       runtimeMessages.push(clone(message));
       if (callback) callback({ ok: false, reason: 'consent_disabled' });
@@ -117,6 +124,9 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
         sentMessages.push({ tabId, message: clone(message) });
         runtime.lastError = null;
         if (callback) callback();
+      },
+      create(properties) {
+        createdTabs.push(clone(properties));
       }
     },
     i18n: { getMessage() { return ''; } }
@@ -140,7 +150,16 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   };
 
   vm.runInNewContext(POPUP_SOURCE, context, { filename: 'popup.js' });
-  return { chrome, elements, sentMessages, runtimeMessages };
+  return {
+    chrome,
+    elements,
+    sentMessages,
+    runtimeMessages,
+    createdTabs,
+    get openOptionsPageCount() {
+      return openOptionsPageCount;
+    }
+  };
 }
 
 function toggle(popup, key, checked) {
@@ -166,6 +185,9 @@ assert(popup.elements.screenNavigationToggle.checked === false, 'screen navigati
 assert(popup.elements.scrollBookmarksToggle.checked === false, 'bookmarks default to disabled');
 assert(popup.elements.outlineNavigationToggle.checked === false, 'outline navigation defaults to disabled');
 assert(popup.elements.progressBarToggle.disabled === false, 'feature switches are interactive while extension is enabled');
+popup.elements.openSettings.dispatch('click');
+assert(popup.openOptionsPageCount === 1, 'opening settings uses the standard options page');
+assert(popup.createdTabs.length === 0, 'opening settings does not carry a source tab id');
 
 console.log('\nTest 2: Feature changes persist by registrable domain and notify the active tab');
 toggle(popup, 'progressBarToggle', true);

@@ -13,6 +13,7 @@ const INCLUDED_FILES = [
   'manifest.json',
   'background.js',
   'analytics.js',
+  'feedback.js',
   'domain-utils.js',
   'content.js',
   'popup.html',
@@ -360,6 +361,14 @@ function runRegressionTests() {
     stdio: 'inherit',
   });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-upload.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-feedback-client.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-feedback-worker.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });

@@ -59,6 +59,8 @@ Smart Scroll Navigator does not collect, transmit, sell, or analyze your browsin
 
 Optional anonymous usage analytics is off by default and requires explicit consent. If enabled, it sends only bucketed settings and UTC daily aggregate action counts, never visited URLs, page content, bookmark content, or a persistent user ID. You can turn it off at any time to clear pending data and revoke optional permissions.
 
+The optional in-extension feedback form sends data only when you submit it. Contact details and images are included only when you choose to provide them. The form does not collect the current page URL or browser language. Feedback is forwarded to the developer through a dedicated Cloudflare Worker and email delivery service.
+
 If you are looking for a scroll-to-top button, scroll-to-bottom shortcut, reading progress bar, long-page navigator, page outline, reading-position saver, or a customizable Chrome scrolling extension for Notion and wikis, Smart Scroll Navigator brings these tools together in one lightweight extension.
 
 ## 简体中文
@@ -119,6 +121,8 @@ If you are looking for a scroll-to-top button, scroll-to-bottom shortcut, readin
 智能页面滚动导航器不会收集、传输、出售或分析你的浏览历史、访问网址、网页内容、页面标题、书签内容或个人数据。滚动位置书签和网站状态保存在浏览器本地。
 
 可选匿名使用统计默认关闭，只有在你主动同意后，才会发送区间化设置和按 UTC 日期聚合的功能操作次数；统计不包含网址、网页内容、书签内容或长期用户 ID。你可以随时关闭统计，并清除待发送数据及撤销可选权限。
+
+扩展内反馈表单只有在你主动提交时才会发送数据。联系方式和图片仅在你选择提供时附带；表单不读取当前页面 URL 或浏览器语言。反馈通过专用 Cloudflare Worker 和邮件服务转发给开发者。
 
 如果你正在寻找回到顶部按钮、滚动到底部工具、网页阅读进度条、长页面导航、网页目录、阅读位置书签、Notion/Wiki 滚动助手或可自定义的 Chrome 滚动扩展，智能页面滚动导航器可以把这些常用能力集中在一个轻量工具中。
 

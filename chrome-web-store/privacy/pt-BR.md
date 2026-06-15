@@ -4,7 +4,7 @@
 
 ## Coleta de dados
 
-O Smart Scroll Navigator **não** coleta nem transmite histórico de navegação, URLs ou domínios visitados, títulos ou conteúdo de páginas, termos de pesquisa, dados de formulários, posições de rolagem, conteúdo de marcadores salvos, informações de conta ou outro conteúdo pessoal.
+Durante o uso normal de rolagem, o Smart Scroll Navigator **não** coleta nem transmite histórico, URLs ou domínios visitados, títulos ou conteúdo de páginas, pesquisas, formulários, posições, marcadores ou contas. A única exceção são os dados enviados expressamente pelo formulário opcional descrito abaixo.
 
 A extensão inclui estatísticas anônimas de uso opcionais. Esse recurso fica desativado por padrão para usuários novos e existentes. Os dados só são coletados e transmitidos depois que você ativa expressamente **Enviar estatísticas anônimas de uso** na página de opções.
 
@@ -44,6 +44,12 @@ Os lotes aceitos são imediatamente convertidos em contadores diários agregados
 A Cloudflare pode processar metadados comuns de rede, incluindo endereço IP e cabeçalhos da solicitação, para fornecer e proteger o serviço de acordo com suas políticas de infraestrutura. A extensão não adiciona URLs de páginas, referenciadores, dados personalizados de agente do usuário ou identificadores persistentes às solicitações. O desenvolvedor não usa metadados de rede para identificar usuários ou criar perfis.
 
 Os dados são usados apenas para avaliar o uso de recursos, a distribuição de configurações, os valores padrão e as prioridades do produto. Eles não são vendidos, usados para publicidade ou compartilhados para criação de perfis.
+
+## Sugestões e feedback
+
+O formulário opcional só envia dados após a confirmação. São enviados tipo, mensagem, versão da extensão e idioma da interface. Contato e até três imagens JPEG, PNG ou WebP só são enviados quando fornecidos. O formulário não coleta a URL atual nem o idioma do navegador. A extensão não salva o conteúdo.
+
+O serviço usa Cloudflare Workers e D1 e o Resend para encaminhar o email. Um hash com salt do endereço de rede é usado apenas para o limite por hora; o IP em texto simples não é armazenado. Apenas logs sem conteúdo são mantidos por até 30 dias. Mensagem, contato e imagens não são salvos no D1. A permissão opcional de host é solicitada no envio e revogada ao final.
 
 ## Uso limitado da Chrome Web Store
 

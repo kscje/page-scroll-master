@@ -226,6 +226,15 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     analyticsEnabled: createElement('analyticsEnabled'),
     analyticsStatus: createElement('analyticsStatus'),
     analyticsPreviewData: createElement('analyticsPreviewData', { textContent: '[]' }),
+    feedbackForm: createElement('feedbackForm'),
+    feedbackType: createElement('feedbackType', { value: 'feature' }),
+    feedbackMessage: createElement('feedbackMessage'),
+    feedbackContact: createElement('feedbackContact'),
+    feedbackImages: createElement('feedbackImages'),
+    feedbackImageSummary: createElement('feedbackImageSummary'),
+    feedbackWebsite: createElement('feedbackWebsite'),
+    feedbackSubmitButton: createElement('feedbackSubmitButton'),
+    feedbackSubmitStatus: createElement('feedbackSubmitStatus'),
     onboardingGuide: createElement('onboardingGuide'),
     dismissOnboardingButton: createElement('dismissOnboardingButton'),
     reopenOnboardingButton: createElement('reopenOnboardingButton'),
@@ -263,6 +272,14 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
 
   elements.previewTopButton.children[0].tagName = 'svg';
   elements.previewBottomButton.children[0].tagName = 'svg';
+  elements.feedbackImages.files = [];
+  elements.feedbackForm.reset = function () {
+    elements.feedbackType.value = 'feature';
+    elements.feedbackMessage.value = '';
+    elements.feedbackContact.value = '';
+    elements.feedbackImages.files = [];
+    elements.feedbackWebsite.value = '';
+  };
   elements.onboardingGuide.scrollIntoView = function (options) {
     this.scrollIntoViewOptions = options;
   };
@@ -625,12 +642,31 @@ assert(
   'returning focus to the settings page refreshes command bindings'
 );
 assert(
-  (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 3,
-  'feedback page uses one card style for privacy, about, and release notes'
+  (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 4,
+  'feedback page uses one card style for submission, privacy, about, and release notes'
 );
 assert(
   OPTIONS_HTML.includes('class="analytics-preview feedback-disclosure"'),
   'analytics preview uses the shared disclosure interaction style'
+);
+assert(
+  OPTIONS_HTML.includes('id="feedbackForm"') &&
+    OPTIONS_HTML.includes('id="feedbackType"') &&
+    OPTIONS_HTML.includes('id="feedbackMessage"') &&
+    OPTIONS_HTML.includes('id="feedbackImages"') &&
+    !OPTIONS_HTML.includes('id="feedbackIncludeContext"'),
+  'feedback page exposes the planned form fields without page context collection'
+);
+assert(
+  OPTIONS_HTML.includes('input[type="text"],\n    textarea,\n    select') &&
+    OPTIONS_HTML.includes('textarea:focus'),
+  'feedback textarea uses the shared full-width form control styles'
+);
+assert(
+  MANIFEST.optional_host_permissions.includes(
+    'https://page-scroll-master-feedback.kscje-apps.workers.dev/*'
+  ),
+  'feedback uses one fixed optional host permission'
 );
 
 const domainTablePage = createOptionsPage({}, {
