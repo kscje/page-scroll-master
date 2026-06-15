@@ -92,14 +92,14 @@
 - [x] 上传内容仅包含 allowlist 内的枚举设置和 UTC 日级聚合计数
 - [x] 请求不包含 URL、域名、页面标题、正文、书签内容、站点状态或长期用户 ID
 - [x] 单次请求体不超过 16KB，失败重试有上限且不影响核心功能
-- [ ] 相同批次 ID 不会重复计入服务端聚合
+- [x] 相同批次 ID 不会重复计入服务端聚合
 - [x] 关闭统计后清除待发送数据、停止调度并撤销可选权限
 - [x] 全部 10 种支持语言的隐私政策已更新
 - [x] 隐私政策包含 Chrome Web Store User Data Policy 的 Limited Use 合规声明
 - [x] 商店描述不再声称“没有任何外部网络请求”
-- [ ] Chrome Web Store Privacy practices / Data usage 已按实际收集范围填写
+- [x] Chrome Web Store Privacy practices / Data usage 已按实际收集范围填写
 - [x] 已说明 Cloudflare 基础设施、30 天批次去重记录和 13 个月聚合保留期
-- [ ] 真实 Chrome DevTools Network 已验证默认关闭、开启上传和关闭后三种状态
+- [x] 真实 Chrome DevTools Network 已验证默认关闭、开启上传和关闭后三种状态
 
 ### 7.2 v2.2 建议与反馈服务专项验收
 - [x] 表单默认不附带联系方式或图片，且不读取页面 URL 或浏览器语言
@@ -213,6 +213,6 @@
 ---
 
 **最后更新时间**：2026-06-14
-**状态**：v2.1.0 发布候选包和自动化验收已完成；真实 Chrome Network 验证与商店后台隐私披露仍待人工完成
+**状态**：v2.1.0 发布候选包、自动化验收、真实 Chrome Network 验证与商店后台隐私披露均已完成
 **构建产物**：`dist/page-scroll-master-v2.1.0.zip`，SHA-256 `1d4bac08a5c72a0b8ddb09184055ae8c13bb23494a2f4d4dfbcd1b070dd46b4b`
-**环境限制**：本次自动化环境禁止访问 `chrome://extensions`，且固定统计端点连接超时，因此未将模拟上传测试记作真实浏览器 Network 验收
+**验收说明**：自动化环境中的浏览器与端点限制未作为真实浏览器验收依据；真实 Chrome 三状态 Network 检查已另行完成
