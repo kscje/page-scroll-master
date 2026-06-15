@@ -56,8 +56,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     screenStepRatio: 0.9,
     previousScreenButtonColor: DEFAULT_BUTTON_COLOR,
-    nextScreenButtonColor: DEFAULT_BUTTON_COLOR,
-    opacity: 100
+    nextScreenButtonColor: DEFAULT_BUTTON_COLOR
   },
   progressBar: {
     enabled: false,
@@ -225,7 +224,6 @@ function mergeAdvancedSettings(savedSettings) {
     merged.screenNavigation.nextScreenButtonColor,
     DEFAULT_BUTTON_COLOR
   );
-  merged.screenNavigation.opacity = clampNumber(merged.screenNavigation.opacity, 0, 100, 100);
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT);
   merged.iconCustomization.enabled = true;
@@ -357,9 +355,8 @@ function normalizeIconSet(value) {
 }
 
 function normalizeReadingToolPosition(value) {
-  return ['pageTop', 'pageBottom', 'betweenScrollButtons'].includes(value)
-    ? value
-    : 'pageBottom';
+  if (value === 'betweenScrollButtons') return 'pageMiddle';
+  return ['pageTop', 'pageBottom', 'pageMiddle'].includes(value) ? value : 'pageBottom';
 }
 
 function normalizeReadingToolColorMode(value) {
@@ -2372,12 +2369,12 @@ function ensureFeatureToolControls(config) {
 
   const standalone = getOrCreateFeatureToolContainer(root, config.containerId);
   const position = config.settings().buttonPosition;
-  if (position === 'betweenScrollButtons') {
+  if (position === 'pageMiddle') {
     if (standalone) {
       standalone.remove();
     }
     if (nextButton.parentNode !== bottomButton.parentNode) {
-      bottomButton.parentNode.insertBefore(nextButton, bottomButton);
+      bottomButton.parentNode.appendChild(nextButton);
     }
   } else if (standalone) {
     if (nextButton.parentNode !== standalone) {
@@ -2409,11 +2406,11 @@ function ensureReadingToolControls() {
   });
 
   const { bottomButton, bookmarkButton, outlineButton } = getButtonElements();
-  if (bottomButton && bookmarkButton && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons') {
-    bottomButton.parentNode.insertBefore(bookmarkButton, bottomButton);
+  if (bottomButton && bookmarkButton && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle') {
+    bottomButton.parentNode.appendChild(bookmarkButton);
   }
-  if (bottomButton && outlineButton && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons') {
-    bottomButton.parentNode.insertBefore(outlineButton, bottomButton);
+  if (bottomButton && outlineButton && advancedSettings.outlineNavigation.buttonPosition === 'pageMiddle') {
+    bottomButton.parentNode.appendChild(outlineButton);
   }
 
   updateReadingToolPosition();
@@ -2963,13 +2960,13 @@ function createScrollButton() {
   if (advancedSettings.screenNavigation.enabled) {
     buttonContainer.appendChild(createScreenNavigationButton('next'));
   }
-  if (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons') {
+  buttonContainer.appendChild(bottomButton);
+  if (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle') {
     buttonContainer.appendChild(createBookmarkToolButton());
   }
-  if (isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons') {
+  if (isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'pageMiddle') {
     buttonContainer.appendChild(createOutlineToolButton());
   }
-  buttonContainer.appendChild(bottomButton);
 
   // 添加到页面，Shadow DOM 隔离扩展样式和网页样式
   root.appendChild(buttonContainer);
@@ -3770,9 +3767,9 @@ function getMainButtonGroupHeight() {
   const spacing = Math.max(0, Number(buttonSettings.buttonSpacing) || 0);
   const hasVerticalProgress = advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton';
   const screenNavigationCount = advancedSettings.screenNavigation.enabled ? 2 : 0;
-  const betweenFeatureCount = [
-    isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons',
-    isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'betweenScrollButtons'
+  const middleFeatureCount = [
+    isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle',
+    isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'pageMiddle'
   ].filter(Boolean).length;
   const progressHeight = hasVerticalProgress
     ? clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT)
@@ -3781,7 +3778,7 @@ function getMainButtonGroupHeight() {
     ? (buttonSize * 2) + progressHeight + (spacing * 2)
     : (buttonSize * 2) + spacing;
   return baseHeight +
-    ((screenNavigationCount + betweenFeatureCount) * (buttonSize + spacing));
+    ((screenNavigationCount + middleFeatureCount) * (buttonSize + spacing));
 }
 
 function updateReadingToolPosition() {
@@ -3953,7 +3950,7 @@ function updateButtonStyle() {
   topButton.style.opacity = opacity;
   bottomButton.style.opacity = opacity;
   screenNavigationButtons.forEach((button) => {
-    button.style.opacity = advancedSettings.screenNavigation.opacity / 100;
+    button.style.opacity = opacity;
   });
   if (progressButton) {
     progressButton.style.opacity = opacity;

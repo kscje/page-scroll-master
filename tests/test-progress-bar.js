@@ -101,6 +101,9 @@ class FakeElement {
   }
 
   appendChild(child) {
+    if (child.parentNode) {
+      child.parentNode.children = child.parentNode.children.filter((existing) => existing !== child);
+    }
     child.parentNode = this;
     child.parentElement = this;
     this.children.push(child);
@@ -419,6 +422,25 @@ function testDefaultCreatesOnlyTwoButtons() {
   );
 }
 
+function testMainOpacityAppliesToAllButtons() {
+  const sandbox = createContext({
+    buttonSettings: { opacity: 35 },
+    advancedSettings: {
+      screenNavigation: { enabled: true, opacity: 80 },
+      progressBar: { enabled: true, mode: 'verticalButton' },
+      scrollBookmarks: { enabled: true, buttonPosition: 'pageMiddle' },
+      outlineNavigation: { enabled: true, buttonPosition: 'pageMiddle' }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const buttons = root.querySelectorAll('.psm-scroll-button');
+  assert(buttons.length === 7, 'enabled controls create seven buttons');
+  assert(
+    buttons.every((button) => button.style.opacity === 0.35),
+    'main button opacity applies to scroll, screen navigation, progress, and reading tool buttons'
+  );
+}
+
 function testIconSizingSurvivesIconRebuild() {
   const sandbox = createContext();
   const root = sandbox.getScrollRoot();
@@ -487,7 +509,13 @@ function testAdvancedSettingsMergeAndProgressMath() {
     readingTools: { enabled: true, buttonPosition: 'betweenScrollButtons', features: { scrollBookmarks: true } }
   });
   assert(migratedBookmarkFeature.scrollBookmarks.enabled === true, 'legacy reading tool state migrates to scroll bookmark settings');
-  assert(migratedBookmarkFeature.scrollBookmarks.buttonPosition === 'betweenScrollButtons', 'legacy reading tool position migrates to scroll bookmark settings');
+  assert(migratedBookmarkFeature.scrollBookmarks.buttonPosition === 'pageMiddle', 'legacy reading tool position migrates to page middle');
+  const migratedFeaturePositions = sandbox.mergeAdvancedSettings({
+    scrollBookmarks: { buttonPosition: 'betweenScrollButtons' },
+    outlineNavigation: { buttonPosition: 'betweenScrollButtons' }
+  });
+  assert(migratedFeaturePositions.scrollBookmarks.buttonPosition === 'pageMiddle', 'legacy bookmark position migrates to page middle');
+  assert(migratedFeaturePositions.outlineNavigation.buttonPosition === 'pageMiddle', 'legacy outline position migrates to page middle');
   const migratedProgressColors = sandbox.mergeAdvancedSettings({
     scrollBookmarks: { buttonColorMode: 'followProgressBar' },
     outlineNavigation: { buttonColorMode: 'followProgressBar' }
@@ -588,16 +616,22 @@ function testReadingToolsDomAndBookmarks() {
 
   sandbox = createContext({
     advancedSettings: {
+      screenNavigation: { enabled: true },
       progressBar: { enabled: true, mode: 'verticalButton' },
-      scrollBookmarks: { enabled: true, buttonPosition: 'betweenScrollButtons' }
+      scrollBookmarks: { enabled: true, buttonPosition: 'pageMiddle' },
+      outlineNavigation: { enabled: true, buttonPosition: 'pageMiddle' }
     }
   });
   root = sandbox.getScrollRoot();
   const classOrder = root.getElementById('page-scroll-master-button').children.map((child) => child.className);
-  assert(classOrder[0].includes('psm-scroll-top'), 'between mode keeps top button first');
-  assert(classOrder[1].includes('psm-progress-button'), 'between mode keeps vertical progress below top button');
-  assert(classOrder[2].includes('psm-bookmark-tool-button'), 'between mode places bookmark tool below vertical progress');
-  assert(classOrder[3].includes('psm-scroll-bottom'), 'between mode keeps bottom button last');
+  assert(classOrder.length === 7, 'page-middle mode keeps one instance of each enabled button');
+  assert(classOrder[0].includes('psm-scroll-top'), 'page-middle mode keeps top button first');
+  assert(classOrder[1].includes('psm-screen-previous'), 'page-middle mode keeps previous screen after top');
+  assert(classOrder[2].includes('psm-progress-button'), 'page-middle mode keeps vertical progress between screen buttons');
+  assert(classOrder[3].includes('psm-screen-next'), 'page-middle mode keeps next screen before bottom');
+  assert(classOrder[4].includes('psm-scroll-bottom'), 'page-middle mode keeps bottom before reading tools');
+  assert(classOrder[5].includes('psm-bookmark-tool-button'), 'page-middle mode places bookmark after bottom');
+  assert(classOrder[6].includes('psm-outline-tool-button'), 'page-middle mode places outline after bookmark');
 
   const normalized = sandbox.normalizeBookmarkUrl('https://example.test/docs?utm_source=x&page=1&fbclid=y&source=keep#part');
   assert(normalized === 'https://example.test/docs?page=1&source=keep#part', 'bookmark URL normalization only removes explicit tracking params and keeps source/hash');
@@ -1676,6 +1710,7 @@ function testRemainingReadingTimeLabels() {
 }
 
 testDefaultCreatesOnlyTwoButtons();
+testMainOpacityAppliesToAllButtons();
 testIconSizingSurvivesIconRebuild();
 testAdvancedSettingsMergeAndProgressMath();
 testProgressClickRatios();

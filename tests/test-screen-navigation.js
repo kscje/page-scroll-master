@@ -139,7 +139,7 @@ assert(defaults.screenNavigation.enabled === false, 'screen navigation defaults 
 assert(defaults.screenNavigation.screenStepRatio === 0.9, 'screen navigation defaults to a 90% step');
 assert(defaults.screenNavigation.previousScreenButtonColor === '#4A9EDD', 'previous screen uses the default color');
 assert(defaults.screenNavigation.nextScreenButtonColor === '#4A9EDD', 'next screen uses the default color');
-assert(defaults.screenNavigation.opacity === 100, 'screen navigation opacity defaults to 100%');
+assert(!Object.prototype.hasOwnProperty.call(defaults.screenNavigation, 'opacity'), 'screen navigation has no independent opacity');
 
 const merged = sandbox.mergeAdvancedSettings({
   screenNavigation: {
@@ -152,7 +152,7 @@ const merged = sandbox.mergeAdvancedSettings({
 assert(merged.screenNavigation.screenStepRatio === 1, 'screen step ratio is clamped to 100%');
 assert(merged.screenNavigation.previousScreenButtonColor === '#112233', 'previous color is merged independently');
 assert(merged.screenNavigation.nextScreenButtonColor === '#445566', 'next color is merged independently');
-assert(merged.screenNavigation.opacity === 35, 'screen navigation uses one shared opacity');
+assert(!Object.prototype.hasOwnProperty.call(merged.screenNavigation, 'opacity'), 'legacy screen opacity is ignored');
 
 const root = context.documentElement;
 assert(sandbox.getScreenNavigationTarget(root, 1, 0.5) === 1400, 'root next screen supports a 50% step');

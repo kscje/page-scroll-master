@@ -36,9 +36,15 @@ function createElement(id, options = {}) {
   const element = {
     id,
     value: options.value || '',
+    min: options.min || '',
+    max: options.max || '',
     checked: Boolean(options.checked),
     textContent: options.textContent || '',
-    style: {},
+    style: {
+      setProperty(name, value) {
+        this[name] = value;
+      }
+    },
     attributes: options.attributes || {},
     listeners: {},
     children: options.children || [],
@@ -125,7 +131,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
   const appendedHeadElements = [];
   const windowListeners = {};
   const elements = {
-    scrollSpeed: createElement('scrollSpeed', { value: '1000' }),
+    scrollSpeed: createElement('scrollSpeed', { value: '1000', min: '10', max: '2000' }),
     speedValue: createElement('speedValue', { textContent: '1000ms' }),
     horizontalPosition: createElement('horizontalPosition', { value: 'right' }),
     verticalAlignment: createElement('verticalAlignment', { value: 'center' }),
@@ -145,7 +151,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     topButtonColorHex: createElement('topButtonColorHex', { value: '#4A9EDD' }),
     bottomButtonColor: createElement('bottomButtonColor', { value: '#4A9EDD' }),
     bottomButtonColorHex: createElement('bottomButtonColorHex', { value: '#4A9EDD' }),
-    opacity: createElement('opacity', { value: '100' }),
+    opacity: createElement('opacity', { value: '100', min: '0', max: '100' }),
     opacityValue: createElement('opacityValue', { textContent: '100%' }),
     enableHoverHide: createElement('enableHoverHide', { checked: true }),
     hoverHideKey: createElement('hoverHideKey', {
@@ -163,8 +169,6 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     progressBarEnabled: createElement('progressBarEnabled'),
     screenNavigationSettings: createElement('screenNavigationSettings'),
     screenStepRatio: createElement('screenStepRatio', { value: '90' }),
-    screenNavigationOpacity: createElement('screenNavigationOpacity', { value: '100' }),
-    screenNavigationOpacityValue: createElement('screenNavigationOpacityValue', { textContent: '100%' }),
     previousScreenButtonColor: createElement('previousScreenButtonColor', { value: '#4A9EDD' }),
     previousScreenButtonColorHex: createElement('previousScreenButtonColorHex', { value: '#4A9EDD' }),
     nextScreenButtonColor: createElement('nextScreenButtonColor', { value: '#4A9EDD' }),
@@ -231,6 +235,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     feedbackMessage: createElement('feedbackMessage'),
     feedbackContact: createElement('feedbackContact'),
     feedbackImages: createElement('feedbackImages'),
+    feedbackImageStatus: createElement('feedbackImageStatus'),
     feedbackImageSummary: createElement('feedbackImageSummary'),
     feedbackWebsite: createElement('feedbackWebsite'),
     feedbackSubmitButton: createElement('feedbackSubmitButton'),
@@ -572,10 +577,8 @@ assert(
   'screen navigation distance input displays an in-field percent suffix'
 );
 assert(
-  OPTIONS_HTML.includes('<label for="screenNavigationOpacity" data-i18n="settings.opacity">透明度</label>') &&
-    OPTIONS_HTML.includes('<input type="range" id="screenNavigationOpacity" min="0" max="100" step="1" value="100">') &&
-    OPTIONS_HTML.includes('<div class="speed-value" id="screenNavigationOpacityValue">100%</div>'),
-  'screen navigation opacity uses the shared opacity label and range control'
+  !OPTIONS_HTML.includes('screenNavigationOpacity'),
+  'screen navigation omits an independent opacity control'
 );
 assert(
   !OPTIONS_HTML.includes('data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup') &&
@@ -658,9 +661,44 @@ assert(
   'feedback page exposes the planned form fields without page context collection'
 );
 assert(
+  OPTIONS_HTML.includes('class="feedback-file-input"') &&
+    OPTIONS_HTML.includes('class="feedback-file-button"') &&
+    OPTIONS_HTML.includes('id="feedbackImageStatus"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.feedbackChooseImages"'),
+  'feedback image picker uses a styled accessible upload control with selection status'
+);
+const feedbackFilePage = createOptionsPage({}, {}, {});
+feedbackFilePage.elements.feedbackImages.dispatch('change');
+assert(
+  feedbackFilePage.elements.feedbackImageStatus.textContent === 'No images selected',
+  'feedback image picker shows the localized empty state'
+);
+feedbackFilePage.elements.feedbackImages.files = [
+  { name: 'layout.png' },
+  { name: 'scroll.webp' }
+];
+feedbackFilePage.elements.feedbackImages.dispatch('change');
+assert(
+  feedbackFilePage.elements.feedbackImageStatus.textContent ===
+    '2 image(s) selected: layout.png, scroll.webp',
+  'feedback image picker shows selected file names'
+);
+assert(
+  feedbackFilePage.elements.feedbackImageSummary.textContent ===
+    'Up to 3 JPEG, PNG, or WebP images, no more than 5MB each.',
+  'feedback image picker keeps the format and size guidance visible after selection'
+);
+assert(
   OPTIONS_HTML.includes('input[type="text"],\n    textarea,\n    select') &&
     OPTIONS_HTML.includes('textarea:focus'),
   'feedback textarea uses the shared full-width form control styles'
+);
+assert(
+  OPTIONS_HTML.includes('input[type="range"]::-webkit-slider-runnable-track') &&
+    OPTIONS_HTML.includes('var(--range-progress, 0%)') &&
+    OPTIONS_HTML.includes('input[type="checkbox"]:checked::after') &&
+    OPTIONS_HTML.includes('border: solid #ffffff;'),
+  'range tracks preserve blue progress over white surfaces and checked checkbox marks are white'
 );
 assert(
   MANIFEST.optional_host_permissions.includes(
@@ -811,12 +849,30 @@ const legacyProgressColorPage = createOptionsPage({
 assert(legacyProgressColorPage.elements.scrollBookmarkButtonColorMode.value === 'followTopButton', 'legacy bookmark progress color loads as top button color');
 assert(legacyProgressColorPage.elements.outlineButtonColorMode.value === 'followTopButton', 'legacy outline progress color loads as top button color');
 assert(!OPTIONS_HTML.includes('settings.featureButtonColorMode.followProgressBar'), 'feature color selects omit the progress bar option');
+assert(!OPTIONS_HTML.includes('value="betweenScrollButtons"'), 'feature position selects omit the legacy between-buttons option');
+assert(
+  OPTIONS_HTML.includes('value="pageMiddle"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.featureButtonPosition.pageMiddleNote"'),
+  'feature position selects expose page middle with an ordering note'
+);
+const legacyPositionPage = createOptionsPage({
+  advancedSettings: {
+    scrollBookmarks: { buttonPosition: 'betweenScrollButtons' },
+    outlineNavigation: { buttonPosition: 'betweenScrollButtons' }
+  }
+});
+assert(legacyPositionPage.elements.scrollBookmarkButtonPosition.value === 'pageMiddle', 'legacy bookmark position loads as page middle');
+assert(legacyPositionPage.elements.outlineButtonPosition.value === 'pageMiddle', 'legacy outline position loads as page middle');
 
 console.log('\nTest 2: Live opacity and speed inputs update the page');
 page.elements.opacity.value = '42';
 page.elements.opacity.dispatch('input');
 assert(page.elements.opacityValue.textContent === '42%', 'opacity label updates on input');
 assert(page.elements.previewTopButton.style.opacity === 0.42, 'preview opacity updates on input');
+assert(
+  page.elements.opacity.style['--range-progress'] === '42%',
+  'range fill boundary updates when the slider value changes'
+);
 
 page.elements.scrollSpeed.value = '250';
 page.elements.scrollSpeed.dispatch('input');
@@ -825,11 +881,10 @@ assert(page.elements.speedValue.textContent === '250ms', 'speed label updates on
 console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.progressBarMode.value = 'horizontalBar';
 page.elements.screenStepRatio.value = '50';
-page.elements.screenNavigationOpacity.value = '35';
 page.elements.previousScreenButtonColor.value = '#112233';
 page.elements.nextScreenButtonColor.value = '#445566';
 page.elements.progressThickness.value = '12';
-page.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
+page.elements.scrollBookmarkButtonPosition.value = 'pageMiddle';
 page.elements.scrollBookmarkButtonColorMode.value = 'custom';
 page.elements.scrollBookmarkButtonCustomColor.value = '#778899';
 page.elements.outlineButtonPosition.value = 'pageTop';
@@ -850,7 +905,10 @@ assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
 assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
 assert(page.syncData.advancedSettings.screenNavigation.screenStepRatio === 0.5, 'save persists the screen step ratio');
-assert(page.syncData.advancedSettings.screenNavigation.opacity === 35, 'save persists the shared screen navigation opacity');
+assert(
+  !Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.screenNavigation, 'opacity'),
+  'save omits legacy screen navigation opacity'
+);
 assert(page.syncData.advancedSettings.screenNavigation.previousScreenButtonColor === '#112233', 'save persists the previous screen color');
 assert(page.syncData.advancedSettings.screenNavigation.nextScreenButtonColor === '#445566', 'save persists the next screen color independently');
 assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.screenNavigation, 'enabled'), 'save omits screen navigation enabled state');
@@ -858,7 +916,7 @@ assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.prog
 assert(page.syncData.advancedSettings.progressBar.mode === 'horizontalBar', 'save persists progress bar mode');
 assert(page.syncData.advancedSettings.progressBar.thickness === 12, 'save persists progress bar thickness');
 assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.scrollBookmarks, 'enabled'), 'save omits bookmark enabled state');
-assert(page.syncData.advancedSettings.scrollBookmarks.buttonPosition === 'betweenScrollButtons', 'save persists scroll bookmark button position');
+assert(page.syncData.advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle', 'save persists scroll bookmark page-middle position');
 assert(page.syncData.advancedSettings.scrollBookmarks.buttonColorMode === 'custom', 'save persists scroll bookmark button color mode');
 assert(page.syncData.advancedSettings.scrollBookmarks.buttonCustomColor === '#778899', 'save persists scroll bookmark custom color');
 assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.outlineNavigation, 'enabled'), 'save omits outline enabled state');
@@ -947,12 +1005,9 @@ assert(page4.elements.previewPreviousScreenButton.style.backgroundColor === '#12
 assert(page4.elements.previewNextScreenButton.style.backgroundColor === '#4A9EDD', 'changing previous screen color does not overwrite next screen color');
 page4.elements.opacity.value = '20';
 page4.elements.opacity.dispatch('input');
-page4.elements.screenNavigationOpacity.value = '65';
-page4.elements.screenNavigationOpacity.dispatch('input');
-assert(page4.elements.screenNavigationOpacityValue.textContent === '65%', 'screen navigation opacity label updates on input');
 assert(page4.elements.previewTopButton.style.opacity === 0.2, 'main button opacity still follows the global setting');
-assert(page4.elements.previewPreviousScreenButton.style.opacity === 0.65, 'screen navigation opacity is independent from the global setting');
-assert(page4.elements.previewNextScreenButton.style.opacity === 0.65, 'both screen navigation buttons share one opacity');
+assert(page4.elements.previewPreviousScreenButton.style.opacity === 0.2, 'previous screen uses the main button opacity');
+assert(page4.elements.previewNextScreenButton.style.opacity === 0.2, 'next screen uses the main button opacity');
 assert(
   page4.elements.previewBottomButton.style.top.includes('272'),
   `bottom preview button is offset below vertical progress preview (${page4.elements.previewBottomButton.style.top})`
@@ -976,19 +1031,21 @@ page5.elements.scrollBookmarkButtonPosition.value = 'pageBottom';
 page5.elements.scrollBookmarkButtonColorMode.value = 'followTopButton';
 assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview is shown when enabled');
 assert(page5.elements.previewBookmarkButton.style.backgroundColor === '#4A9EDD', 'scroll bookmark preview falls back to top button color');
-assert(page5.elements.previewBookmarkButton.style.bottom === '8px', 'page-bottom scroll bookmark preview uses edge distance when scroll buttons are centered');
+assert(page5.elements.previewBookmarkButton.style.bottom === '56px', 'page-bottom bookmark stacks before outline when scroll buttons are centered');
+assert(page5.elements.previewOutlineButton.style.bottom === '8px', 'page-bottom outline follows bookmark toward the page edge');
 page5.elements.verticalAlignment.value = 'bottom';
 page5.elements.verticalAlignment.dispatch('change');
 assert(page5.elements.previewBookmarkButton.style.bottom !== page5.elements.previewOutlineButton.style.bottom, 'page-bottom feature previews do not overlap');
 page5.elements.verticalAlignment.value = 'center';
 page5.elements.verticalAlignment.dispatch('change');
-page5.elements.scrollBookmarkButtonPosition.value = 'betweenScrollButtons';
-page5.elements.outlineButtonPosition.value = 'betweenScrollButtons';
+page5.elements.scrollBookmarkButtonPosition.value = 'pageMiddle';
+page5.elements.outlineButtonPosition.value = 'pageMiddle';
 page5.elements.scrollBookmarkButtonPosition.dispatch('change');
 page5.elements.outlineButtonPosition.dispatch('change');
-assert(page5.elements.previewBookmarkButton.style.top.includes('calc(50%'), 'between-buttons scroll bookmark preview joins centered button group');
-assert(page5.elements.previewOutlineButton.style.top.includes('calc(50%'), 'between-buttons outline preview joins centered button group');
-assert(page5.elements.previewBookmarkButton.style.top !== page5.elements.previewOutlineButton.style.top, 'between-buttons feature previews do not overlap');
+assert(page5.elements.previewBookmarkButton.style.top.includes('calc(50%'), 'page-middle scroll bookmark preview joins centered button group');
+assert(page5.elements.previewOutlineButton.style.top.includes('calc(50%'), 'page-middle outline preview joins centered button group');
+assert(page5.elements.previewBottomButton.style.top !== page5.elements.previewBookmarkButton.style.top, 'page-middle bookmark appears after the bottom button');
+assert(page5.elements.previewBookmarkButton.style.top !== page5.elements.previewOutlineButton.style.top, 'page-middle feature previews do not overlap');
 
 console.log('\nTest 9: Saved scroll bookmarks render and can be deleted');
 const savedBookmarksDetailsTag = OPTIONS_HTML.match(/<details\b[^>]*saved-bookmarks-details[^>]*>/)?.[0] || '';

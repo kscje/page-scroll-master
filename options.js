@@ -1191,6 +1191,18 @@ Object.keys(translations).forEach((lang) => {
     'ko-KR': '버튼 색상',
     'it-IT': 'Colore del pulsante'
   }[lang];
+  const featurePositionTranslations = {
+    'zh-CN': ['页面中部', '页面中部会将阅读工具排列在“回到底部”按钮之后，不会夹在滚动方向按钮之间。'],
+    'zh-TW': ['頁面中部', '頁面中部會將閱讀工具排列在「回到底部」按鈕之後，不會夾在捲動方向按鈕之間。'],
+    'en-US': ['Page middle', 'In the page middle, reading tools appear after the scroll-to-bottom button, never between navigation buttons.'],
+    'es-ES': ['Centro de la página', 'En el centro de la página, las herramientas aparecen después del botón para ir al final, nunca entre los botones de navegación.'],
+    'ja-JP': ['ページ中央', 'ページ中央では、読書ツールはページ末尾ボタンの後に並び、移動ボタンの間には入りません。'],
+    'de-DE': ['Seitenmitte', 'In der Seitenmitte erscheinen Lesewerkzeuge nach der Schaltfläche zum Seitenende und nie zwischen den Navigationsschaltflächen.'],
+    'fr-FR': ['Milieu de page', 'Au milieu de la page, les outils de lecture apparaissent après le bouton de fin de page, jamais entre les boutons de navigation.'],
+    'pt-BR': ['Meio da página', 'No meio da página, as ferramentas de leitura aparecem após o botão de fim da página, nunca entre os botões de navegação.'],
+    'ko-KR': ['페이지 중간', '페이지 중간에서는 읽기 도구가 맨 아래로 이동 버튼 뒤에 배치되며 이동 버튼 사이에는 들어가지 않습니다.'],
+    'it-IT': ['Centro pagina', 'Al centro della pagina, gli strumenti di lettura compaiono dopo il pulsante di fine pagina, mai tra i pulsanti di navigazione.']
+  }[lang] || [];
   const domainFeatureTranslations = {
     'zh-CN': ['是否启用由工具栏 Popup 按当前主域名控制，此处只配置详细参数。', '插件', '页面进度条', '按屏跳转', '滚动位置书签', '智能段落跳转', '清除全部主域名记录', '配置高级功能的显示、位置和交互参数。', '按主域名管理插件和高级功能的启用状态。', '主域名', '操作'],
     'zh-TW': ['是否啟用由工具列 Popup 依目前主網域控制，此處只設定詳細參數。', '外掛', '頁面進度條', '上一屏／下一屏', '捲動位置書籤', '智慧段落跳轉', '清除全部主網域記錄', '設定進階功能的顯示、位置和互動參數。', '依主網域管理外掛和進階功能的啟用狀態。', '主網域', '操作'],
@@ -1287,7 +1299,8 @@ Object.keys(translations).forEach((lang) => {
     'settings.featureButtonPosition': t['settings.featureButtonPosition'] || t['settings.readingToolPosition'],
     'settings.featureButtonPosition.pageTop': t['settings.featureButtonPosition.pageTop'] || t['settings.readingToolPosition.pageTop'],
     'settings.featureButtonPosition.pageBottom': t['settings.featureButtonPosition.pageBottom'] || t['settings.readingToolPosition.pageBottom'],
-    'settings.featureButtonPosition.betweenScrollButtons': t['settings.featureButtonPosition.betweenScrollButtons'] || t['settings.readingToolPosition.betweenScrollButtons'],
+    'settings.featureButtonPosition.pageMiddle': featurePositionTranslations[0],
+    'settings.featureButtonPosition.pageMiddleNote': featurePositionTranslations[1],
     'settings.featureButtonColorMode': t['settings.featureButtonColorMode'] || t['settings.readingToolColorMode'],
     'settings.featureButtonColorMode.followTopButton': t['settings.featureButtonColorMode.followTopButton'] || t['settings.readingToolColorMode.followTopButton'],
     'settings.featureButtonColorMode.followBottomButton': t['settings.featureButtonColorMode.followBottomButton'] || t['settings.readingToolColorMode.followBottomButton'],
@@ -1453,6 +1466,8 @@ const feedbackTranslations = {
     contact: '联系方式（可选）',
     contactPlaceholder: '邮箱或其他联系方式',
     images: '选择图片（可选）',
+    chooseImages: '上传图片',
+    noImages: '尚未选择图片',
     imagesHint: '最多 3 张 JPEG、PNG 或 WebP 图片，每张不超过 5MB。',
     imagesSelected: '已选择 {count} 张图片：{names}',
     privacyNote: '反馈内容仅在提交时发送，不会保存到扩展存储。图片和联系方式仅在你主动提供时发送。',
@@ -1485,6 +1500,8 @@ const feedbackTranslations = {
     contact: 'Contact (optional)',
     contactPlaceholder: 'Email or another contact method',
     images: 'Choose images (optional)',
+    chooseImages: 'Upload images',
+    noImages: 'No images selected',
     imagesHint: 'Up to 3 JPEG, PNG, or WebP images, no more than 5MB each.',
     imagesSelected: '{count} image(s) selected: {names}',
     privacyNote: 'Feedback is sent only when you submit it and is not saved in extension storage. Images and contact details are sent only when you provide them.',
@@ -1509,7 +1526,8 @@ const feedbackTranslations = {
     typeCompatibility: '相容性問題', typeTranslation: '翻譯問題', typeOther: '其他',
     message: '你的建議或問題', messagePlaceholder: '請描述你的建議、遇到的問題或重現步驟',
     contact: '聯絡方式（選填）', contactPlaceholder: '電子郵件或其他聯絡方式',
-    images: '選擇圖片（選填）', imagesHint: '最多 3 張 JPEG、PNG 或 WebP 圖片，每張不超過 5MB。',
+    images: '選擇圖片（選填）', chooseImages: '上傳圖片', noImages: '尚未選擇圖片',
+    imagesHint: '最多 3 張 JPEG、PNG 或 WebP 圖片，每張不超過 5MB。',
     imagesSelected: '已選擇 {count} 張圖片：{names}',
     privacyNote: '回饋內容只會在提交時傳送，不會儲存在擴充功能中。圖片和聯絡方式只會在你主動提供時傳送。',
     submit: '提交回饋', submitting: '正在提交…', success: '回饋已提交，感謝你的協助。',
@@ -1525,7 +1543,8 @@ const feedbackTranslations = {
     typeCompatibility: 'Compatibilidad', typeTranslation: 'Traducción', typeOther: 'Otro',
     message: 'Sugerencia o problema', messagePlaceholder: 'Describe la sugerencia, el problema o los pasos para reproducirlo',
     contact: 'Contacto (opcional)', contactPlaceholder: 'Correo u otro medio de contacto',
-    images: 'Imágenes (opcional)', imagesHint: 'Hasta 3 imágenes JPEG, PNG o WebP de 5MB como máximo.',
+    images: 'Imágenes (opcional)', chooseImages: 'Subir imágenes', noImages: 'Ninguna imagen seleccionada',
+    imagesHint: 'Hasta 3 imágenes JPEG, PNG o WebP de 5MB como máximo.',
     imagesSelected: '{count} imagen(es): {names}',
     privacyNote: 'Los datos se envían solo al pulsar Enviar y no se guardan en la extensión. Las imágenes y el contacto solo se envían si los proporcionas.',
     submit: 'Enviar', submitting: 'Enviando…', success: 'Comentarios enviados. Gracias.',
@@ -1541,7 +1560,8 @@ const feedbackTranslations = {
     typeCompatibility: '互換性の問題', typeTranslation: '翻訳の問題', typeOther: 'その他',
     message: '提案または問題', messagePlaceholder: '提案、問題、再現手順を入力してください',
     contact: '連絡先（任意）', contactPlaceholder: 'メールなどの連絡先',
-    images: '画像（任意）', imagesHint: 'JPEG、PNG、WebP を最大3枚、各5MBまで。',
+    images: '画像（任意）', chooseImages: '画像をアップロード', noImages: '画像が選択されていません',
+    imagesHint: 'JPEG、PNG、WebP を最大3枚、各5MBまで。',
     imagesSelected: '{count}枚を選択：{names}',
     privacyNote: '内容は送信時のみ送られ、拡張機能には保存されません。画像と連絡先は指定した場合のみ送信されます。',
     submit: '送信', submitting: '送信中…', success: '送信しました。ありがとうございます。',
@@ -1557,7 +1577,8 @@ const feedbackTranslations = {
     typeCompatibility: 'Kompatibilitätsproblem', typeTranslation: 'Übersetzungsproblem', typeOther: 'Sonstiges',
     message: 'Vorschlag oder Problem', messagePlaceholder: 'Beschreiben Sie Vorschlag, Problem oder Schritte zur Reproduktion',
     contact: 'Kontakt (optional)', contactPlaceholder: 'E-Mail oder anderer Kontakt',
-    images: 'Bilder (optional)', imagesHint: 'Bis zu 3 JPEG-, PNG- oder WebP-Bilder mit jeweils höchstens 5MB.',
+    images: 'Bilder (optional)', chooseImages: 'Bilder hochladen', noImages: 'Keine Bilder ausgewählt',
+    imagesHint: 'Bis zu 3 JPEG-, PNG- oder WebP-Bilder mit jeweils höchstens 5MB.',
     imagesSelected: '{count} Bild(er): {names}',
     privacyNote: 'Feedback wird nur beim Absenden übertragen und nicht in der Erweiterung gespeichert. Bilder und Kontaktdaten werden nur auf Ihre Auswahl hin gesendet.',
     submit: 'Feedback senden', submitting: 'Wird gesendet…', success: 'Feedback wurde gesendet. Vielen Dank.',
@@ -1573,7 +1594,8 @@ const feedbackTranslations = {
     typeCompatibility: 'Compatibilité', typeTranslation: 'Traduction', typeOther: 'Autre',
     message: 'Suggestion ou problème', messagePlaceholder: 'Décrivez votre suggestion, le problème ou les étapes de reproduction',
     contact: 'Contact (facultatif)', contactPlaceholder: 'E-mail ou autre moyen de contact',
-    images: 'Images (facultatif)', imagesHint: 'Jusqu’à 3 images JPEG, PNG ou WebP de 5Mo maximum chacune.',
+    images: 'Images (facultatif)', chooseImages: 'Importer des images', noImages: 'Aucune image sélectionnée',
+    imagesHint: 'Jusqu’à 3 images JPEG, PNG ou WebP de 5Mo maximum chacune.',
     imagesSelected: '{count} image(s) : {names}',
     privacyNote: 'Le contenu est envoyé uniquement lors de la soumission et n’est pas enregistré dans l’extension. Les images et le contact ne sont envoyés que si vous les fournissez.',
     submit: 'Envoyer', submitting: 'Envoi…', success: 'Avis envoyé. Merci.',
@@ -1589,7 +1611,8 @@ const feedbackTranslations = {
     typeCompatibility: 'Compatibilidade', typeTranslation: 'Tradução', typeOther: 'Outro',
     message: 'Sugestão ou problema', messagePlaceholder: 'Descreva a sugestão, o problema ou os passos para reproduzir',
     contact: 'Contato (opcional)', contactPlaceholder: 'E-mail ou outro contato',
-    images: 'Imagens (opcional)', imagesHint: 'Até 3 imagens JPEG, PNG ou WebP, com no máximo 5MB cada.',
+    images: 'Imagens (opcional)', chooseImages: 'Enviar imagens', noImages: 'Nenhuma imagem selecionada',
+    imagesHint: 'Até 3 imagens JPEG, PNG ou WebP, com no máximo 5MB cada.',
     imagesSelected: '{count} imagem(ns): {names}',
     privacyNote: 'O conteúdo é enviado apenas ao confirmar e não fica salvo na extensão. Imagens e contato só são enviados quando você os fornece.',
     submit: 'Enviar', submitting: 'Enviando…', success: 'Feedback enviado. Obrigado.',
@@ -1605,7 +1628,8 @@ const feedbackTranslations = {
     typeCompatibility: '호환성 문제', typeTranslation: '번역 문제', typeOther: '기타',
     message: '제안 또는 문제', messagePlaceholder: '제안, 문제 또는 재현 단계를 설명하세요',
     contact: '연락처(선택)', contactPlaceholder: '이메일 또는 다른 연락 방법',
-    images: '이미지(선택)', imagesHint: 'JPEG, PNG, WebP 이미지를 최대 3개, 각 5MB 이하로 선택하세요.',
+    images: '이미지(선택)', chooseImages: '이미지 업로드', noImages: '선택한 이미지 없음',
+    imagesHint: 'JPEG, PNG, WebP 이미지를 최대 3개, 각 5MB 이하로 선택하세요.',
     imagesSelected: '{count}개 선택: {names}',
     privacyNote: '내용은 제출할 때만 전송되며 확장 프로그램 저장소에 저장되지 않습니다. 이미지와 연락처는 직접 제공한 경우에만 전송됩니다.',
     submit: '피드백 제출', submitting: '제출 중…', success: '피드백을 제출했습니다. 감사합니다.',
@@ -1621,7 +1645,8 @@ const feedbackTranslations = {
     typeCompatibility: 'Compatibilità', typeTranslation: 'Traduzione', typeOther: 'Altro',
     message: 'Suggerimento o problema', messagePlaceholder: 'Descrivi il suggerimento, il problema o i passaggi per riprodurlo',
     contact: 'Contatto (facoltativo)', contactPlaceholder: 'Email o altro contatto',
-    images: 'Immagini (facoltative)', imagesHint: 'Fino a 3 immagini JPEG, PNG o WebP, massimo 5MB ciascuna.',
+    images: 'Immagini (facoltative)', chooseImages: 'Carica immagini', noImages: 'Nessuna immagine selezionata',
+    imagesHint: 'Fino a 3 immagini JPEG, PNG o WebP, massimo 5MB ciascuna.',
     imagesSelected: '{count} immagine/i: {names}',
     privacyNote: 'Il contenuto viene inviato solo alla conferma e non viene salvato nell’estensione. Immagini e contatto vengono inviati solo se forniti.',
     submit: 'Invia', submitting: 'Invio…', success: 'Feedback inviato. Grazie.',
@@ -1865,6 +1890,8 @@ Object.keys(translations).forEach((lang) => {
     'settings.feedbackContact': feedbackText.contact,
     'settings.feedbackContactPlaceholder': feedbackText.contactPlaceholder,
     'settings.feedbackImages': feedbackText.images,
+    'settings.feedbackChooseImages': feedbackText.chooseImages,
+    'settings.feedbackNoImages': feedbackText.noImages,
     'settings.feedbackImagesHint': feedbackText.imagesHint,
     'settings.feedbackPrivacyNote': feedbackText.privacyNote,
     'settings.feedbackSubmit': feedbackText.submit,
@@ -2223,8 +2250,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     screenStepRatio: 0.9,
     previousScreenButtonColor: '#4A9EDD',
-    nextScreenButtonColor: '#4A9EDD',
-    opacity: 100
+    nextScreenButtonColor: '#4A9EDD'
   },
   progressBar: {
     enabled: false,
@@ -2380,9 +2406,8 @@ function normalizeIconSet(value) {
 }
 
 function normalizeReadingToolPosition(value) {
-  return ['pageTop', 'pageBottom', 'betweenScrollButtons'].includes(value)
-    ? value
-    : 'pageBottom';
+  if (value === 'betweenScrollButtons') return 'pageMiddle';
+  return ['pageTop', 'pageBottom', 'pageMiddle'].includes(value) ? value : 'pageBottom';
 }
 
 function normalizeReadingToolColorMode(value) {
@@ -2437,7 +2462,6 @@ function mergeAdvancedSettings(savedSettings) {
     merged.screenNavigation.nextScreenButtonColor,
     '#4A9EDD'
   );
-  merged.screenNavigation.opacity = clampNumber(merged.screenNavigation.opacity, 0, 100, 100);
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
   merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, 120);
   merged.iconCustomization.enabled = true;
@@ -2744,8 +2768,6 @@ function updatePreviewButtons() {
     document.getElementById('nextScreenButtonColor')?.value,
     '#4A9EDD'
   );
-  const screenNavigationOpacity =
-    clampNumber(document.getElementById('screenNavigationOpacity')?.value, 0, 100, 100) / 100;
   const featureButtons = [
     {
       button: bookmarkButton,
@@ -2822,9 +2844,9 @@ function updatePreviewButtons() {
   const totalGroupHeight = isVerticalProgressPreview
     ? (displaySize * 4) + displayProgressHeight + (displaySpacing * 4)
     : (displaySize * 4) + (displaySpacing * 3);
-  const betweenFeatureCount = featureButtons.filter((feature) => feature.enabled && feature.position === 'betweenScrollButtons').length;
-  const totalPreviewGroupHeight = betweenFeatureCount
-    ? totalGroupHeight + (betweenFeatureCount * (displaySize + displaySpacing))
+  const middleFeatureCount = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageMiddle').length;
+  const totalPreviewGroupHeight = middleFeatureCount
+    ? totalGroupHeight + (middleFeatureCount * (displaySize + displaySpacing))
     : totalGroupHeight;
 
   const unit = displaySize + displaySpacing;
@@ -2832,8 +2854,8 @@ function updatePreviewButtons() {
   const progressOffset = unit * 2;
   const nextScreenOffset = progressOffset +
     (isVerticalProgressPreview ? displayProgressHeight + displaySpacing : 0);
-  const betweenFeatureOffset = nextScreenOffset + unit;
-  const bottomButtonOffset = betweenFeatureOffset + (betweenFeatureCount * unit);
+  const bottomButtonOffset = nextScreenOffset + unit;
+  const middleFeatureOffset = bottomButtonOffset + unit;
 
   function getMainButtonPosition(offset, height) {
     if (verticalAlignment === 'center') {
@@ -2860,17 +2882,17 @@ function updatePreviewButtons() {
   const nextScreenPosition = getMainButtonPosition(nextScreenOffset, displaySize);
   const bottomButtonPosition = getMainButtonPosition(bottomButtonOffset, displaySize);
 
-  function getBetweenFeaturePosition(index) {
+  function getMiddleFeaturePosition(index) {
     let top = 'auto';
     let bottom = 'auto';
     if (verticalAlignment === 'center') {
       const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-      top = `calc(${groupTopOffset} + ${betweenFeatureOffset + (index * unit)}px)`;
+      top = `calc(${groupTopOffset} + ${middleFeatureOffset + (index * unit)}px)`;
     } else if (verticalAlignment === 'top') {
-      top = `calc(${displayEdgeDistance}px + ${betweenFeatureOffset + (index * unit)}px)`;
+      top = `calc(${displayEdgeDistance}px + ${middleFeatureOffset + (index * unit)}px)`;
     } else {
       bottom = `${displayEdgeDistance + totalPreviewGroupHeight -
-        (betweenFeatureOffset + (index * unit)) - displaySize}px`;
+        (middleFeatureOffset + (index * unit)) - displaySize}px`;
     }
     return { top, bottom };
   }
@@ -2880,14 +2902,15 @@ function updatePreviewButtons() {
     let bottom = 'auto';
     if (position === 'pageTop') {
       const baseOffset = verticalAlignment === 'top'
-        ? displayEdgeDistance + totalGroupHeight + displaySpacing
+        ? displayEdgeDistance + totalPreviewGroupHeight + displaySpacing
         : displayEdgeDistance;
       const offset = baseOffset + (index * (displaySize + displaySpacing));
       top = offset + 'px';
     } else {
-      const offset = verticalAlignment === 'bottom'
-        ? displayEdgeDistance + totalGroupHeight + displaySpacing + ((count - index - 1) * (displaySize + displaySpacing))
-        : displayEdgeDistance + (index * (displaySize + displaySpacing));
+      const baseOffset = verticalAlignment === 'bottom'
+        ? displayEdgeDistance + totalPreviewGroupHeight + displaySpacing
+        : displayEdgeDistance;
+      const offset = baseOffset + ((count - index - 1) * (displaySize + displaySpacing));
       bottom = offset + 'px';
     }
     return { top, bottom };
@@ -2951,7 +2974,7 @@ function updatePreviewButtons() {
       screenButton.button.style.height = size;
       screenButton.button.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
       screenButton.button.style.backgroundColor = screenButton.color;
-      screenButton.button.style.opacity = screenNavigationOpacity;
+      screenButton.button.style.opacity = opacity;
       screenButton.button.style.left = leftPos;
       screenButton.button.style.right = rightPos;
       screenButton.button.style.top = screenButton.position.top;
@@ -3013,7 +3036,7 @@ function updatePreviewButtons() {
 
     const standaloneTopFeatures = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageTop');
     const standaloneBottomFeatures = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageBottom');
-    let betweenIndex = 0;
+    let middleIndex = 0;
 
     featureButtons.forEach((feature) => {
       const featureButton = feature.button;
@@ -3030,9 +3053,9 @@ function updatePreviewButtons() {
       featureButton.style.right = rightPos;
 
       let position;
-      if (feature.position === 'betweenScrollButtons') {
-        position = getBetweenFeaturePosition(betweenIndex);
-        betweenIndex += 1;
+      if (feature.position === 'pageMiddle') {
+        position = getMiddleFeaturePosition(middleIndex);
+        middleIndex += 1;
       } else if (feature.position === 'pageTop') {
         position = getStandaloneFeaturePosition(
           feature.position,
@@ -3272,9 +3295,6 @@ function setAdvancedSettingsControls(settings) {
   document.getElementById('previousScreenButtonColorHex').value = screenNavigation.previousScreenButtonColor;
   document.getElementById('nextScreenButtonColor').value = screenNavigation.nextScreenButtonColor;
   document.getElementById('nextScreenButtonColorHex').value = screenNavigation.nextScreenButtonColor;
-  document.getElementById('screenNavigationOpacity').value = screenNavigation.opacity;
-  document.getElementById('screenNavigationOpacityValue').textContent = screenNavigation.opacity + '%';
-
   document.getElementById('progressBarMode').value = progress.mode;
   document.getElementById('progressHorizontalPosition').value = progress.horizontalPosition;
   document.getElementById('progressColorMode').value = progress.colorMode;
@@ -3324,12 +3344,6 @@ function getAdvancedSettingsFromControls() {
     document.getElementById('nextScreenButtonColor').value,
     '#4A9EDD'
   );
-  const screenNavigationOpacity = clampNumber(
-    document.getElementById('screenNavigationOpacity').value,
-    0,
-    100,
-    100
-  );
   const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
   const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4a9edd');
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
@@ -3341,8 +3355,7 @@ function getAdvancedSettingsFromControls() {
       enabled: true,
       screenStepRatio,
       previousScreenButtonColor,
-      nextScreenButtonColor,
-      opacity: screenNavigationOpacity
+      nextScreenButtonColor
     },
     progressBar: {
       enabled: true,
@@ -4025,16 +4038,19 @@ function getFeedbackText(key) {
 
 function renderFeedbackImages() {
   const input = document.getElementById('feedbackImages');
+  const status = document.getElementById('feedbackImageStatus');
   const summary = document.getElementById('feedbackImageSummary');
-  if (!input || !summary) return;
+  if (!input || !status || !summary) return;
   const files = Array.from(input.files || []);
   if (!files.length) {
+    status.textContent = getFeedbackText('noImages');
     summary.textContent = getFeedbackText('imagesHint');
     return;
   }
-  summary.textContent = getFeedbackText('imagesSelected')
+  status.textContent = getFeedbackText('imagesSelected')
     .replace('{count}', String(files.length))
     .replace('{names}', files.map((file) => file.name).join(', '));
+  summary.textContent = getFeedbackText('imagesHint');
 }
 
 function renderFeedbackStatus() {
@@ -4155,6 +4171,28 @@ function handleFeedbackSubmit(event) {
   });
 }
 
+function updateRangeFill(input) {
+  if (!input) return;
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const value = Number(input.value);
+  const progress = max > min
+    ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
+    : 0;
+  input.style.setProperty('--range-progress', `${progress}%`);
+}
+
+function getRangeControls() {
+  return [
+    document.getElementById('scrollSpeed'),
+    document.getElementById('opacity')
+  ].filter(Boolean);
+}
+
+function updateRangeFills() {
+  getRangeControls().forEach(updateRangeFill);
+}
+
 // 加载保存的设置
 function loadSettings() {
   chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
@@ -4193,6 +4231,7 @@ function loadSettings() {
     }
 
     setAdvancedSettingsControls(result.advancedSettings);
+    updateRangeFills();
 
     // 应用语言设置
     getCurrentLanguage().then(lang => {
@@ -4311,6 +4350,10 @@ function init() {
   setManifestVersion();
   renderReleaseNotes(normalizeLanguage(navigator.language || navigator.userLanguage));
   loadOnboardingState();
+  getRangeControls().forEach((input) => {
+    input.addEventListener('input', () => updateRangeFill(input));
+    updateRangeFill(input);
+  });
   loadSettings();
   loadDomainFeatureStates();
   loadSavedBookmarks();
@@ -4355,10 +4398,6 @@ function init() {
   });
 
   document.getElementById('screenStepRatio').addEventListener('input', updatePreviewButtons);
-  document.getElementById('screenNavigationOpacity').addEventListener('input', (e) => {
-    document.getElementById('screenNavigationOpacityValue').textContent = e.target.value + '%';
-    updatePreviewButtons();
-  });
   document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
