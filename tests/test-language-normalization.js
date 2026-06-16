@@ -112,7 +112,11 @@ const cases = [
   ['pt-PT', 'pt-BR'],
   ['ko-KR', 'ko-KR'],
   ['it-IT', 'it-IT'],
-  ['ru-RU', 'en-US']
+  ['ru-RU', 'ru-RU'],
+  ['ru-UA', 'ru-RU'],
+  ['tr-TR', 'tr-TR'],
+  ['id-ID', 'id-ID'],
+  ['id', 'id-ID']
 ];
 
 cases.forEach(([input, expected]) => {
@@ -128,6 +132,9 @@ assert(optionsContext.__translations['pt-BR'], 'options translations include Por
 assert(optionsContext.__translations['zh-TW'], 'options translations include Traditional Chinese');
 assert(optionsContext.__translations['ko-KR'], 'options translations include Korean');
 assert(optionsContext.__translations['it-IT'], 'options translations include Italian');
+assert(optionsContext.__translations['ru-RU'], 'options translations include Russian');
+assert(optionsContext.__translations['tr-TR'], 'options translations include Turkish');
+assert(optionsContext.__translations['id-ID'], 'options translations include Indonesian');
 assert(popupContext.popupTranslations['es-ES'], 'popup translations include Spanish');
 assert(popupContext.popupTranslations['ja-JP'], 'popup translations include Japanese');
 assert(popupContext.popupTranslations['de-DE'], 'popup translations include German');
@@ -136,8 +143,11 @@ assert(popupContext.popupTranslations['pt-BR'], 'popup translations include Port
 assert(popupContext.popupTranslations['zh-TW'], 'popup translations include Traditional Chinese');
 assert(popupContext.popupTranslations['ko-KR'], 'popup translations include Korean');
 assert(popupContext.popupTranslations['it-IT'], 'popup translations include Italian');
+assert(popupContext.popupTranslations['ru-RU'], 'popup translations include Russian');
+assert(popupContext.popupTranslations['tr-TR'], 'popup translations include Turkish');
+assert(popupContext.popupTranslations['id-ID'], 'popup translations include Indonesian');
 
-const expectedOptionLanguages = ['zh-CN', 'zh-TW', 'en-US', 'es-ES', 'ja-JP', 'de-DE', 'fr-FR', 'pt-BR', 'ko-KR', 'it-IT'];
+const expectedOptionLanguages = ['zh-CN', 'zh-TW', 'en-US', 'es-ES', 'ja-JP', 'de-DE', 'fr-FR', 'pt-BR', 'ko-KR', 'it-IT', 'ru-RU', 'tr-TR', 'id-ID'];
 const expectedButtonColorLabels = {
   'zh-CN': '按钮颜色',
   'zh-TW': '按鈕顏色',
@@ -148,7 +158,10 @@ const expectedButtonColorLabels = {
   'fr-FR': 'Couleur du bouton',
   'pt-BR': 'Cor do botão',
   'ko-KR': '버튼 색상',
-  'it-IT': 'Colore del pulsante'
+  'it-IT': 'Colore del pulsante',
+  'ru-RU': 'Цвет кнопки',
+  'tr-TR': 'Düğme rengi',
+  'id-ID': 'Warna tombol'
 };
 const englishOptionKeys = Object.keys(optionsContext.__translations['en-US']).sort();
 const outlineTranslationKeys = [
@@ -233,7 +246,7 @@ assert(
   'release notes start at v1.8'
 );
 
-const expectedLocaleDirs = ['de', 'fr', 'pt_BR', 'zh_TW', 'ko', 'it'];
+const expectedLocaleDirs = ['de', 'fr', 'pt_BR', 'zh_TW', 'ko', 'it', 'ru', 'tr', 'id'];
 const englishLocale = JSON.parse(fs.readFileSync(path.join(ROOT, '_locales', 'en', 'messages.json'), 'utf8'));
 const englishKeys = Object.keys(englishLocale).sort();
 

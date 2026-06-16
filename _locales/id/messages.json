@@ -1,0 +1,44 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Atas, Bawah & Progres"
+  },
+  "extensionDescription": {
+    "message": "Gulir ke atas atau bawah, lacak progres halaman, dan jelajahi halaman panjang"
+  },
+  "commandScrollToTop": {
+    "message": "Gulir ke bagian atas halaman"
+  },
+  "commandScrollToBottom": {
+    "message": "Gulir ke bagian bawah halaman"
+  },
+  "popupScrollTop": {
+    "message": "Gulir ke Atas"
+  },
+  "popupScrollBottom": {
+    "message": "Gulir ke Bawah"
+  },
+  "previousScreen": {
+    "message": "Layar Sebelumnya"
+  },
+  "nextScreen": {
+    "message": "Layar Berikutnya"
+  },
+  "autoScrollPlay": {
+    "message": "Mulai Gulir Otomatis"
+  },
+  "autoScrollPause": {
+    "message": "Jeda Gulir Otomatis"
+  },
+  "popupSettings": {
+    "message": "Pengaturan"
+  },
+  "popupEnableToggle": {
+    "message": "Aktifkan di situs ini"
+  },
+  "settingsEdgeDistance": {
+    "message": "Jarak dari Tepi(px)"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "Jarak dari tepi harus antara 0px dan 200px"
+  }
+}

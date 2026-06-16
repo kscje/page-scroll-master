@@ -1,0 +1,44 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Верх, низ и прогресс"
+  },
+  "extensionDescription": {
+    "message": "Переходите к началу или концу страницы, отслеживайте прогресс и перемещайтесь по длинным страницам"
+  },
+  "commandScrollToTop": {
+    "message": "Прокрутить к началу страницы"
+  },
+  "commandScrollToBottom": {
+    "message": "Прокрутить к концу страницы"
+  },
+  "popupScrollTop": {
+    "message": "Прокрутить вверх"
+  },
+  "popupScrollBottom": {
+    "message": "Прокрутить вниз"
+  },
+  "previousScreen": {
+    "message": "Предыдущий экран"
+  },
+  "nextScreen": {
+    "message": "Следующий экран"
+  },
+  "autoScrollPlay": {
+    "message": "Запустить автопрокрутку"
+  },
+  "autoScrollPause": {
+    "message": "Приостановить автопрокрутку"
+  },
+  "popupSettings": {
+    "message": "Настройки"
+  },
+  "popupEnableToggle": {
+    "message": "Включить на этом сайте"
+  },
+  "settingsEdgeDistance": {
+    "message": "Отступ от края(px)"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "Отступ от края должен быть от 0px до 200px"
+  }
+}

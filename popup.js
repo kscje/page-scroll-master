@@ -139,6 +139,42 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Segnalibri posizione',
     'popupOutlineNavigation': 'Navigazione sezioni',
     'popupUnavailable': 'Controlli non disponibili in questa pagina'
+  },
+  'ru-RU': {
+    'popupSettings': 'Открыть настройки',
+    'popupEnableToggle': 'Включить расширение для этого домена',
+    'popupCurrentSite': 'Текущий сайт: ',
+    'popupAdvancedFeatures': 'Дополнительные функции',
+    'popupAutoScroll': 'Автопрокрутка',
+    'popupProgressBar': 'Индикатор прогресса',
+    'popupScreenNavigation': 'Предыдущий/следующий экран',
+    'popupScrollBookmarks': 'Закладки позиции',
+    'popupOutlineNavigation': 'Навигация по разделам',
+    'popupUnavailable': 'Управление расширением недоступно на этой странице'
+  },
+  'tr-TR': {
+    'popupSettings': 'Ayarları aç',
+    'popupEnableToggle': 'Bu alan adında uzantıyı etkinleştir',
+    'popupCurrentSite': 'Geçerli site: ',
+    'popupAdvancedFeatures': 'Gelişmiş özellikler',
+    'popupAutoScroll': 'Otomatik kaydırma',
+    'popupProgressBar': 'Sayfa ilerleme çubuğu',
+    'popupScreenNavigation': 'Önceki/sonraki ekran',
+    'popupScrollBookmarks': 'Kaydırma konumu yer imleri',
+    'popupOutlineNavigation': 'Akıllı bölüm gezintisi',
+    'popupUnavailable': 'Bu sayfada uzantı kontrolleri kullanılamaz'
+  },
+  'id-ID': {
+    'popupSettings': 'Buka pengaturan',
+    'popupEnableToggle': 'Aktifkan ekstensi di domain ini',
+    'popupCurrentSite': 'Situs saat ini: ',
+    'popupAdvancedFeatures': 'Fitur lanjutan',
+    'popupAutoScroll': 'Gulir otomatis',
+    'popupProgressBar': 'Bilah progres halaman',
+    'popupScreenNavigation': 'Layar sebelumnya/berikutnya',
+    'popupScrollBookmarks': 'Bookmark posisi gulir',
+    'popupOutlineNavigation': 'Navigasi bagian pintar',
+    'popupUnavailable': 'Kontrol ekstensi tidak tersedia di halaman ini'
   }
 };
 
@@ -154,6 +190,9 @@ function normalizeLanguage(browserLang) {
   if (lang.indexOf('pt') === 0) return 'pt-BR';
   if (lang.indexOf('ko') === 0) return 'ko-KR';
   if (lang.indexOf('it') === 0) return 'it-IT';
+  if (lang.indexOf('ru') === 0) return 'ru-RU';
+  if (lang.indexOf('tr') === 0) return 'tr-TR';
+  if (lang.indexOf('id') === 0) return 'id-ID';
   return 'en-US';
 }
 

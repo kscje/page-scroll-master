@@ -31,7 +31,10 @@ assert(
   'fr-FR',
   'pt-BR',
   'ko-KR',
-  'it-IT'
+  'it-IT',
+  'ru-RU',
+  'tr-TR',
+  'id-ID'
 ].forEach((locale) => {
   assert(source.includes(`'${locale}': {`), `${locale} has analytics copy`);
 });

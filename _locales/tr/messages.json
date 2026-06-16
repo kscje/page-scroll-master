@@ -1,0 +1,44 @@
+{
+  "extensionName": {
+    "message": "Smart Scroll Navigator – Üst, Alt ve İlerleme"
+  },
+  "extensionDescription": {
+    "message": "Sayfanın üstüne veya altına kaydırın, sayfa ilerlemesini izleyin ve uzun sayfalarda gezinin"
+  },
+  "commandScrollToTop": {
+    "message": "Sayfanın en üstüne kaydır"
+  },
+  "commandScrollToBottom": {
+    "message": "Sayfanın en altına kaydır"
+  },
+  "popupScrollTop": {
+    "message": "Yukarı kaydır"
+  },
+  "popupScrollBottom": {
+    "message": "Aşağı kaydır"
+  },
+  "previousScreen": {
+    "message": "Önceki ekran"
+  },
+  "nextScreen": {
+    "message": "Sonraki ekran"
+  },
+  "autoScrollPlay": {
+    "message": "Otomatik kaydırmayı başlat"
+  },
+  "autoScrollPause": {
+    "message": "Otomatik kaydırmayı duraklat"
+  },
+  "popupSettings": {
+    "message": "Ayarlar"
+  },
+  "popupEnableToggle": {
+    "message": "Bu sitede etkinleştir"
+  },
+  "settingsEdgeDistance": {
+    "message": "Kenardan Uzaklık(px)"
+  },
+  "settingsEdgeDistanceError": {
+    "message": "Kenardan uzaklık 0px ile 200px arasında olmalıdır"
+  }
+}
