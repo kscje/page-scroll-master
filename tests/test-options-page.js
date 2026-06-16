@@ -237,6 +237,10 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     domainError: createElement('domainError'),
     domainList: createElement('domainList'),
     domainEmpty: createElement('domainEmpty'),
+    domainPagination: createElement('domainPagination'),
+    domainPrevPageButton: createElement('domainPrevPageButton'),
+    domainPageStatus: createElement('domainPageStatus'),
+    domainNextPageButton: createElement('domainNextPageButton'),
     addDomainButton: createElement('addDomainButton'),
     clearDisabledSitesButton: createElement('clearDisabledSitesButton'),
     restoreAllSitesButton: createElement('restoreAllSitesButton'),
@@ -755,8 +759,9 @@ const domainHeader = domainTablePage.elements.domainList.children[0];
 const domainRow = domainTablePage.elements.domainList.children[1];
 assert(domainHeader.className === 'domain-header', 'domain feature names render once in a table header');
 assert(
-  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 112px 132px 132px 44px;') &&
-    OPTIONS_HTML.includes('min-width: 944px;'),
+  OPTIONS_HTML.includes('grid-template-columns: minmax(112px, 1fr) 56px 78px 88px 88px 96px 96px 36px;') &&
+    OPTIONS_HTML.includes('min-width: 800px;') &&
+    OPTIONS_HTML.includes('max-width: 100%;'),
   'domain header and rows use identical explicit column tracks'
 );
 assert(
@@ -783,6 +788,50 @@ assert(
   domainDeleteButton.getAttribute('aria-label') === 'Delete' &&
     domainDeleteButton.getAttribute('title') === 'Delete',
   'domain delete icon retains an accessible label and tooltip'
+);
+const manyDomainStates = {};
+for (let index = 1; index <= 51; index += 1) {
+  manyDomainStates[`domain-${String(index).padStart(3, '0')}.example`] = {
+    extensionEnabled: true,
+    features: {
+      autoScroll: false,
+      progressBar: false,
+      screenNavigation: false,
+      scrollBookmarks: false,
+      outlineNavigation: false
+    }
+  };
+}
+const pagedDomainPage = createOptionsPage({}, {
+  domainFeatureMigrationVersion: 1,
+  domainFeatureStates: manyDomainStates
+});
+assert(
+  pagedDomainPage.elements.domainList.children.length === 51 &&
+    pagedDomainPage.elements.domainPageStatus.textContent === '1 / 2' &&
+    pagedDomainPage.elements.domainPagination.style.display === 'flex',
+  'domain management renders 50 records per page and shows pagination when needed'
+);
+assert(
+  pagedDomainPage.elements.domainPrevPageButton.disabled === true &&
+    pagedDomainPage.elements.domainNextPageButton.disabled === false,
+  'domain pagination disables only the unavailable direction on the first page'
+);
+pagedDomainPage.elements.domainNextPageButton.dispatch('click');
+assert(
+  pagedDomainPage.elements.domainList.children.length === 2 &&
+    pagedDomainPage.elements.domainPageStatus.textContent === '2 / 2' &&
+    pagedDomainPage.elements.domainPrevPageButton.disabled === false &&
+    pagedDomainPage.elements.domainNextPageButton.disabled === true,
+  'domain pagination advances to the remaining records and updates controls'
+);
+pagedDomainPage.elements.domainSearch.value = 'domain-051';
+pagedDomainPage.elements.domainSearch.dispatch('input');
+assert(
+  pagedDomainPage.elements.domainList.children.length === 2 &&
+    pagedDomainPage.elements.domainPageStatus.textContent === '1 / 1' &&
+    pagedDomainPage.elements.domainPagination.style.display === 'none',
+  'domain search resets pagination and hides controls for one-page results'
 );
 
 const analyticsConsentPage = createOptionsPage();

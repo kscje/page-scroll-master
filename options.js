@@ -12,6 +12,7 @@ let analyticsStatusKey = 'disabled';
 let feedbackStatusKey = '';
 let feedbackSubmitting = false;
 const AUTO_SCROLL_ICON_SIZE = '48%';
+const DOMAIN_PAGE_SIZE = 50;
 
 // 多语言翻译数据
 const translations = {
@@ -1216,6 +1217,18 @@ Object.keys(translations).forEach((lang) => {
     'ko-KR': ['사용 여부는 도구 모음 팝업에서 도메인별로 설정하고 여기서는 세부 옵션만 구성합니다.', '확장 프로그램', '진행률', '화면 이동', '위치 북마크', '구간 이동', '모든 도메인 기록 지우기', '고급 기능의 표시, 위치 및 상호작용을 설정합니다.', '등록 가능한 도메인별로 확장 프로그램과 기능을 관리합니다.', '도메인', '작업'],
     'it-IT': ['Attiva le funzioni per dominio dal popup. Configura qui solo i dettagli.', 'Estensione', 'Progresso', 'Navigazione schermata', 'Segnalibri', 'Navigazione', 'Cancella tutti i domini', 'Configura visualizzazione, posizione e interazione delle funzioni avanzate.', 'Gestisci estensione e funzioni per dominio registrabile.', 'Dominio', 'Azioni']
   }[lang] || [];
+  const domainPaginationTranslations = {
+    'zh-CN': ['上一页', '下一页'],
+    'zh-TW': ['上一頁', '下一頁'],
+    'en-US': ['Previous page', 'Next page'],
+    'es-ES': ['Página anterior', 'Página siguiente'],
+    'ja-JP': ['前のページ', '次のページ'],
+    'de-DE': ['Vorherige Seite', 'Nächste Seite'],
+    'fr-FR': ['Page précédente', 'Page suivante'],
+    'pt-BR': ['Página anterior', 'Próxima página'],
+    'ko-KR': ['이전 페이지', '다음 페이지'],
+    'it-IT': ['Pagina precedente', 'Pagina successiva']
+  }[lang] || ['Previous page', 'Next page'];
   const advancedIntroTranslations = {
     'zh-CN': [
       '按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。',
@@ -1324,6 +1337,8 @@ Object.keys(translations).forEach((lang) => {
     'settings.domainIntro': domainFeatureTranslations[8],
     'settings.domainName': domainFeatureTranslations[9],
     'settings.domainActions': domainFeatureTranslations[10],
+    'settings.domainPreviousPage': domainPaginationTranslations[0],
+    'settings.domainNextPage': domainPaginationTranslations[1],
     'settings.globalScrollShortcuts': globalShortcutTranslations[0],
     'settings.scrollToTopShortcut': globalShortcutTranslations[1],
     'settings.scrollToBottomShortcut': globalShortcutTranslations[2],
@@ -3192,6 +3207,7 @@ let advancedSettingsState = mergeAdvancedSettings();
 let domainFeatureStates = {};
 let domainFeatureDefaults = domainUtils.normalizeDefaults();
 let domainSearchText = '';
+let domainCurrentPage = 1;
 let savedBookmarks = {};
 
 // 检测操作系统平台
@@ -4444,6 +4460,27 @@ function createDomainToggle(lang, labelKey, checked, disabled, onChange) {
   return toggleLabel;
 }
 
+function updateDomainPaginationControls(lang, totalItems, totalPages) {
+  const pagination = document.getElementById('domainPagination');
+  const previousButton = document.getElementById('domainPrevPageButton');
+  const nextButton = document.getElementById('domainNextPageButton');
+  const status = document.getElementById('domainPageStatus');
+  if (!pagination || !previousButton || !nextButton || !status) return;
+
+  pagination.style.display = totalItems > DOMAIN_PAGE_SIZE ? 'flex' : 'none';
+  status.textContent = `${domainCurrentPage} / ${totalPages}`;
+
+  previousButton.disabled = domainCurrentPage <= 1;
+  nextButton.disabled = domainCurrentPage >= totalPages;
+
+  const previousLabel = translations[lang]?.['settings.domainPreviousPage'] || 'Previous page';
+  const nextLabel = translations[lang]?.['settings.domainNextPage'] || 'Next page';
+  previousButton.setAttribute('aria-label', previousLabel);
+  previousButton.setAttribute('title', previousLabel);
+  nextButton.setAttribute('aria-label', nextLabel);
+  nextButton.setAttribute('title', nextLabel);
+}
+
 function renderDomainFeatureStatesList() {
   const list = document.getElementById('domainList');
   const empty = document.getElementById('domainEmpty');
@@ -4457,8 +4494,13 @@ function renderDomainFeatureStatesList() {
   const domainKeys = Object.keys(domainFeatureStates)
     .sort()
     .filter((domainKey) => domainKey.toLowerCase().includes(query));
+  const totalPages = Math.max(1, Math.ceil(domainKeys.length / DOMAIN_PAGE_SIZE));
+  domainCurrentPage = Math.min(Math.max(domainCurrentPage, 1), totalPages);
+  const pageStart = (domainCurrentPage - 1) * DOMAIN_PAGE_SIZE;
+  const visibleDomainKeys = domainKeys.slice(pageStart, pageStart + DOMAIN_PAGE_SIZE);
 
   empty.style.display = domainKeys.length === 0 ? 'block' : 'none';
+  updateDomainPaginationControls(lang, domainKeys.length, totalPages);
   if (domainKeys.length > 0) {
     const header = document.createElement('div');
     header.className = 'domain-header';
@@ -4479,7 +4521,7 @@ function renderDomainFeatureStatesList() {
     list.appendChild(header);
   }
 
-  domainKeys.forEach((domainKey) => {
+  visibleDomainKeys.forEach((domainKey) => {
     const state = domainUtils.getState(domainFeatureStates, domainKey, domainFeatureDefaults);
     const row = document.createElement('div');
     row.className = 'domain-row';
@@ -5433,6 +5475,16 @@ function init() {
 
   document.getElementById('domainSearch').addEventListener('input', (e) => {
     domainSearchText = e.target.value || '';
+    domainCurrentPage = 1;
+    renderDomainFeatureStatesList();
+  });
+  document.getElementById('domainPrevPageButton').addEventListener('click', () => {
+    if (domainCurrentPage <= 1) return;
+    domainCurrentPage -= 1;
+    renderDomainFeatureStatesList();
+  });
+  document.getElementById('domainNextPageButton').addEventListener('click', () => {
+    domainCurrentPage += 1;
     renderDomainFeatureStatesList();
   });
   document.getElementById('addDomainButton').addEventListener('click', () => {
@@ -5445,6 +5497,7 @@ function init() {
       return;
     }
     showDomainError('');
+    domainCurrentPage = 1;
     saveDomainFeatureState(domainKey, {
       extensionEnabled: document.getElementById('domainInitialState').value === 'true',
       features: {

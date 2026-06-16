@@ -500,10 +500,10 @@
     .domain-header,
     .domain-row {
       display: grid;
-      grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 112px 132px 132px 44px;
+      grid-template-columns: minmax(112px, 1fr) 56px 78px 88px 88px 96px 96px 36px;
       gap: 8px;
       align-items: center;
-      min-width: 944px;
+      min-width: 800px;
     }
 
     .domain-header {
@@ -530,7 +530,41 @@
 
     .domain-list {
       margin-top: 10px;
+      max-width: 100%;
       overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .domain-pagination {
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .domain-pagination button {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      margin: 0;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .domain-pagination button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .domain-page-status {
+      min-width: 72px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
     }
 
     .domain-feature-toggle {
@@ -1797,6 +1831,11 @@
 
           <div id="domainList" class="domain-list"></div>
           <p id="domainEmpty" class="muted-note" data-i18n="settings.domainEmpty">暂无手动设置的网站。</p>
+          <div id="domainPagination" class="domain-pagination">
+            <button type="button" id="domainPrevPageButton" aria-label="Previous page" title="Previous page">‹</button>
+            <span id="domainPageStatus" class="domain-page-status">1 / 1</span>
+            <button type="button" id="domainNextPageButton" aria-label="Next page" title="Next page">›</button>
+          </div>
 
           <div class="domain-toolbar">
             <button type="button" id="addDomainButton" data-i18n="settings.addDomain">添加域名</button>
