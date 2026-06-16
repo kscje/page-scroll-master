@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-15
+
+### Added
+- ✅ 新增设置页全局快捷键展示，并提供 Chrome 快捷键管理入口
+- ✅ 新增上一屏和下一屏跳转，支持根页面和自定义滚动容器
+- ✅ 新增上一屏和下一屏独立按钮颜色、专用图标及按主域名启停
+- ✅ 新增扩展内建议与反馈服务，支持可选联系方式和最多 3 张图片
+
+### Changed
+- ✅ 上一屏和下一屏按钮复用主按钮透明度，不再维护独立透明度
+- ✅ 滚动位置书签和智能段落跳转的“上/下按钮之间”迁移为“页面中部”
+- ✅ 页面中部阅读工具统一排列在“回到底部”按钮之后
+- ✅ 设置页滑块、复选框和反馈图片选择控件视觉与可访问性优化
+
+### Security
+- ✅ 反馈服务使用固定可选主机权限，并在提交结束后撤销
+- ✅ 反馈表单不读取页面 URL 或浏览器语言，服务端不保存正文、联系方式或图片
+
 ## [2.1.0] - 2026-06-13
 
 ### Added
@@ -192,6 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.2.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.2.0
 [2.1.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.1.0
 [2.0.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.0.0
 [1.9.0]: https://github.com/kscje/page-scroll-master/releases/tag/v1.9.0

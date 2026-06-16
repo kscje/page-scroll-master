@@ -500,10 +500,10 @@
     .domain-header,
     .domain-row {
       display: grid;
-      grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 132px 132px 44px;
+      grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 112px 132px 132px 44px;
       gap: 8px;
       align-items: center;
-      min-width: 824px;
+      min-width: 944px;
     }
 
     .domain-header {
@@ -1353,9 +1353,11 @@
               </div>
               <div class="onboarding-step-copy">
                 <h4 data-i18n="settings.onboardingSiteControlsTitle">按当前网站控制功能</h4>
-                <p data-i18n="settings.onboardingSiteControlsDescription">Popup 可分别启停整个扩展和三项高级功能，状态对当前主域名生效。</p>
+                <p data-i18n="settings.onboardingSiteControlsDescription">Popup 可分别启停整个扩展和各项高级功能，状态对当前主域名生效。</p>
                 <div class="onboarding-feature-list">
                   <span class="onboarding-feature" data-i18n="settings.onboardingFeatureExtension">扩展</span>
+                  <span class="onboarding-feature" data-i18n="settings.onboardingFeatureAutoScroll">自动滚屏</span>
+                  <span class="onboarding-feature" data-i18n="settings.screenNavigation">按屏跳转</span>
                   <span class="onboarding-feature" data-i18n="settings.onboardingFeatureProgress">页面进度条</span>
                   <span class="onboarding-feature" data-i18n="settings.onboardingFeatureBookmarks">书签</span>
                   <span class="onboarding-feature" data-i18n="settings.onboardingFeatureOutline">文章大纲</span>
@@ -1505,7 +1507,66 @@
       <section class="tab-panel" data-tab-panel="advanced">
         <div class="panel-heading">
           <h2 data-i18n="settings.advancedFeatures">高级功能</h2>
-          <p data-i18n="settings.advancedIntro">配置三项高级功能的显示、位置和交互参数。</p>
+          <p data-i18n="settings.advancedIntro">配置高级功能的显示、位置和交互参数。</p>
+        </div>
+
+        <div class="setting-group full-width">
+          <h3 data-i18n="settings.autoScroll">自动滚屏</h3>
+          <p class="muted-note" data-i18n="settings.autoScrollIntro">以稳定速度连续向下滚动，并在用户操作页面时智能暂停。</p>
+
+          <div id="autoScrollSettings" class="sub-setting">
+            <label for="autoScrollSpeedPreset" data-i18n="settings.autoScrollSpeedPreset">滚动速度</label>
+            <select id="autoScrollSpeedPreset">
+              <option value="slow" data-i18n="settings.autoScrollSpeedPreset.slow">慢速（20 px/s）</option>
+              <option value="standard" selected data-i18n="settings.autoScrollSpeedPreset.standard">标准（40 px/s）</option>
+              <option value="fast" data-i18n="settings.autoScrollSpeedPreset.fast">快速（80 px/s）</option>
+              <option value="custom" data-i18n="settings.autoScrollSpeedPreset.custom">自定义</option>
+            </select>
+
+            <div id="autoScrollCustomSpeedContainer">
+              <label for="autoScrollCustomSpeed" data-i18n="settings.autoScrollCustomSpeed">自定义速度（10-300 px/s）</label>
+              <input type="number" id="autoScrollCustomSpeed" min="10" max="300" step="1" value="40">
+            </div>
+
+            <label for="autoScrollButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
+            <select id="autoScrollButtonPosition">
+              <option value="pageTop" data-i18n="settings.featureButtonPosition.pageTop">页面顶部</option>
+              <option value="pageBottom" selected data-i18n="settings.featureButtonPosition.pageBottom">页面底部</option>
+              <option value="pageMiddle" data-i18n="settings.featureButtonPosition.pageMiddle">页面中部</option>
+            </select>
+            <p class="muted-note" data-i18n="settings.featureButtonPosition.pageMiddleNote">页面中部会将阅读工具排列在“回到底部”按钮之后，不会夹在滚动方向按钮之间。</p>
+
+            <label data-i18n="settings.autoScrollButtonColor">自动滚屏按钮颜色</label>
+            <div class="color-input-container">
+              <input type="color" id="autoScrollButtonColor" value="#4A9EDD">
+              <input type="text" id="autoScrollButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
+            </div>
+
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseOnUserScroll" checked>
+              <label for="autoScrollPauseOnUserScroll" data-i18n="settings.autoScrollPauseOnUserScroll">用户滚动时暂停</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseOnTextSelection" checked>
+              <label for="autoScrollPauseOnTextSelection" data-i18n="settings.autoScrollPauseOnTextSelection">选择文字时暂停</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseOnEditableFocus" checked>
+              <label for="autoScrollPauseOnEditableFocus" data-i18n="settings.autoScrollPauseOnEditableFocus">编辑输入时暂停</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseWhenPageHidden" checked>
+              <label for="autoScrollPauseWhenPageHidden" data-i18n="settings.autoScrollPauseWhenPageHidden">切换到其他标签页时暂停</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseOnFullscreen" checked>
+              <label for="autoScrollPauseOnFullscreen" data-i18n="settings.autoScrollPauseOnFullscreen">进入全屏时暂停</label>
+            </div>
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoScrollPauseOnVideo" checked>
+              <label for="autoScrollPauseOnVideo" data-i18n="settings.autoScrollPauseOnVideo">主要视频播放时暂停</label>
+            </div>
+          </div>
         </div>
 
         <div class="setting-group full-width">
@@ -1715,7 +1776,7 @@
       <section class="tab-panel" data-tab-panel="domains">
         <div class="panel-heading">
           <h2 data-i18n="settings.tab.domains">域名管理</h2>
-          <p data-i18n="settings.domainIntro">按主域名管理插件和三项高级功能的启用状态。</p>
+          <p data-i18n="settings.domainIntro">按主域名管理插件和高级功能的启用状态。</p>
         </div>
 
         <div class="setting-group full-width">
@@ -1814,7 +1875,7 @@
           <h3 data-i18n="settings.about">关于插件</h3>
           <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
           <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.1.0</span></p>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.2.0</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
@@ -1840,13 +1901,14 @@
     <span class="preview-progress-label"></span>
   </button>
   <button id="previewNextScreenButton" class="preview-scroll-button" title="下一屏" aria-label="下一屏"></button>
-  <button id="previewBookmarkButton" class="preview-scroll-button hidden" title="滚动位置书签" aria-label="滚动位置书签"></button>
-  <button id="previewOutlineButton" class="preview-scroll-button hidden" title="智能段落跳转" aria-label="智能段落跳转"></button>
   <button id="previewBottomButton" class="preview-scroll-button" title="滚动到底部">
     <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 5v14M5 12l7 7 7-7"/>
     </svg>
   </button>
+  <button id="previewAutoScrollButton" class="preview-scroll-button hidden" title="自动滚屏" aria-label="自动滚屏"></button>
+  <button id="previewBookmarkButton" class="preview-scroll-button hidden" title="滚动位置书签" aria-label="滚动位置书签"></button>
+  <button id="previewOutlineButton" class="preview-scroll-button hidden" title="智能段落跳转" aria-label="智能段落跳转"></button>
   <div id="previewHorizontalProgress" class="preview-horizontal-progress hidden" aria-hidden="true">
     <div class="preview-horizontal-progress-fill"></div>
     <span class="preview-horizontal-progress-label"></span>

@@ -101,6 +101,7 @@ function createContext() {
         hasLoadedExtensionEnabledState,
         isExtensionEnabled,
         currentDomainKey,
+        autoScrollEnabled: advancedSettings.autoScroll.enabled,
         progressEnabled: advancedSettings.progressBar.enabled,
         screenNavigationEnabled: advancedSettings.screenNavigation.enabled,
         bookmarksEnabled: advancedSettings.scrollBookmarks.enabled,
@@ -388,6 +389,7 @@ enabledContext.runLocalGet({
   domainFeatureDefaults: {
     extensionEnabled: true,
     features: {
+      autoScroll: false,
       progressBar: false,
       screenNavigation: false,
       scrollBookmarks: false,
@@ -398,6 +400,7 @@ enabledContext.runLocalGet({
     'youtube.com': {
       extensionEnabled: true,
       features: {
+        autoScroll: true,
         progressBar: true,
         screenNavigation: true,
         scrollBookmarks: false,
@@ -410,6 +413,7 @@ enabledContext.runLocalGet({
 const enabledState = enabledContext.getState();
 assert(enabledState.currentDomainKey === 'youtube.com', 'content script normalizes subdomains to the main domain');
 assert(enabledContext.initializeCalls === 1, 'enabled main-domain state initializes buttons');
+assert(enabledState.autoScrollEnabled === true, 'auto scroll feature state is applied at runtime');
 assert(enabledState.progressEnabled === true, 'progress feature state is applied at runtime');
 assert(enabledState.screenNavigationEnabled === true, 'screen navigation feature state is applied at runtime');
 assert(enabledState.bookmarksEnabled === false, 'disabled bookmark feature stays off');
@@ -422,6 +426,7 @@ defaultContext.runLocalGet({
   domainFeatureDefaults: {
     extensionEnabled: true,
     features: {
+      autoScroll: false,
       progressBar: false,
       screenNavigation: false,
       scrollBookmarks: false,
@@ -441,6 +446,7 @@ const baselineStorageListeners = lifecycle.storageListeners.size;
 const enabledDomainState = {
   extensionEnabled: true,
   features: {
+    autoScroll: false,
     progressBar: false,
     screenNavigation: false,
     scrollBookmarks: false,

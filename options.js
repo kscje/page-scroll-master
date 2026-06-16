@@ -11,6 +11,7 @@ let analyticsRuntimeState = {
 let analyticsStatusKey = 'disabled';
 let feedbackStatusKey = '';
 let feedbackSubmitting = false;
+const AUTO_SCROLL_ICON_SIZE = '48%';
 
 // 多语言翻译数据
 const translations = {
@@ -1339,6 +1340,42 @@ Object.keys(translations).forEach((lang) => {
   }
 });
 
+const autoScrollTranslations = {
+  'zh-CN': ['自动滚屏', '以稳定速度连续向下滚动，并在用户操作页面时智能暂停。', '滚动速度', '慢速（20 px/s）', '标准（40 px/s）', '快速（80 px/s）', '自定义', '自定义速度（10-300 px/s）', '自动滚屏按钮颜色', '用户滚动时暂停', '选择文字时暂停', '编辑输入时暂停', '切换到其他标签页时暂停', '进入全屏时暂停', '主要视频播放时暂停'],
+  'zh-TW': ['自動捲動', '以穩定速度持續向下捲動，並在使用者操作頁面時智慧暫停。', '捲動速度', '慢速（20 px/s）', '標準（40 px/s）', '快速（80 px/s）', '自訂', '自訂速度（10-300 px/s）', '自動捲動按鈕顏色', '使用者捲動時暫停', '選取文字時暫停', '編輯輸入時暫停', '切換到其他分頁時暫停', '進入全螢幕時暫停', '主要影片播放時暫停'],
+  'en-US': ['Auto scroll', 'Scroll downward at a steady speed and pause intelligently when you interact with the page.', 'Scroll speed', 'Slow (20 px/s)', 'Standard (40 px/s)', 'Fast (80 px/s)', 'Custom', 'Custom speed (10-300 px/s)', 'Auto scroll button color', 'Pause on user scroll', 'Pause when text is selected', 'Pause while editing', 'Pause when the tab is hidden', 'Pause in fullscreen', 'Pause while a primary video plays'],
+  'es-ES': ['Desplazamiento automático', 'Desplázate hacia abajo a velocidad constante y pausa al interactuar con la página.', 'Velocidad', 'Lenta (20 px/s)', 'Estándar (40 px/s)', 'Rápida (80 px/s)', 'Personalizada', 'Velocidad personalizada (10-300 px/s)', 'Color del botón', 'Pausar al desplazar', 'Pausar al seleccionar texto', 'Pausar al editar', 'Pausar al ocultar la pestaña', 'Pausar en pantalla completa', 'Pausar al reproducir el vídeo principal'],
+  'ja-JP': ['自動スクロール', '一定速度で下方向へスクロールし、ページ操作時に自動で一時停止します。', 'スクロール速度', '低速（20 px/s）', '標準（40 px/s）', '高速（80 px/s）', 'カスタム', 'カスタム速度（10-300 px/s）', '自動スクロールボタンの色', '手動スクロール時に一時停止', '文字選択時に一時停止', '入力時に一時停止', 'タブ非表示時に一時停止', '全画面時に一時停止', '主要動画の再生時に一時停止'],
+  'de-DE': ['Automatisches Scrollen', 'Scrollt gleichmäßig nach unten und pausiert bei Interaktionen mit der Seite.', 'Scrollgeschwindigkeit', 'Langsam (20 px/s)', 'Standard (40 px/s)', 'Schnell (80 px/s)', 'Benutzerdefiniert', 'Eigene Geschwindigkeit (10-300 px/s)', 'Farbe der Auto-Scroll-Schaltfläche', 'Bei manuellem Scrollen pausieren', 'Bei Textauswahl pausieren', 'Bei Eingabe pausieren', 'Bei ausgeblendetem Tab pausieren', 'Im Vollbild pausieren', 'Bei Wiedergabe des Hauptvideos pausieren'],
+  'fr-FR': ['Défilement automatique', 'Fait défiler vers le bas à vitesse constante et se met en pause lors des interactions.', 'Vitesse de défilement', 'Lente (20 px/s)', 'Standard (40 px/s)', 'Rapide (80 px/s)', 'Personnalisée', 'Vitesse personnalisée (10-300 px/s)', 'Couleur du bouton', 'Pause lors du défilement manuel', 'Pause lors de la sélection de texte', 'Pause pendant la saisie', 'Pause lorsque l’onglet est masqué', 'Pause en plein écran', 'Pause pendant la vidéo principale'],
+  'pt-BR': ['Rolagem automática', 'Rola para baixo em velocidade constante e pausa ao interagir com a página.', 'Velocidade', 'Lenta (20 px/s)', 'Padrão (40 px/s)', 'Rápida (80 px/s)', 'Personalizada', 'Velocidade personalizada (10-300 px/s)', 'Cor do botão', 'Pausar ao rolar manualmente', 'Pausar ao selecionar texto', 'Pausar durante a edição', 'Pausar quando a guia estiver oculta', 'Pausar em tela cheia', 'Pausar durante o vídeo principal'],
+  'ko-KR': ['자동 스크롤', '일정한 속도로 아래로 스크롤하고 페이지 조작 시 자동으로 일시 정지합니다.', '스크롤 속도', '느림 (20 px/s)', '표준 (40 px/s)', '빠름 (80 px/s)', '사용자 지정', '사용자 지정 속도 (10-300 px/s)', '자동 스크롤 버튼 색상', '사용자 스크롤 시 일시 정지', '텍스트 선택 시 일시 정지', '입력 중 일시 정지', '탭이 숨겨질 때 일시 정지', '전체 화면에서 일시 정지', '주요 동영상 재생 시 일시 정지'],
+  'it-IT': ['Scorrimento automatico', 'Scorre verso il basso a velocità costante e si mette in pausa durante le interazioni.', 'Velocità', 'Lenta (20 px/s)', 'Standard (40 px/s)', 'Veloce (80 px/s)', 'Personalizzata', 'Velocità personalizzata (10-300 px/s)', 'Colore del pulsante', 'Pausa durante lo scorrimento manuale', 'Pausa durante la selezione del testo', 'Pausa durante la modifica', 'Pausa quando la scheda è nascosta', 'Pausa a schermo intero', 'Pausa durante il video principale']
+};
+
+Object.keys(translations).forEach((lang) => {
+  const values = autoScrollTranslations[lang] || autoScrollTranslations['en-US'];
+  Object.assign(translations[lang], {
+    'settings.autoScroll': values[0],
+    'settings.autoScrollIntro': values[1],
+    'settings.autoScrollSpeedPreset': values[2],
+    'settings.autoScrollSpeedPreset.slow': values[3],
+    'settings.autoScrollSpeedPreset.standard': values[4],
+    'settings.autoScrollSpeedPreset.fast': values[5],
+    'settings.autoScrollSpeedPreset.custom': values[6],
+    'settings.autoScrollCustomSpeed': values[7],
+    'settings.autoScrollButtonColor': values[8],
+    'settings.autoScrollPauseOnUserScroll': values[9],
+    'settings.autoScrollPauseOnTextSelection': values[10],
+    'settings.autoScrollPauseOnEditableFocus': values[11],
+    'settings.autoScrollPauseWhenPageHidden': values[12],
+    'settings.autoScrollPauseOnFullscreen': values[13],
+    'settings.autoScrollPauseOnVideo': values[14],
+    'settings.onboardingFeatureAutoScroll': values[0],
+    'settings.domainAutoScroll': values[0]
+  });
+});
+
 const analyticsTranslations = {
   'zh-CN': {
     title: '隐私与统计',
@@ -1668,7 +1705,7 @@ const onboardingTranslations = {
     popupTitle: '从 Chrome 工具栏打开 Popup',
     popupDescription: '点击 Chrome 工具栏中的扩展图标；若图标未显示，可先在拼图菜单中固定本扩展。',
     siteControlsTitle: '按当前网站控制功能',
-    siteControlsDescription: 'Popup 可分别启停整个扩展和三项高级功能，状态对当前主域名生效。',
+    siteControlsDescription: 'Popup 可分别启停整个扩展和各项高级功能，状态对当前主域名生效。',
     featureExtension: '扩展',
     featureProgress: '页面进度条',
     featureBookmarks: '书签',
@@ -1687,7 +1724,7 @@ const onboardingTranslations = {
     popupTitle: '從 Chrome 工具列開啟 Popup',
     popupDescription: '點擊 Chrome 工具列中的擴充功能圖示；若圖示未顯示，可先在拼圖選單中固定本擴充功能。',
     siteControlsTitle: '依目前網站控制功能',
-    siteControlsDescription: 'Popup 可分別啟用或停用整個擴充功能與三項進階功能，狀態套用至目前主網域。',
+    siteControlsDescription: 'Popup 可分別啟用或停用整個擴充功能與各項進階功能，狀態套用至目前主網域。',
     featureExtension: '擴充功能',
     featureProgress: '頁面進度條',
     featureBookmarks: '書籤',
@@ -1706,7 +1743,7 @@ const onboardingTranslations = {
     popupTitle: 'Open the Popup from the Chrome toolbar',
     popupDescription: 'Click the extension icon in the Chrome toolbar. If it is hidden, pin this extension from the puzzle-piece menu.',
     siteControlsTitle: 'Control features for the current site',
-    siteControlsDescription: 'The Popup separately turns the extension and its three advanced features on or off for the current main domain.',
+    siteControlsDescription: 'The Popup separately turns the extension and its advanced features on or off for the current main domain.',
     featureExtension: 'Extension',
     featureProgress: 'Page progress',
     featureBookmarks: 'Bookmarks',
@@ -1725,7 +1762,7 @@ const onboardingTranslations = {
     popupTitle: 'Abre el Popup desde la barra de Chrome',
     popupDescription: 'Haz clic en el icono de la extensión. Si no aparece, fíjalo desde el menú de extensiones con forma de pieza de puzle.',
     siteControlsTitle: 'Controla las funciones del sitio actual',
-    siteControlsDescription: 'El Popup activa o desactiva por separado la extensión y sus tres funciones avanzadas para el dominio principal actual.',
+    siteControlsDescription: 'El Popup activa o desactiva por separado la extensión y sus funciones avanzadas para el dominio principal actual.',
     featureExtension: 'Extensión',
     featureProgress: 'Progreso de página',
     featureBookmarks: 'Marcadores',
@@ -1744,7 +1781,7 @@ const onboardingTranslations = {
     popupTitle: 'Chrome ツールバーから Popup を開く',
     popupDescription: 'Chrome ツールバーの拡張機能アイコンをクリックします。表示されない場合は、パズル形のメニューから固定してください。',
     siteControlsTitle: '現在のサイトごとに機能を制御する',
-    siteControlsDescription: 'Popup では、現在のメインドメインに対して拡張機能全体と3つの高度な機能を個別にオン、オフできます。',
+    siteControlsDescription: 'Popup では、現在のメインドメインに対して拡張機能全体と高度な機能を個別にオン、オフできます。',
     featureExtension: '拡張機能',
     featureProgress: 'ページ進捗',
     featureBookmarks: 'ブックマーク',
@@ -1763,7 +1800,7 @@ const onboardingTranslations = {
     popupTitle: 'Popup über die Chrome-Symbolleiste öffnen',
     popupDescription: 'Klicken Sie auf das Erweiterungssymbol in Chrome. Falls es nicht sichtbar ist, heften Sie die Erweiterung über das Puzzle-Menü an.',
     siteControlsTitle: 'Funktionen für die aktuelle Website steuern',
-    siteControlsDescription: 'Im Popup lassen sich die Erweiterung und ihre drei erweiterten Funktionen für die aktuelle Hauptdomain getrennt ein- oder ausschalten.',
+    siteControlsDescription: 'Im Popup lassen sich die Erweiterung und ihre erweiterten Funktionen für die aktuelle Hauptdomain getrennt ein- oder ausschalten.',
     featureExtension: 'Erweiterung',
     featureProgress: 'Seitenfortschritt',
     featureBookmarks: 'Lesezeichen',
@@ -1782,7 +1819,7 @@ const onboardingTranslations = {
     popupTitle: 'Ouvrir le Popup depuis la barre Chrome',
     popupDescription: 'Cliquez sur l’icône de l’extension dans Chrome. Si elle est masquée, épinglez-la depuis le menu en forme de pièce de puzzle.',
     siteControlsTitle: 'Contrôler les fonctions du site actuel',
-    siteControlsDescription: 'Le Popup active ou désactive séparément l’extension et ses trois fonctions avancées pour le domaine principal actuel.',
+    siteControlsDescription: 'Le Popup active ou désactive séparément l’extension et ses fonctions avancées pour le domaine principal actuel.',
     featureExtension: 'Extension',
     featureProgress: 'Progression de page',
     featureBookmarks: 'Marque-pages',
@@ -1801,7 +1838,7 @@ const onboardingTranslations = {
     popupTitle: 'Abra o Popup pela barra do Chrome',
     popupDescription: 'Clique no ícone da extensão na barra do Chrome. Se ele estiver oculto, fixe a extensão pelo menu em forma de peça de quebra-cabeça.',
     siteControlsTitle: 'Controle os recursos do site atual',
-    siteControlsDescription: 'O Popup ativa ou desativa separadamente a extensão e seus três recursos avançados para o domínio principal atual.',
+    siteControlsDescription: 'O Popup ativa ou desativa separadamente a extensão e seus recursos avançados para o domínio principal atual.',
     featureExtension: 'Extensão',
     featureProgress: 'Progresso da página',
     featureBookmarks: 'Favoritos',
@@ -1820,7 +1857,7 @@ const onboardingTranslations = {
     popupTitle: 'Chrome 도구 모음에서 Popup 열기',
     popupDescription: 'Chrome 도구 모음의 확장 프로그램 아이콘을 클릭하세요. 아이콘이 보이지 않으면 퍼즐 메뉴에서 이 확장 프로그램을 고정하세요.',
     siteControlsTitle: '현재 사이트별 기능 제어',
-    siteControlsDescription: 'Popup에서 현재 기본 도메인에 대해 확장 프로그램 전체와 세 가지 고급 기능을 각각 켜거나 끌 수 있습니다.',
+    siteControlsDescription: 'Popup에서 현재 기본 도메인에 대해 확장 프로그램 전체와 고급 기능을 각각 켜거나 끌 수 있습니다.',
     featureExtension: '확장 프로그램',
     featureProgress: '페이지 진행률',
     featureBookmarks: '북마크',
@@ -1839,7 +1876,7 @@ const onboardingTranslations = {
     popupTitle: 'Apri il Popup dalla barra di Chrome',
     popupDescription: 'Fai clic sull’icona dell’estensione in Chrome. Se è nascosta, fissala dal menu con l’icona a forma di puzzle.',
     siteControlsTitle: 'Controlla le funzioni del sito corrente',
-    siteControlsDescription: 'Il Popup attiva o disattiva separatamente l’estensione e le tre funzioni avanzate per il dominio principale corrente.',
+    siteControlsDescription: 'Il Popup attiva o disattiva separatamente l’estensione e le funzioni avanzate per il dominio principale corrente.',
     featureExtension: 'Estensione',
     featureProgress: 'Avanzamento pagina',
     featureBookmarks: 'Segnalibri',
@@ -1912,6 +1949,19 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.2.0',
+    categories: {
+      added: [
+        'globalShortcutManagement',
+        'screenNavigation',
+        'feedbackService'
+      ],
+      improved: [
+        'readingToolLayout'
+      ]
+    }
+  },
+  {
     version: '2.1.0',
     categories: {
       added: [
@@ -1977,6 +2027,10 @@ const releaseNotesTranslations = {
     currentVersion: '当前版本',
     categories: { added: '新功能', improved: '功能优化', fixed: 'Bug 修复' },
     items: {
+      globalShortcutManagement: '新增全局滚动快捷键查看和浏览器管理入口。',
+      screenNavigation: '新增上一屏和下一屏跳转，支持自定义滚动容器。',
+      feedbackService: '新增扩展内建议与反馈提交，支持可选联系方式和图片。',
+      readingToolLayout: '统一按钮透明度，并优化页面中部阅读工具的排列顺序。',
       domainFeatureControls: '新增按主域名控制插件和三项高级功能。',
       installOptionsPage: '全新安装扩展后自动打开设置页。',
       releaseNotes: '新增扩展内更新记录。',
@@ -2004,6 +2058,10 @@ const releaseNotesTranslations = {
     currentVersion: '目前版本',
     categories: { added: '新功能', improved: '功能最佳化', fixed: 'Bug 修正' },
     items: {
+      globalShortcutManagement: '新增全域捲動快捷鍵查看與瀏覽器管理入口。',
+      screenNavigation: '新增上一屏與下一屏跳轉，支援自訂捲動容器。',
+      feedbackService: '新增擴充功能內建議與回饋提交，支援選填聯絡方式與圖片。',
+      readingToolLayout: '統一按鈕透明度，並最佳化頁面中部閱讀工具的排列順序。',
       domainFeatureControls: '新增依主網域控制外掛與三項進階功能。',
       installOptionsPage: '全新安裝擴充功能後自動開啟設定頁。',
       releaseNotes: '新增擴充功能內更新記錄。',
@@ -2031,6 +2089,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Current version',
     categories: { added: 'New features', improved: 'Feature improvements', fixed: 'Bug fixes' },
     items: {
+      globalShortcutManagement: 'Added current shortcut display and a browser-managed shortcut entry.',
+      screenNavigation: 'Added previous-screen and next-screen navigation for root and custom scroll containers.',
+      feedbackService: 'Added in-extension feedback submission with optional contact details and images.',
+      readingToolLayout: 'Unified button opacity and improved page-middle reading tool ordering.',
       domainFeatureControls: 'Added per-domain controls for the extension and its three advanced features.',
       installOptionsPage: 'The settings page now opens automatically after a fresh installation.',
       releaseNotes: 'Added release notes inside the extension.',
@@ -2058,6 +2120,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Versión actual',
     categories: { added: 'Nuevas funciones', improved: 'Mejoras de funciones', fixed: 'Correcciones de errores' },
     items: {
+      globalShortcutManagement: 'Se añadió la visualización de atajos y el acceso a su gestión en el navegador.',
+      screenNavigation: 'Se añadió la navegación por pantalla anterior y siguiente para contenedores de desplazamiento personalizados.',
+      feedbackService: 'Se añadió el envío de comentarios con contacto e imágenes opcionales.',
+      readingToolLayout: 'Se unificó la opacidad de los botones y se mejoró el orden de las herramientas centrales.',
       domainFeatureControls: 'Se añadieron controles por dominio para la extensión y sus tres funciones avanzadas.',
       installOptionsPage: 'La página de ajustes ahora se abre automáticamente tras una instalación nueva.',
       releaseNotes: 'Se añadieron novedades dentro de la extensión.',
@@ -2085,6 +2151,10 @@ const releaseNotesTranslations = {
     currentVersion: '現在のバージョン',
     categories: { added: '新機能', improved: '機能改善', fixed: '不具合修正' },
     items: {
+      globalShortcutManagement: '現在のショートカット表示とブラウザーの管理画面への入口を追加しました。',
+      screenNavigation: 'ルートおよびカスタムスクロール領域に前後1画面の移動を追加しました。',
+      feedbackService: '任意の連絡先と画像に対応したフィードバック送信を追加しました。',
+      readingToolLayout: 'ボタンの透明度を統一し、ページ中央の読書ツール順序を改善しました。',
       domainFeatureControls: 'メインドメインごとに拡張機能と3つの高度な機能を制御できるようになりました。',
       installOptionsPage: '新規インストール後に設定ページを自動で開くようになりました。',
       releaseNotes: '拡張機能内に更新履歴を追加しました。',
@@ -2112,6 +2182,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Aktuelle Version',
     categories: { added: 'Neue Funktionen', improved: 'Funktionsverbesserungen', fixed: 'Fehlerbehebungen' },
     items: {
+      globalShortcutManagement: 'Anzeige aktueller Tastenkürzel und Zugang zur Browserverwaltung hinzugefügt.',
+      screenNavigation: 'Navigation zur vorherigen und nächsten Bildschirmseite für eigene Scroll-Container hinzugefügt.',
+      feedbackService: 'Feedbackversand mit optionalen Kontaktdaten und Bildern hinzugefügt.',
+      readingToolLayout: 'Schaltflächentransparenz vereinheitlicht und Anordnung der Lesewerkzeuge in der Seitenmitte verbessert.',
       domainFeatureControls: 'Steuerung der Erweiterung und ihrer drei erweiterten Funktionen pro Domain hinzugefügt.',
       installOptionsPage: 'Nach einer Neuinstallation wird die Einstellungsseite automatisch geöffnet.',
       releaseNotes: 'Versionshinweise innerhalb der Erweiterung hinzugefügt.',
@@ -2139,6 +2213,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Version actuelle',
     categories: { added: 'Nouvelles fonctions', improved: 'Améliorations', fixed: 'Corrections de bugs' },
     items: {
+      globalShortcutManagement: 'Ajout de l’affichage des raccourcis et de l’accès à leur gestion par le navigateur.',
+      screenNavigation: 'Ajout de la navigation par écran précédent et suivant pour les conteneurs de défilement personnalisés.',
+      feedbackService: 'Ajout de l’envoi d’avis avec contact et images facultatifs.',
+      readingToolLayout: 'Uniformisation de l’opacité des boutons et amélioration de l’ordre des outils au milieu de page.',
       domainFeatureControls: 'Ajout du contrôle par domaine de l’extension et de ses trois fonctions avancées.',
       installOptionsPage: 'La page des réglages s’ouvre automatiquement après une nouvelle installation.',
       releaseNotes: 'Ajout des notes de version dans l’extension.',
@@ -2166,6 +2244,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Versão atual',
     categories: { added: 'Novos recursos', improved: 'Melhorias de recursos', fixed: 'Correções de bugs' },
     items: {
+      globalShortcutManagement: 'Adicionada a exibição dos atalhos e o acesso ao gerenciamento pelo navegador.',
+      screenNavigation: 'Adicionada navegação para a tela anterior e seguinte em contêineres de rolagem personalizados.',
+      feedbackService: 'Adicionado envio de feedback com contato e imagens opcionais.',
+      readingToolLayout: 'Unificada a opacidade dos botões e melhorada a ordem das ferramentas no meio da página.',
       domainFeatureControls: 'Adicionados controles por domínio para a extensão e seus três recursos avançados.',
       installOptionsPage: 'A página de configurações agora abre automaticamente após uma nova instalação.',
       releaseNotes: 'Adicionadas notas da versão dentro da extensão.',
@@ -2193,6 +2275,10 @@ const releaseNotesTranslations = {
     currentVersion: '현재 버전',
     categories: { added: '새 기능', improved: '기능 개선', fixed: '버그 수정' },
     items: {
+      globalShortcutManagement: '현재 단축키 표시와 브라우저 단축키 관리 진입점을 추가했습니다.',
+      screenNavigation: '루트 및 사용자 지정 스크롤 영역에 이전 화면과 다음 화면 이동을 추가했습니다.',
+      feedbackService: '선택 연락처와 이미지를 포함할 수 있는 피드백 제출을 추가했습니다.',
+      readingToolLayout: '버튼 투명도를 통합하고 페이지 중간 읽기 도구 순서를 개선했습니다.',
       domainFeatureControls: '기본 도메인별로 확장 프로그램과 세 가지 고급 기능을 제어할 수 있습니다.',
       installOptionsPage: '새로 설치하면 설정 페이지가 자동으로 열립니다.',
       releaseNotes: '확장 프로그램 안에 업데이트 기록을 추가했습니다.',
@@ -2220,6 +2306,10 @@ const releaseNotesTranslations = {
     currentVersion: 'Versione attuale',
     categories: { added: 'Nuove funzioni', improved: 'Miglioramenti', fixed: 'Correzioni di bug' },
     items: {
+      globalShortcutManagement: 'Aggiunta la visualizzazione delle scorciatoie e l’accesso alla gestione del browser.',
+      screenNavigation: 'Aggiunta la navigazione alla schermata precedente e successiva per contenitori di scorrimento personalizzati.',
+      feedbackService: 'Aggiunto l’invio di feedback con contatto e immagini facoltativi.',
+      readingToolLayout: 'Uniformata l’opacità dei pulsanti e migliorato l’ordine degli strumenti al centro pagina.',
       domainFeatureControls: 'Aggiunti controlli per dominio per l’estensione e le sue tre funzioni avanzate.',
       installOptionsPage: 'La pagina delle impostazioni si apre automaticamente dopo una nuova installazione.',
       releaseNotes: 'Aggiunte le note di versione all’interno dell’estensione.',
@@ -2246,6 +2336,19 @@ const releaseNotesTranslations = {
 };
 
 const DEFAULT_ADVANCED_SETTINGS = {
+  autoScroll: {
+    enabled: false,
+    speedPreset: 'standard',
+    customSpeed: 40,
+    buttonPosition: 'pageBottom',
+    buttonColor: '#4A9EDD',
+    pauseOnUserScroll: true,
+    pauseOnTextSelection: true,
+    pauseOnEditableFocus: true,
+    pauseWhenPageHidden: true,
+    pauseOnFullscreen: true,
+    pauseOnVideo: true
+  },
   screenNavigation: {
     enabled: false,
     screenStepRatio: 0.9,
@@ -2388,6 +2491,10 @@ function normalizeBoolean(value, fallback) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
+function normalizeAutoScrollSpeedPreset(value) {
+  return ['slow', 'standard', 'fast', 'custom'].includes(value) ? value : 'standard';
+}
+
 function normalizeOutlineMaxItems(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return DEFAULT_ADVANCED_SETTINGS.outlineNavigation.maxItems;
@@ -2438,6 +2545,9 @@ function normalizeBookmarkRestoreMode(value, legacyRestorePromptEnabled) {
 
 function mergeAdvancedSettings(savedSettings) {
   const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
+  const savedAutoScroll = isPlainObject(savedSettings) && isPlainObject(savedSettings.autoScroll)
+    ? savedSettings.autoScroll
+    : {};
   const savedOutline = isPlainObject(savedSettings) && isPlainObject(savedSettings.outlineNavigation)
     ? savedSettings.outlineNavigation
     : {};
@@ -2453,6 +2563,23 @@ function mergeAdvancedSettings(savedSettings) {
     ? savedSettings.readingTools.features
     : {};
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
+  merged.autoScroll.speedPreset = normalizeAutoScrollSpeedPreset(merged.autoScroll.speedPreset);
+  merged.autoScroll.customSpeed = clampNumber(merged.autoScroll.customSpeed, 10, 300, 40);
+  merged.autoScroll.buttonPosition = normalizeFeatureButtonPosition(merged.autoScroll.buttonPosition);
+  merged.autoScroll.buttonColor = validateHexColor(merged.autoScroll.buttonColor, '#4A9EDD');
+  [
+    'pauseOnUserScroll',
+    'pauseOnTextSelection',
+    'pauseOnEditableFocus',
+    'pauseWhenPageHidden',
+    'pauseOnFullscreen',
+    'pauseOnVideo'
+  ].forEach((key) => {
+    merged.autoScroll[key] = normalizeBoolean(
+      savedAutoScroll[key],
+      DEFAULT_ADVANCED_SETTINGS.autoScroll[key]
+    );
+  });
   merged.screenNavigation.screenStepRatio = clampNumber(merged.screenNavigation.screenStepRatio, 0.5, 1, 0.9);
   merged.screenNavigation.previousScreenButtonColor = validateHexColor(
     merged.screenNavigation.previousScreenButtonColor,
@@ -2723,6 +2850,10 @@ function getOutlineIconSvg() {
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
 }
 
+function getAutoScrollIconSvg() {
+  return '<svg class="psm-auto-scroll-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+}
+
 function getScreenNavigationIconSvg(direction) {
   const arrowPath = direction === 'previous'
     ? '<path d="M12 17V8M8.5 11.5 12 8l3.5 3.5"/>'
@@ -2737,6 +2868,7 @@ function updatePreviewButtons() {
   const bottomButton = document.getElementById('previewBottomButton');
   const nextScreenButton = document.getElementById('previewNextScreenButton');
   const progressButton = document.getElementById('previewProgressButton');
+  const autoScrollButton = document.getElementById('previewAutoScrollButton');
   const bookmarkButton = document.getElementById('previewBookmarkButton');
   const outlineButton = document.getElementById('previewOutlineButton');
   const horizontalProgress = document.getElementById('previewHorizontalProgress');
@@ -2769,6 +2901,13 @@ function updatePreviewButtons() {
     '#4A9EDD'
   );
   const featureButtons = [
+    {
+      button: autoScrollButton,
+      enabled: true,
+      position: document.getElementById('autoScrollButtonPosition')?.value || 'pageBottom',
+      color: validateHexColor(document.getElementById('autoScrollButtonColor')?.value, '#4A9EDD'),
+      icon: getAutoScrollIconSvg()
+    },
     {
       button: bookmarkButton,
       enabled: true,
@@ -3077,8 +3216,9 @@ function updatePreviewButtons() {
       featureButton.style.color = iconColor;
       const featureIcon = featureButton.querySelector('svg');
       if (featureIcon) {
-        featureIcon.style.width = iconSize;
-        featureIcon.style.height = iconSize;
+        const featureIconSize = feature.button === autoScrollButton ? AUTO_SCROLL_ICON_SIZE : iconSize;
+        featureIcon.style.width = featureIconSize;
+        featureIcon.style.height = featureIconSize;
         featureIcon.style.display = 'block';
       }
     });
@@ -3238,6 +3378,9 @@ function validateOutlineMaxItemsInput() {
 }
 
 function updateAdvancedVisibility() {
+  const autoScrollSettings = document.getElementById('autoScrollSettings');
+  const autoScrollCustomSpeedContainer = document.getElementById('autoScrollCustomSpeedContainer');
+  const autoScrollSpeedPreset = document.getElementById('autoScrollSpeedPreset');
   const progressSettings = document.getElementById('progressBarSettings');
   const verticalSettings = document.getElementById('verticalProgressSettings');
   const horizontalSettings = document.getElementById('horizontalProgressSettings');
@@ -3251,6 +3394,12 @@ function updateAdvancedVisibility() {
   const scrollBookmarkColorMode = document.getElementById('scrollBookmarkButtonColorMode');
   const outlineColorMode = document.getElementById('outlineButtonColorMode');
 
+  if (autoScrollSettings) {
+    autoScrollSettings.style.display = 'block';
+  }
+  if (autoScrollCustomSpeedContainer && autoScrollSpeedPreset) {
+    autoScrollCustomSpeedContainer.style.display = autoScrollSpeedPreset.value === 'custom' ? 'block' : 'none';
+  }
   if (progressSettings) {
     progressSettings.style.display = 'block';
   }
@@ -3284,12 +3433,24 @@ function updateAdvancedPreviewControls() {
 
 function setAdvancedSettingsControls(settings) {
   advancedSettingsState = mergeAdvancedSettings(settings);
+  const autoScroll = advancedSettingsState.autoScroll;
   const screenNavigation = advancedSettingsState.screenNavigation;
   const progress = advancedSettingsState.progressBar;
   const icons = advancedSettingsState.iconCustomization;
   const scrollBookmarks = advancedSettingsState.scrollBookmarks;
   const outlineNavigation = advancedSettingsState.outlineNavigation;
 
+  document.getElementById('autoScrollSpeedPreset').value = autoScroll.speedPreset;
+  document.getElementById('autoScrollCustomSpeed').value = autoScroll.customSpeed;
+  document.getElementById('autoScrollButtonPosition').value = autoScroll.buttonPosition;
+  document.getElementById('autoScrollButtonColor').value = autoScroll.buttonColor;
+  document.getElementById('autoScrollButtonColorHex').value = autoScroll.buttonColor;
+  document.getElementById('autoScrollPauseOnUserScroll').checked = autoScroll.pauseOnUserScroll;
+  document.getElementById('autoScrollPauseOnTextSelection').checked = autoScroll.pauseOnTextSelection;
+  document.getElementById('autoScrollPauseOnEditableFocus').checked = autoScroll.pauseOnEditableFocus;
+  document.getElementById('autoScrollPauseWhenPageHidden').checked = autoScroll.pauseWhenPageHidden;
+  document.getElementById('autoScrollPauseOnFullscreen').checked = autoScroll.pauseOnFullscreen;
+  document.getElementById('autoScrollPauseOnVideo').checked = autoScroll.pauseOnVideo;
   document.getElementById('screenStepRatio').value = Math.round(screenNavigation.screenStepRatio * 100);
   document.getElementById('previousScreenButtonColor').value = screenNavigation.previousScreenButtonColor;
   document.getElementById('previousScreenButtonColorHex').value = screenNavigation.previousScreenButtonColor;
@@ -3335,6 +3496,11 @@ function setAdvancedSettingsControls(settings) {
 }
 
 function getAdvancedSettingsFromControls() {
+  const autoScrollCustomSpeed = clampNumber(document.getElementById('autoScrollCustomSpeed').value, 10, 300, 40);
+  const autoScrollButtonColor = validateHexColor(
+    document.getElementById('autoScrollButtonColor').value,
+    '#4A9EDD'
+  );
   const screenStepRatio = clampNumber(document.getElementById('screenStepRatio').value, 50, 100, 90) / 100;
   const previousScreenButtonColor = validateHexColor(
     document.getElementById('previousScreenButtonColor').value,
@@ -3351,6 +3517,19 @@ function getAdvancedSettingsFromControls() {
   const outlineCustomColor = validateHexColor(document.getElementById('outlineButtonCustomColor').value, '#4a9edd');
   ensureOutlineSourceSelection(false);
   return mergeAdvancedSettings({
+    autoScroll: {
+      enabled: true,
+      speedPreset: normalizeAutoScrollSpeedPreset(document.getElementById('autoScrollSpeedPreset').value),
+      customSpeed: autoScrollCustomSpeed,
+      buttonPosition: normalizeFeatureButtonPosition(document.getElementById('autoScrollButtonPosition').value),
+      buttonColor: autoScrollButtonColor,
+      pauseOnUserScroll: document.getElementById('autoScrollPauseOnUserScroll').checked,
+      pauseOnTextSelection: document.getElementById('autoScrollPauseOnTextSelection').checked,
+      pauseOnEditableFocus: document.getElementById('autoScrollPauseOnEditableFocus').checked,
+      pauseWhenPageHidden: document.getElementById('autoScrollPauseWhenPageHidden').checked,
+      pauseOnFullscreen: document.getElementById('autoScrollPauseOnFullscreen').checked,
+      pauseOnVideo: document.getElementById('autoScrollPauseOnVideo').checked
+    },
     screenNavigation: {
       enabled: true,
       screenStepRatio,
@@ -3499,6 +3678,7 @@ function renderDomainFeatureStatesList() {
     [
       'settings.domainName',
       'settings.domainExtension',
+      'settings.domainAutoScroll',
       'settings.domainProgressBar',
       'settings.domainScreenNavigation',
       'settings.domainScrollBookmarks',
@@ -3535,6 +3715,7 @@ function renderDomainFeatureStatesList() {
     );
     const featureToggles = domainUtils.FEATURE_KEYS.map((featureKey) => {
       const labelKeys = {
+        autoScroll: 'settings.domainAutoScroll',
         progressBar: 'settings.domainProgressBar',
         screenNavigation: 'settings.domainScreenNavigation',
         scrollBookmarks: 'settings.domainScrollBookmarks',
@@ -3552,7 +3733,7 @@ function renderDomainFeatureStatesList() {
               ...current.features,
               [featureKey]: checked
             }
-          }), () => recordAnalyticsToggle(featureKey, checked));
+          }), featureKey === 'autoScroll' ? null : () => recordAnalyticsToggle(featureKey, checked));
         }
       );
     });
@@ -4398,6 +4579,9 @@ function init() {
   });
 
   document.getElementById('screenStepRatio').addEventListener('input', updatePreviewButtons);
+  document.getElementById('autoScrollSpeedPreset').addEventListener('change', updateAdvancedPreviewControls);
+  document.getElementById('autoScrollCustomSpeed').addEventListener('input', updatePreviewButtons);
+  document.getElementById('autoScrollButtonPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
@@ -4443,6 +4627,7 @@ function init() {
 
   bindColorPair('scrollBookmarkButtonCustomColor', 'scrollBookmarkButtonCustomColorHex');
   bindColorPair('outlineButtonCustomColor', 'outlineButtonCustomColorHex');
+  bindColorPair('autoScrollButtonColor', 'autoScrollButtonColorHex');
   bindColorPair('previousScreenButtonColor', 'previousScreenButtonColorHex');
   bindColorPair('nextScreenButtonColor', 'nextScreenButtonColorHex');
 

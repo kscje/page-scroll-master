@@ -3,6 +3,7 @@ var STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 
 var extensionToggleEl = document.getElementById('extensionToggle');
 var featureToggleEls = {
+  autoScroll: document.getElementById('autoScrollToggle'),
   progressBar: document.getElementById('progressBarToggle'),
   screenNavigation: document.getElementById('screenNavigationToggle'),
   scrollBookmarks: document.getElementById('scrollBookmarksToggle'),
@@ -24,6 +25,7 @@ var popupTranslations = {
     'popupEnableToggle': '在此主域名启用插件',
     'popupCurrentSite': '当前网站：',
     'popupAdvancedFeatures': '高级功能',
+    'popupAutoScroll': '自动滚屏',
     'popupProgressBar': '页面进度条',
     'popupScreenNavigation': '按屏跳转',
     'popupScrollBookmarks': '滚动位置书签',
@@ -35,6 +37,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Enable extension on this domain',
     'popupCurrentSite': 'Current site: ',
     'popupAdvancedFeatures': 'Advanced features',
+    'popupAutoScroll': 'Auto scroll',
     'popupProgressBar': 'Page progress bar',
     'popupScreenNavigation': 'Previous/next screen',
     'popupScrollBookmarks': 'Scroll position bookmarks',
@@ -46,6 +49,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Activar extensión en este dominio',
     'popupCurrentSite': 'Sitio actual: ',
     'popupAdvancedFeatures': 'Funciones avanzadas',
+    'popupAutoScroll': 'Desplazamiento automático',
     'popupProgressBar': 'Barra de progreso',
     'popupScreenNavigation': 'Pantalla anterior/siguiente',
     'popupScrollBookmarks': 'Marcadores de posición',
@@ -57,6 +61,7 @@ var popupTranslations = {
     'popupEnableToggle': 'このドメインで拡張機能を有効化',
     'popupCurrentSite': '現在のサイト：',
     'popupAdvancedFeatures': '高度な機能',
+    'popupAutoScroll': '自動スクロール',
     'popupProgressBar': 'ページ進捗バー',
     'popupScreenNavigation': '前後の画面へ移動',
     'popupScrollBookmarks': 'スクロール位置ブックマーク',
@@ -68,6 +73,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Erweiterung für diese Domain aktivieren',
     'popupCurrentSite': 'Aktuelle Website: ',
     'popupAdvancedFeatures': 'Erweiterte Funktionen',
+    'popupAutoScroll': 'Automatisches Scrollen',
     'popupProgressBar': 'Seitenfortschritt',
     'popupScreenNavigation': 'Vorheriger/nächster Bildschirm',
     'popupScrollBookmarks': 'Scrollpositions-Lesezeichen',
@@ -79,6 +85,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Activer l’extension sur ce domaine',
     'popupCurrentSite': 'Site actuel : ',
     'popupAdvancedFeatures': 'Fonctions avancées',
+    'popupAutoScroll': 'Défilement automatique',
     'popupProgressBar': 'Progression de page',
     'popupScreenNavigation': 'Écran précédent/suivant',
     'popupScrollBookmarks': 'Marque-pages de position',
@@ -90,6 +97,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Ativar extensão neste domínio',
     'popupCurrentSite': 'Site atual: ',
     'popupAdvancedFeatures': 'Recursos avançados',
+    'popupAutoScroll': 'Rolagem automática',
     'popupProgressBar': 'Progresso da página',
     'popupScreenNavigation': 'Tela anterior/seguinte',
     'popupScrollBookmarks': 'Favoritos de posição',
@@ -101,6 +109,7 @@ var popupTranslations = {
     'popupEnableToggle': '在此主網域啟用外掛',
     'popupCurrentSite': '目前網站：',
     'popupAdvancedFeatures': '進階功能',
+    'popupAutoScroll': '自動捲動',
     'popupProgressBar': '頁面進度條',
     'popupScreenNavigation': '上一屏／下一屏',
     'popupScrollBookmarks': '捲動位置書籤',
@@ -112,6 +121,7 @@ var popupTranslations = {
     'popupEnableToggle': '이 도메인에서 확장 프로그램 사용',
     'popupCurrentSite': '현재 사이트: ',
     'popupAdvancedFeatures': '고급 기능',
+    'popupAutoScroll': '자동 스크롤',
     'popupProgressBar': '페이지 진행률 표시줄',
     'popupScreenNavigation': '이전/다음 화면',
     'popupScrollBookmarks': '스크롤 위치 북마크',
@@ -123,6 +133,7 @@ var popupTranslations = {
     'popupEnableToggle': 'Attiva l’estensione su questo dominio',
     'popupCurrentSite': 'Sito corrente: ',
     'popupAdvancedFeatures': 'Funzioni avanzate',
+    'popupAutoScroll': 'Scorrimento automatico',
     'popupProgressBar': 'Progresso pagina',
     'popupScreenNavigation': 'Schermata precedente/successiva',
     'popupScrollBookmarks': 'Segnalibri posizione',
@@ -250,6 +261,7 @@ function readStateFromControls() {
   return domainUtils.normalizeState({
     extensionEnabled: extensionToggleEl.checked,
     features: {
+      autoScroll: featureToggleEls.autoScroll.checked,
       progressBar: featureToggleEls.progressBar.checked,
       screenNavigation: featureToggleEls.screenNavigation.checked,
       scrollBookmarks: featureToggleEls.scrollBookmarks.checked,
@@ -262,12 +274,15 @@ function handleControlChange(feature) {
   if (ignoreChanges || !currentDomainKey) return;
   setControlsDisabled(false);
   var state = readStateFromControls();
-  persistCurrentState(state, {
-    feature: feature,
-    enabled: feature === 'extension'
-      ? state.extensionEnabled
-      : state.features[feature]
-  });
+  persistCurrentState(
+    state,
+    feature === 'autoScroll' ? null : {
+      feature: feature,
+      enabled: feature === 'extension'
+        ? state.extensionEnabled
+        : state.features[feature]
+    }
+  );
 }
 
 function loadStorageAndRender() {

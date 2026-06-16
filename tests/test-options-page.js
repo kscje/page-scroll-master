@@ -167,6 +167,19 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     manageGlobalShortcuts: createElement('manageGlobalShortcuts'),
     languageSelector: createElement('languageSelector', { value: 'auto' }),
     progressBarEnabled: createElement('progressBarEnabled'),
+    autoScrollSettings: createElement('autoScrollSettings'),
+    autoScrollSpeedPreset: createElement('autoScrollSpeedPreset', { value: 'standard' }),
+    autoScrollCustomSpeedContainer: createElement('autoScrollCustomSpeedContainer'),
+    autoScrollCustomSpeed: createElement('autoScrollCustomSpeed', { value: '40' }),
+    autoScrollButtonPosition: createElement('autoScrollButtonPosition', { value: 'pageBottom' }),
+    autoScrollButtonColor: createElement('autoScrollButtonColor', { value: '#4A9EDD' }),
+    autoScrollButtonColorHex: createElement('autoScrollButtonColorHex', { value: '#4A9EDD' }),
+    autoScrollPauseOnUserScroll: createElement('autoScrollPauseOnUserScroll', { checked: true }),
+    autoScrollPauseOnTextSelection: createElement('autoScrollPauseOnTextSelection', { checked: true }),
+    autoScrollPauseOnEditableFocus: createElement('autoScrollPauseOnEditableFocus', { checked: true }),
+    autoScrollPauseWhenPageHidden: createElement('autoScrollPauseWhenPageHidden', { checked: true }),
+    autoScrollPauseOnFullscreen: createElement('autoScrollPauseOnFullscreen', { checked: true }),
+    autoScrollPauseOnVideo: createElement('autoScrollPauseOnVideo', { checked: true }),
     screenNavigationSettings: createElement('screenNavigationSettings'),
     screenStepRatio: createElement('screenStepRatio', { value: '90' }),
     previousScreenButtonColor: createElement('previousScreenButtonColor', { value: '#4A9EDD' }),
@@ -249,6 +262,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       children: [createElement('topSvg', { attributes: { tagName: 'svg' } })]
     }),
     previewPreviousScreenButton: createElement('previewPreviousScreenButton'),
+    previewAutoScrollButton: createElement('previewAutoScrollButton'),
     previewProgressButton: createElement('previewProgressButton', {
       className: 'preview-scroll-button preview-progress-button hidden',
       children: [
@@ -545,10 +559,12 @@ assert(
   'onboarding explains scroll buttons, toolbar Popup, site controls, and analytics consent'
 );
 assert(
+  OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureAutoScroll"') &&
+  OPTIONS_HTML.includes('data-i18n="settings.screenNavigation"') &&
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureProgress"') &&
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureBookmarks"') &&
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureOutline"'),
-  'onboarding names all three advanced features controlled from the Popup'
+  'onboarding names the advanced features controlled from the Popup'
 );
 assert(
   OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyOff"'),
@@ -579,6 +595,11 @@ assert(
 assert(
   !OPTIONS_HTML.includes('screenNavigationOpacity'),
   'screen navigation omits an independent opacity control'
+);
+assert(
+  OPTIONS_HTML.includes('id="autoScrollButtonColor"') &&
+    !OPTIONS_HTML.includes('id="autoScrollButtonColorMode"'),
+  'auto scroll uses one directly configurable button color'
 );
 assert(
   !OPTIONS_HTML.includes('data-i18n="settings.advancedEnableHint">是否启用由工具栏 Popup') &&
@@ -734,24 +755,24 @@ const domainHeader = domainTablePage.elements.domainList.children[0];
 const domainRow = domainTablePage.elements.domainList.children[1];
 assert(domainHeader.className === 'domain-header', 'domain feature names render once in a table header');
 assert(
-  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 132px 132px 44px;') &&
-    OPTIONS_HTML.includes('min-width: 824px;'),
+  OPTIONS_HTML.includes('grid-template-columns: minmax(140px, 1fr) 72px 112px 112px 112px 132px 132px 44px;') &&
+    OPTIONS_HTML.includes('min-width: 944px;'),
   'domain header and rows use identical explicit column tracks'
 );
 assert(
   JSON.stringify(domainHeader.children.map((child) => child.textContent)) ===
-    JSON.stringify(['Domain', 'Extension', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Actions']),
+    JSON.stringify(['Domain', 'Extension', 'Auto scroll', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Actions']),
   'domain table header labels every column'
 );
-assert(domainRow.children.length === 7, 'domain rows contain one domain, five controls, and one action');
+assert(domainRow.children.length === 8, 'domain rows contain one domain, six controls, and one action');
 assert(
-  domainRow.children.slice(1, 6).every((label) =>
+  domainRow.children.slice(1, 7).every((label) =>
     label.children.length === 1 &&
     Boolean(label.children[0].getAttribute('aria-label'))
   ),
   'domain rows omit repeated feature text while retaining accessible checkbox labels'
 );
-const domainDeleteButton = domainRow.children[6];
+const domainDeleteButton = domainRow.children[7];
 assert(
   domainDeleteButton.className === 'domain-delete-button' &&
     domainDeleteButton.innerHTML.includes('<svg') &&
@@ -798,7 +819,7 @@ const releaseNotesCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedbac
 assert(aboutCardIndex >= 0 && releaseNotesCardIndex > aboutCardIndex, 'release notes appear after the about card');
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -879,6 +900,11 @@ page.elements.scrollSpeed.dispatch('input');
 assert(page.elements.speedValue.textContent === '250ms', 'speed label updates on input');
 
 console.log('\nTest 3: Save stores settings and notifies the active tab');
+page.elements.autoScrollSpeedPreset.value = 'custom';
+page.elements.autoScrollCustomSpeed.value = '125';
+page.elements.autoScrollButtonPosition.value = 'pageMiddle';
+page.elements.autoScrollButtonColor.value = '#336699';
+page.elements.autoScrollPauseOnVideo.checked = false;
 page.elements.progressBarMode.value = 'horizontalBar';
 page.elements.screenStepRatio.value = '50';
 page.elements.previousScreenButtonColor.value = '#112233';
@@ -904,6 +930,12 @@ page.elements.saveButton.dispatch('click');
 assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
 assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
+assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.autoScroll, 'enabled'), 'save omits auto scroll enabled state');
+assert(page.syncData.advancedSettings.autoScroll.speedPreset === 'custom', 'save persists the auto scroll speed preset');
+assert(page.syncData.advancedSettings.autoScroll.customSpeed === 125, 'save persists the custom auto scroll speed');
+assert(page.syncData.advancedSettings.autoScroll.buttonPosition === 'pageMiddle', 'save persists the auto scroll button position');
+assert(page.syncData.advancedSettings.autoScroll.buttonColor === '#336699', 'save persists the direct auto scroll button color');
+assert(page.syncData.advancedSettings.autoScroll.pauseOnVideo === false, 'save persists auto scroll pause rules');
 assert(page.syncData.advancedSettings.screenNavigation.screenStepRatio === 0.5, 'save persists the screen step ratio');
 assert(
   !Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.screenNavigation, 'opacity'),

@@ -22,6 +22,7 @@ const DYNAMIC_STYLE_ID = 'page-scroll-master-dynamic-styles';
 const HORIZONTAL_PROGRESS_ID = 'page-scroll-master-horizontal-progress';
 const BOOKMARK_TOOL_CONTAINER_ID = 'page-scroll-master-bookmark-tool';
 const OUTLINE_TOOL_CONTAINER_ID = 'page-scroll-master-outline-tool';
+const AUTO_SCROLL_TOOL_CONTAINER_ID = 'page-scroll-master-auto-scroll-tool';
 const BOOKMARK_MENU_ID = 'page-scroll-master-bookmark-menu';
 const OUTLINE_MENU_ID = 'page-scroll-master-outline-menu';
 const BOOKMARK_TOAST_ID = 'page-scroll-master-bookmark-toast';
@@ -41,6 +42,9 @@ const LABEL_SCROLL_TOP = chrome.i18n.getMessage('popupScrollTop') || 'Scroll to 
 const LABEL_SCROLL_BOTTOM = chrome.i18n.getMessage('popupScrollBottom') || 'Scroll to Bottom';
 const LABEL_PREVIOUS_SCREEN = chrome.i18n.getMessage('previousScreen') || 'Previous Screen';
 const LABEL_NEXT_SCREEN = chrome.i18n.getMessage('nextScreen') || 'Next Screen';
+const LABEL_AUTO_SCROLL_PLAY = chrome.i18n.getMessage('autoScrollPlay') || 'Start auto scroll';
+const LABEL_AUTO_SCROLL_PAUSE = chrome.i18n.getMessage('autoScrollPause') || 'Pause auto scroll';
+const AUTO_SCROLL_ICON_SIZE = '48%';
 
 function recordAnalyticsAction(actionKey) {
   if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
@@ -52,6 +56,19 @@ function recordAnalyticsAction(actionKey) {
   });
 }
 const DEFAULT_ADVANCED_SETTINGS = {
+  autoScroll: {
+    enabled: false,
+    speedPreset: 'standard',
+    customSpeed: 40,
+    buttonPosition: 'pageBottom',
+    buttonColor: DEFAULT_BUTTON_COLOR,
+    pauseOnUserScroll: true,
+    pauseOnTextSelection: true,
+    pauseOnEditableFocus: true,
+    pauseWhenPageHidden: true,
+    pauseOnFullscreen: true,
+    pauseOnVideo: true
+  },
   screenNavigation: {
     enabled: false,
     screenStepRatio: 0.9,
@@ -147,6 +164,14 @@ let advancedSettings = mergeAdvancedSettings();
 let progressScrollTarget = null;
 let progressUpdateFrame = null;
 let screenNavigationAnimationContainer = null;
+let autoScrollRuntime = {
+  state: 'stopped',
+  frame: null,
+  container: null,
+  lastTimestamp: null,
+  remainder: 0,
+  listenersBound: false
+};
 const scrollAnimationStateMap = new WeakMap();
 let readingEstimateCache = {
   target: null,
@@ -195,6 +220,9 @@ function deepMergeDefaults(defaults, saved) {
 
 function mergeAdvancedSettings(savedSettings) {
   const merged = deepMergeDefaults(DEFAULT_ADVANCED_SETTINGS, savedSettings);
+  const savedAutoScroll = isPlainObject(savedSettings) && isPlainObject(savedSettings.autoScroll)
+    ? savedSettings.autoScroll
+    : {};
   const savedOutline = isPlainObject(savedSettings) && isPlainObject(savedSettings.outlineNavigation)
     ? savedSettings.outlineNavigation
     : {};
@@ -210,6 +238,23 @@ function mergeAdvancedSettings(savedSettings) {
     ? savedSettings.readingTools.features
     : {};
   merged.progressBar.customColor = validateHexColor(merged.progressBar.customColor, '#4a9edd');
+  merged.autoScroll.speedPreset = normalizeAutoScrollSpeedPreset(merged.autoScroll.speedPreset);
+  merged.autoScroll.customSpeed = clampNumber(merged.autoScroll.customSpeed, 10, 300, 40);
+  merged.autoScroll.buttonPosition = normalizeFeatureButtonPosition(merged.autoScroll.buttonPosition);
+  merged.autoScroll.buttonColor = validateHexColor(merged.autoScroll.buttonColor, DEFAULT_BUTTON_COLOR);
+  [
+    'pauseOnUserScroll',
+    'pauseOnTextSelection',
+    'pauseOnEditableFocus',
+    'pauseWhenPageHidden',
+    'pauseOnFullscreen',
+    'pauseOnVideo'
+  ].forEach((key) => {
+    merged.autoScroll[key] = normalizeBoolean(
+      savedAutoScroll[key],
+      DEFAULT_ADVANCED_SETTINGS.autoScroll[key]
+    );
+  });
   merged.screenNavigation.screenStepRatio = clampNumber(
     merged.screenNavigation.screenStepRatio,
     0.5,
@@ -309,6 +354,22 @@ function clampNumber(value, min, max, fallback) {
 
 function normalizeBoolean(value, fallback) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function normalizeAutoScrollSpeedPreset(value) {
+  return ['slow', 'standard', 'fast', 'custom'].includes(value) ? value : 'standard';
+}
+
+function getAutoScrollSpeed(settings = advancedSettings.autoScroll) {
+  const presetSpeeds = {
+    slow: 20,
+    standard: 40,
+    fast: 80
+  };
+  const preset = normalizeAutoScrollSpeedPreset(settings && settings.speedPreset);
+  return preset === 'custom'
+    ? clampNumber(settings.customSpeed, 10, 300, 40)
+    : presetSpeeds[preset];
 }
 
 function normalizeOutlineMaxItems(value) {
@@ -739,6 +800,248 @@ function setScrollTop(container, top) {
   container.scrollTop = top;
 }
 
+function isAutoScrollContainerConnected(container) {
+  return Boolean(
+    container &&
+    (isRootScrollElement(container) || container.isConnected !== false)
+  );
+}
+
+function updateAutoScrollButtonState() {
+  const { autoScrollButton } = getButtonElements();
+  if (!autoScrollButton) return;
+  const isPlaying = autoScrollRuntime.state === 'playing';
+  const label = isPlaying ? LABEL_AUTO_SCROLL_PAUSE : LABEL_AUTO_SCROLL_PLAY;
+  autoScrollButton.title = label;
+  autoScrollButton.setAttribute('aria-label', label);
+  autoScrollButton.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+  autoScrollButton.innerHTML = getAutoScrollIconSvg(isPlaying ? 'pause' : 'play');
+  applyAutoScrollIconSizing(autoScrollButton);
+}
+
+function cancelAutoScrollFrame() {
+  if (autoScrollRuntime.frame !== null) {
+    cancelAnimationFrame(autoScrollRuntime.frame);
+    autoScrollRuntime.frame = null;
+  }
+}
+
+function stopAutoScroll() {
+  cancelAutoScrollFrame();
+  autoScrollRuntime.state = 'stopped';
+  autoScrollRuntime.container = null;
+  autoScrollRuntime.lastTimestamp = null;
+  autoScrollRuntime.remainder = 0;
+  updateAutoScrollButtonState();
+}
+
+function pauseAutoScroll() {
+  if (autoScrollRuntime.state !== 'playing') return false;
+  cancelAutoScrollFrame();
+  autoScrollRuntime.state = 'paused';
+  autoScrollRuntime.lastTimestamp = null;
+  autoScrollRuntime.remainder = 0;
+  updateAutoScrollButtonState();
+  return true;
+}
+
+function autoScrollFrame(timestamp) {
+  if (autoScrollRuntime.state !== 'playing') return;
+  const container = autoScrollRuntime.container;
+  if (!advancedSettings.autoScroll.enabled || !isAutoScrollContainerConnected(container)) {
+    stopAutoScroll();
+    return;
+  }
+
+  if (autoScrollRuntime.lastTimestamp === null) {
+    autoScrollRuntime.lastTimestamp = timestamp;
+    autoScrollRuntime.frame = requestAnimationFrame(autoScrollFrame);
+    return;
+  }
+
+  const elapsedMs = clamp(timestamp - autoScrollRuntime.lastTimestamp, 0, 100);
+  autoScrollRuntime.lastTimestamp = timestamp;
+  const range = getElementScrollRange(container);
+  const currentTop = getScrollTop(container);
+  if (range <= 1 || currentTop >= range - 1) {
+    setScrollTop(container, range);
+    stopAutoScroll();
+    return;
+  }
+
+  const distance = (getAutoScrollSpeed() * elapsedMs / 1000) + autoScrollRuntime.remainder;
+  const pixelDistance = Math.floor(distance);
+  autoScrollRuntime.remainder = distance - pixelDistance;
+  if (pixelDistance > 0) {
+    setScrollTop(container, Math.min(range, currentTop + pixelDistance));
+  }
+
+  if (getScrollTop(container) >= range - 1) {
+    setScrollTop(container, range);
+    stopAutoScroll();
+    return;
+  }
+  autoScrollRuntime.frame = requestAnimationFrame(autoScrollFrame);
+}
+
+function startAutoScroll() {
+  if (!advancedSettings.autoScroll.enabled) return false;
+  bindAutoScrollPauseListeners();
+  if (advancedSettings.autoScroll.pauseWhenPageHidden && document.hidden) return false;
+  if (advancedSettings.autoScroll.pauseOnFullscreen && fullscreenManager.checkFullscreen()) return false;
+  if (advancedSettings.autoScroll.pauseOnVideo && hasPlayingPrimaryVideo()) return false;
+  const container = autoScrollRuntime.state === 'paused' && isAutoScrollContainerConnected(autoScrollRuntime.container)
+    ? autoScrollRuntime.container
+    : resolveScrollContainer();
+  const range = getElementScrollRange(container);
+  if (!container || range <= 1 || getScrollTop(container) >= range - 1) {
+    stopAutoScroll();
+    return false;
+  }
+  cancelScrollAnimation(container);
+  autoScrollRuntime.state = 'playing';
+  autoScrollRuntime.container = container;
+  autoScrollRuntime.lastTimestamp = null;
+  autoScrollRuntime.remainder = 0;
+  updateAutoScrollButtonState();
+  autoScrollRuntime.frame = requestAnimationFrame(autoScrollFrame);
+  return true;
+}
+
+function toggleAutoScroll() {
+  if (autoScrollRuntime.state === 'playing') {
+    pauseAutoScroll();
+    return 'paused';
+  }
+  return startAutoScroll() ? 'playing' : 'stopped';
+}
+
+function hasActiveTextSelection() {
+  if (typeof window.getSelection !== 'function') return false;
+  const selection = window.getSelection();
+  return Boolean(selection && !selection.isCollapsed && String(selection).trim());
+}
+
+function hasPlayingPrimaryVideo() {
+  if (typeof document.querySelectorAll !== 'function') return false;
+  const viewportArea = Math.max(
+    1,
+    (window.innerWidth || document.documentElement.clientWidth || 0) *
+    (window.innerHeight || document.documentElement.clientHeight || 0)
+  );
+  return Array.from(document.querySelectorAll('video')).some((video) => {
+    if (!video || String(video.tagName || '').toLowerCase() !== 'video') return false;
+    if (!video || video.paused || video.ended || video.readyState < 2) return false;
+    if (typeof video.getBoundingClientRect !== 'function') return true;
+    const rect = video.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && (rect.width * rect.height) >= viewportArea * 0.08;
+  });
+}
+
+function isEditableTarget(target) {
+  if (!target) return false;
+  const tagName = target.tagName ? target.tagName.toLowerCase() : '';
+  return ['input', 'textarea', 'select'].includes(tagName) || target.isContentEditable === true;
+}
+
+function handleAutoScrollUserInput() {
+  if (advancedSettings.autoScroll.pauseOnUserScroll) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollSelectionChange() {
+  if (advancedSettings.autoScroll.pauseOnTextSelection && hasActiveTextSelection()) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollFocusIn(event) {
+  if (advancedSettings.autoScroll.pauseOnEditableFocus && isEditableTarget(event.target)) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollVisibilityChange() {
+  if (advancedSettings.autoScroll.pauseWhenPageHidden && document.hidden) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollVideoPlay(event) {
+  if (
+    advancedSettings.autoScroll.pauseOnVideo &&
+    event.target &&
+    String(event.target.tagName || '').toLowerCase() === 'video'
+  ) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollPointerDown(event) {
+  if (!advancedSettings.autoScroll.pauseOnUserScroll || autoScrollRuntime.state !== 'playing') return;
+  const container = autoScrollRuntime.container;
+  let rect;
+  if (isRootScrollElement(container)) {
+    rect = {
+      left: 0,
+      right: window.innerWidth || document.documentElement.clientWidth || 0,
+      top: 0,
+      bottom: window.innerHeight || document.documentElement.clientHeight || 0
+    };
+  } else if (container && typeof container.getBoundingClientRect === 'function') {
+    rect = container.getBoundingClientRect();
+  }
+  if (
+    rect &&
+    event.clientX >= rect.right - 18 &&
+    event.clientX <= rect.right + 2 &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+  ) {
+    pauseAutoScroll();
+  }
+}
+
+function handleAutoScrollKeyDown(event) {
+  if (!advancedSettings.autoScroll.pauseOnUserScroll) return;
+  if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) {
+    pauseAutoScroll();
+  }
+}
+
+function bindAutoScrollPauseListeners() {
+  if (autoScrollRuntime.listenersBound || typeof document.addEventListener !== 'function') return;
+  autoScrollRuntime.listenersBound = true;
+  document.addEventListener('wheel', handleAutoScrollUserInput, true);
+  document.addEventListener('touchstart', handleAutoScrollUserInput, true);
+  document.addEventListener('pointerdown', handleAutoScrollPointerDown, true);
+  document.addEventListener('keydown', handleAutoScrollKeyDown, true);
+  document.addEventListener('selectionchange', handleAutoScrollSelectionChange);
+  document.addEventListener('focusin', handleAutoScrollFocusIn, true);
+  document.addEventListener('visibilitychange', handleAutoScrollVisibilityChange);
+  document.addEventListener('play', handleAutoScrollVideoPlay, true);
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('pagehide', stopAutoScroll);
+  }
+}
+
+function unbindAutoScrollPauseListeners() {
+  if (!autoScrollRuntime.listenersBound || typeof document.removeEventListener !== 'function') return;
+  autoScrollRuntime.listenersBound = false;
+  document.removeEventListener('wheel', handleAutoScrollUserInput, true);
+  document.removeEventListener('touchstart', handleAutoScrollUserInput, true);
+  document.removeEventListener('pointerdown', handleAutoScrollPointerDown, true);
+  document.removeEventListener('keydown', handleAutoScrollKeyDown, true);
+  document.removeEventListener('selectionchange', handleAutoScrollSelectionChange);
+  document.removeEventListener('focusin', handleAutoScrollFocusIn, true);
+  document.removeEventListener('visibilitychange', handleAutoScrollVisibilityChange);
+  document.removeEventListener('play', handleAutoScrollVideoPlay, true);
+  if (typeof window.removeEventListener === 'function') {
+    window.removeEventListener('pagehide', stopAutoScroll);
+  }
+}
+
 function getOutlineTargetScrollTop(element, container, offset = 16) {
   if (
     !element ||
@@ -860,6 +1163,7 @@ function invalidateOutlineSnapshot() {
 
 function handleOutlineRouteChange() {
   if (window.location.href === outlineLastKnownUrl) return false;
+  stopAutoScroll();
   outlineLastKnownUrl = window.location.href;
   bookmarkRestoreCheckedForKey = '';
   restorePromptShownForKey = '';
@@ -930,6 +1234,9 @@ function applyAdvancedSettingsUpdate(nextSettings) {
   const previousSettings = advancedSettings;
   advancedSettings = mergeAdvancedSettings(nextSettings);
   applyEffectiveDomainFeatures();
+  if (!advancedSettings.autoScroll.enabled) {
+    stopAutoScroll();
+  }
   applyAdvancedSettings();
   handleOutlineSettingsChange(previousSettings, advancedSettings);
 }
@@ -999,7 +1306,7 @@ function getButtonContainer() {
 
 function getButtonElements() {
   const root = getScrollRoot();
-  if (!root) {
+  if (!root || typeof root.querySelector !== 'function') {
     return {
       root: null,
       topButton: null,
@@ -1007,6 +1314,7 @@ function getButtonElements() {
       progressButton: null,
       nextScreenButton: null,
       bottomButton: null,
+      autoScrollButton: null,
       bookmarkButton: null,
       outlineButton: null
     };
@@ -1019,6 +1327,7 @@ function getButtonElements() {
     progressButton: root.querySelector('.psm-progress-button'),
     nextScreenButton: root.querySelector('.psm-screen-next'),
     bottomButton: root.querySelector('.psm-scroll-bottom'),
+    autoScrollButton: root.querySelector('.psm-auto-scroll-button'),
     bookmarkButton: root.querySelector('.psm-bookmark-tool-button'),
     outlineButton: root.querySelector('.psm-outline-tool-button')
   };
@@ -1054,6 +1363,7 @@ function getDomainStorageKeys() {
 
 function applyEffectiveDomainFeatures() {
   const state = domainUtils.normalizeState(currentDomainFeatureState, domainFeatureDefaults);
+  advancedSettings.autoScroll.enabled = state.extensionEnabled && state.features.autoScroll;
   advancedSettings.progressBar.enabled = state.extensionEnabled && state.features.progressBar;
   advancedSettings.screenNavigation.enabled = state.extensionEnabled && state.features.screenNavigation;
   advancedSettings.scrollBookmarks.enabled = state.extensionEnabled && state.features.scrollBookmarks;
@@ -1068,6 +1378,7 @@ function applyDomainFeatureState(nextState) {
   applyEffectiveDomainFeatures();
 
   if (!isExtensionEnabled) {
+    stopAutoScroll();
     removeButton();
     return;
   }
@@ -1099,6 +1410,7 @@ function loadDomainFeatureState(legacyAdvancedSettings) {
 
 function smoothScrollTo(container, targetTop, options = {}) {
   if (!container) return;
+  pauseAutoScroll();
   const previousAnimation = scrollAnimationStateMap.get(container);
   if (previousAnimation && previousAnimation.frame) {
     cancelAnimationFrame(previousAnimation.frame);
@@ -1311,6 +1623,16 @@ function applyIconSizing() {
     icon.style.width = iconSize;
     icon.style.height = iconSize;
   });
+  const { autoScrollButton } = getButtonElements();
+  applyAutoScrollIconSizing(autoScrollButton);
+}
+
+function applyAutoScrollIconSizing(autoScrollButton) {
+  const autoScrollIcon = autoScrollButton ? autoScrollButton.querySelector('.psm-auto-scroll-icon') : null;
+  if (autoScrollIcon) {
+    autoScrollIcon.style.width = AUTO_SCROLL_ICON_SIZE;
+    autoScrollIcon.style.height = AUTO_SCROLL_ICON_SIZE;
+  }
 }
 
 function applyButtonIcons() {
@@ -1952,6 +2274,7 @@ function openFeatureToolMenu({ event, button, menu, model }) {
   if (!menu || !button) return false;
   const willOpen = !menu.classList.contains('psm-open');
   if (willOpen) {
+    pauseAutoScroll();
     hideReadingToolMenu();
     renderReadingToolMenu(menu, { model });
     if (!hasReadingToolMenuContent(model)) {
@@ -2382,10 +2705,21 @@ function ensureFeatureToolControls(config) {
     }
   }
 
-  config.getMenu(root);
+  if (config.getMenu) {
+    config.getMenu(root);
+  }
 }
 
 function ensureReadingToolControls() {
+  ensureFeatureToolControls({
+    buttonKey: 'autoScrollButton',
+    containerId: AUTO_SCROLL_TOOL_CONTAINER_ID,
+    menuId: '',
+    createButton: createAutoScrollButton,
+    getMenu: null,
+    isEnabled: () => advancedSettings.autoScroll.enabled,
+    settings: () => advancedSettings.autoScroll
+  });
   ensureFeatureToolControls({
     buttonKey: 'bookmarkButton',
     containerId: BOOKMARK_TOOL_CONTAINER_ID,
@@ -2405,7 +2739,10 @@ function ensureReadingToolControls() {
     settings: () => advancedSettings.outlineNavigation
   });
 
-  const { bottomButton, bookmarkButton, outlineButton } = getButtonElements();
+  const { bottomButton, autoScrollButton, bookmarkButton, outlineButton } = getButtonElements();
+  if (bottomButton && autoScrollButton && advancedSettings.autoScroll.buttonPosition === 'pageMiddle') {
+    bottomButton.parentNode.appendChild(autoScrollButton);
+  }
   if (bottomButton && bookmarkButton && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle') {
     bottomButton.parentNode.appendChild(bookmarkButton);
   }
@@ -2415,6 +2752,12 @@ function ensureReadingToolControls() {
 
   updateReadingToolPosition();
   updateButtonStyle();
+  if (advancedSettings.autoScroll.enabled) {
+    bindAutoScrollPauseListeners();
+  } else {
+    stopAutoScroll();
+    unbindAutoScrollPauseListeners();
+  }
   checkPendingScrollBookmarkRestore((handled) => {
     if (!handled) {
       checkBookmarkRestoreOnOpen();
@@ -2889,6 +3232,28 @@ function createScreenNavigationButton(direction) {
   return button;
 }
 
+function getAutoScrollIconSvg(state) {
+  if (state === 'pause') {
+    return '<svg class="scroll-icon psm-auto-scroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>';
+  }
+  return '<svg class="scroll-icon psm-auto-scroll-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+}
+
+function createAutoScrollButton() {
+  const button = document.createElement('button');
+  button.className = 'psm-scroll-button psm-auto-scroll-button';
+  button.type = 'button';
+  button.addEventListener('click', () => {
+    toggleAutoScroll();
+  });
+  updateAutoScrollButtonState();
+  button.title = LABEL_AUTO_SCROLL_PLAY;
+  button.setAttribute('aria-label', LABEL_AUTO_SCROLL_PLAY);
+  button.setAttribute('aria-pressed', 'false');
+  button.innerHTML = getAutoScrollIconSvg('play');
+  return button;
+}
+
 function ensureScreenNavigationControls() {
   const container = getButtonContainer();
   if (!container) return;
@@ -2961,6 +3326,9 @@ function createScrollButton() {
     buttonContainer.appendChild(createScreenNavigationButton('next'));
   }
   buttonContainer.appendChild(bottomButton);
+  if (advancedSettings.autoScroll.enabled && advancedSettings.autoScroll.buttonPosition === 'pageMiddle') {
+    buttonContainer.appendChild(createAutoScrollButton());
+  }
   if (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle') {
     buttonContainer.appendChild(createBookmarkToolButton());
   }
@@ -3005,6 +3373,8 @@ function createScrollButton() {
 // 移除滚动按钮
 function removeButton() {
   const host = document.getElementById(HOST_ID);
+  stopAutoScroll();
+  unbindAutoScrollPauseListeners();
   cancelScrollAnimation(screenNavigationAnimationContainer);
   screenNavigationAnimationContainer = null;
   cancelScrollAnimation(currentScrollContainer || resolveScrollContainer());
@@ -3768,6 +4138,7 @@ function getMainButtonGroupHeight() {
   const hasVerticalProgress = advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton';
   const screenNavigationCount = advancedSettings.screenNavigation.enabled ? 2 : 0;
   const middleFeatureCount = [
+    advancedSettings.autoScroll.enabled && advancedSettings.autoScroll.buttonPosition === 'pageMiddle',
     isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle',
     isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'pageMiddle'
   ].filter(Boolean).length;
@@ -3790,6 +4161,11 @@ function updateReadingToolPosition() {
   const buttonSize = clampNumber(buttonSettings.buttonSize, 10, 120, 40);
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
   const tools = [
+    {
+      container: root.getElementById(AUTO_SCROLL_TOOL_CONTAINER_ID),
+      enabled: advancedSettings.autoScroll.enabled,
+      settings: advancedSettings.autoScroll
+    },
     {
       container: root.getElementById(BOOKMARK_TOOL_CONTAINER_ID),
       enabled: isScrollBookmarkToolEnabled(),
@@ -3830,7 +4206,11 @@ function updateButtonVisibility() {
   if (!buttonContainer) return;
   const root = getScrollRoot();
   const featureToolContainers = root
-    ? [root.getElementById(BOOKMARK_TOOL_CONTAINER_ID), root.getElementById(OUTLINE_TOOL_CONTAINER_ID)].filter(Boolean)
+    ? [
+        root.getElementById(AUTO_SCROLL_TOOL_CONTAINER_ID),
+        root.getElementById(BOOKMARK_TOOL_CONTAINER_ID),
+        root.getElementById(OUTLINE_TOOL_CONTAINER_ID)
+      ].filter(Boolean)
     : [];
   
   if (buttonSettings.showButton) {
@@ -3864,12 +4244,13 @@ function updateButtonStyle() {
     progressButton,
     nextScreenButton,
     bottomButton,
+    autoScrollButton,
     bookmarkButton,
     outlineButton
   } = getButtonElements();
   if (!topButton || !bottomButton) return;
   const screenNavigationButtons = [previousScreenButton, nextScreenButton].filter(Boolean);
-  const featureButtons = [bookmarkButton, outlineButton].filter(Boolean);
+  const featureButtons = [autoScrollButton, bookmarkButton, outlineButton].filter(Boolean);
   
   // 更新按钮尺寸
   const size = buttonSettings.buttonSize + buttonSettings.buttonSizeUnit;
@@ -3925,6 +4306,7 @@ function updateButtonStyle() {
   }
   if (bookmarkButton) bookmarkButton.style.backgroundColor = getBookmarkToolColor();
   if (outlineButton) outlineButton.style.backgroundColor = getOutlineToolColor();
+  if (autoScrollButton) autoScrollButton.style.backgroundColor = advancedSettings.autoScroll.buttonColor;
 
   const iconColor = getActiveIconColor();
   topButton.style.color = iconColor;
@@ -3988,6 +4370,9 @@ function updateButtonStyle() {
     }
     .psm-outline-tool-button:hover {
       background-color: ${adjustColorBrightness(getOutlineToolColor(), -10)};
+    }
+    .psm-auto-scroll-button:hover {
+      background-color: ${adjustColorBrightness(advancedSettings.autoScroll.buttonColor, -10)};
     }
   `;
   root.appendChild(newStyle);
@@ -4101,6 +4486,9 @@ function detectAndUpdateScrollContainer() {
 
   // 新算法已排除嵌套子滚动组件，只要容器不同就需要更新
   if (newContainer !== oldContainer) {
+    if (autoScrollRuntime.state !== 'stopped' && autoScrollRuntime.container === oldContainer) {
+      stopAutoScroll();
+    }
     currentScrollContainer = newContainer;
 
     // 如果按钮已存在，更新滚动事件绑定
@@ -4259,6 +4647,7 @@ const fullscreenManager = {
     const horizontalProgress = root ? root.getElementById(HORIZONTAL_PROGRESS_ID) : null;
     const featureElements = root
       ? [
+          root.getElementById(AUTO_SCROLL_TOOL_CONTAINER_ID),
           root.getElementById(BOOKMARK_TOOL_CONTAINER_ID),
           root.getElementById(OUTLINE_TOOL_CONTAINER_ID),
           root.getElementById(BOOKMARK_MENU_ID),
@@ -4272,6 +4661,9 @@ const fullscreenManager = {
       } else {
         horizontalProgress.classList.remove('psm-fullscreen-hidden');
       }
+    }
+    if (this.isFullscreen && advancedSettings.autoScroll.pauseOnFullscreen) {
+      pauseAutoScroll();
     }
     featureElements.forEach((element) => {
       if (!element) return;

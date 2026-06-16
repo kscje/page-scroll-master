@@ -25,6 +25,8 @@
   },
   "previousScreen": { "message": "前の画面", "description": "Previous screen button tooltip" },
   "nextScreen": { "message": "次の画面", "description": "Next screen button tooltip" },
+  "autoScrollPlay": { "message": "自動スクロールを開始", "description": "Auto scroll play button tooltip" },
+  "autoScrollPause": { "message": "自動スクロールを一時停止", "description": "Auto scroll pause button tooltip" },
   "popupSettings": {
     "message": "設定",
     "description": "Popup settings button label"

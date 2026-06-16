@@ -22,7 +22,7 @@
 {
   "manifest_version": 3,
   "name": "Smart Scroll Navigator – Top, Bottom & Progress",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "一键滚动到页面顶部及底部的浏览器插件",
   "icons": {
     "16": "icons/icon16.png",
@@ -450,6 +450,6 @@ node chrome-web-store/tools/validate-store-materials.js
 
 ---
 
-**发布时间**：2026-06-14
-**版本**：2.1.0
+**发布时间**：2026-06-15
+**版本**：2.2.0
 **状态**：发布候选版本，待商店后台提交

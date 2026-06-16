@@ -81,6 +81,7 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   let openOptionsPageCount = 0;
   const elements = {
     extensionToggle: createElement('extensionToggle'),
+    autoScrollToggle: createElement('autoScrollToggle'),
     progressBarToggle: createElement('progressBarToggle'),
     screenNavigationToggle: createElement('screenNavigationToggle'),
     scrollBookmarksToggle: createElement('scrollBookmarksToggle'),
@@ -180,6 +181,7 @@ console.log('\nTest 1: New domains default to extension on and advanced features
 let popup = openPopup('https://docs.example.co.uk/page');
 assert(popup.elements.currentSite.textContent === 'example.co.uk', 'public suffix parsing resolves example.co.uk');
 assert(popup.elements.extensionToggle.checked === true, 'extension defaults to enabled');
+assert(popup.elements.autoScrollToggle.checked === false, 'auto scroll defaults to disabled');
 assert(popup.elements.progressBarToggle.checked === false, 'progress bar defaults to disabled');
 assert(popup.elements.screenNavigationToggle.checked === false, 'screen navigation defaults to disabled');
 assert(popup.elements.scrollBookmarksToggle.checked === false, 'bookmarks default to disabled');
@@ -201,6 +203,17 @@ assert(
   popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.screenNavigation === true,
   'screen navigation state is stored under the main domain'
 );
+toggle(popup, 'autoScrollToggle', true);
+assert(
+  popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.autoScroll === true,
+  'auto scroll state is stored under the main domain'
+);
+assert(
+  !popup.runtimeMessages.some((message) =>
+    message.action === 'analytics:recordToggle' && message.feature === 'autoScroll'
+  ),
+  'auto scroll toggle does not extend analytics without a disclosure update'
+);
 
 console.log('\nTest 3: Disabling the extension retains feature choices and disables their controls');
 toggle(popup, 'extensionToggle', false);
@@ -208,6 +221,7 @@ const disabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk
 assert(disabledState.extensionEnabled === false, 'extension state is stored separately');
 assert(disabledState.features.progressBar === true, 'saved progress choice is retained');
 assert(disabledState.features.screenNavigation === true, 'saved screen navigation choice is retained');
+assert(disabledState.features.autoScroll === true, 'saved auto scroll choice is retained');
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches become unavailable');
 
 console.log('\nTest 4: Another subdomain reads the same main-domain state');

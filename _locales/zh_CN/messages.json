@@ -25,6 +25,8 @@
   },
   "previousScreen": { "message": "上一屏", "description": "上一屏按钮提示" },
   "nextScreen": { "message": "下一屏", "description": "下一屏按钮提示" },
+  "autoScrollPlay": { "message": "开始自动滚屏", "description": "自动滚屏播放按钮提示" },
+  "autoScrollPause": { "message": "暂停自动滚屏", "description": "自动滚屏暂停按钮提示" },
   "popupSettings": {
     "message": "设置",
     "description": "弹窗设置按钮标签"

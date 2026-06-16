@@ -25,6 +25,8 @@
   },
   "previousScreen": { "message": "Tela anterior", "description": "Previous screen button tooltip" },
   "nextScreen": { "message": "Próxima tela", "description": "Next screen button tooltip" },
+  "autoScrollPlay": { "message": "Iniciar rolagem automática", "description": "Auto scroll play button tooltip" },
+  "autoScrollPause": { "message": "Pausar rolagem automática", "description": "Auto scroll pause button tooltip" },
   "popupSettings": {
     "message": "Configurações",
     "description": "Popup settings button label"

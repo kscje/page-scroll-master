@@ -25,6 +25,8 @@
   },
   "previousScreen": { "message": "이전 화면", "description": "Previous screen button tooltip" },
   "nextScreen": { "message": "다음 화면", "description": "Next screen button tooltip" },
+  "autoScrollPlay": { "message": "자동 스크롤 시작", "description": "Auto scroll play button tooltip" },
+  "autoScrollPause": { "message": "자동 스크롤 일시 정지", "description": "Auto scroll pause button tooltip" },
   "popupSettings": {
     "message": "설정",
     "description": "Popup settings button label"

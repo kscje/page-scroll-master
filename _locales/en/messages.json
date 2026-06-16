@@ -25,6 +25,8 @@
   },
   "previousScreen": { "message": "Previous Screen", "description": "Previous screen button tooltip" },
   "nextScreen": { "message": "Next Screen", "description": "Next screen button tooltip" },
+  "autoScrollPlay": { "message": "Start Auto Scroll", "description": "Auto scroll play button tooltip" },
+  "autoScrollPause": { "message": "Pause Auto Scroll", "description": "Auto scroll pause button tooltip" },
   "popupSettings": {
     "message": "Settings",
     "description": "Popup settings button label"
