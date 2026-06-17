@@ -2751,6 +2751,12 @@ function ensureReadingToolControls() {
   }
 
   updateReadingToolPosition();
+  const buttonContainer = getButtonContainer();
+  const hoverHideState = buttonContainer ? hoverHideStateMap.get(buttonContainer) : null;
+  if (hoverHideState && hoverHideState.isHidden) {
+    setHoverHideTargetsHidden(buttonContainer, true);
+  }
+  syncHoverHideTriggerTargets(buttonContainer, hoverHideState);
   updateButtonStyle();
   if (advancedSettings.autoScroll.enabled) {
     bindAutoScrollPauseListeners();
@@ -3834,6 +3840,16 @@ function addButtonStyles(root) {
     .psm-container.psm-hidden .psm-scroll-button {
       pointer-events: none;
     }
+
+    .psm-feature-tool-container.psm-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.8);
+    }
+
+    .psm-feature-tool-container.psm-hidden .psm-scroll-button {
+      pointer-events: none;
+    }
     
     .psm-container.psm-fullscreen-hidden {
       opacity: 0 !important;
@@ -3856,6 +3872,65 @@ function addButtonStyles(root) {
 // 全局状态管理 - 使用WeakMap避免内存泄漏
 const hoverHideStateMap = new WeakMap();
 let activeHoverHideCleanup = null;
+
+function getHoverHideTargets(buttonContainer) {
+  const root = getScrollRoot();
+  const targets = [buttonContainer];
+  if (root) {
+    [
+      AUTO_SCROLL_TOOL_CONTAINER_ID,
+      BOOKMARK_TOOL_CONTAINER_ID,
+      OUTLINE_TOOL_CONTAINER_ID
+    ].forEach((containerId) => {
+      const container = root.getElementById(containerId);
+      if (container) {
+        targets.push(container);
+      }
+    });
+  }
+  return targets.filter(Boolean);
+}
+
+function setHoverHideTargetsHidden(buttonContainer, hidden) {
+  getHoverHideTargets(buttonContainer).forEach((target) => {
+    if (typeof target.classList.toggle === 'function') {
+      target.classList.toggle('psm-hidden', hidden);
+    } else if (hidden) {
+      target.classList.add('psm-hidden');
+    } else {
+      target.classList.remove('psm-hidden');
+    }
+  });
+}
+
+function syncHoverHideTriggerTargets(buttonContainer, state) {
+  if (!state || !state.eventHandlers) return;
+  if (!state.hoverTargets) {
+    state.hoverTargets = new Set();
+  }
+
+  const currentTargets = new Set(getHoverHideTargets(buttonContainer));
+  currentTargets.forEach((target) => {
+    if (
+      state.hoverTargets.has(target) ||
+      typeof target.addEventListener !== 'function'
+    ) {
+      return;
+    }
+    target.addEventListener('mouseenter', state.eventHandlers.mouseEnter);
+    target.addEventListener('mouseleave', state.eventHandlers.mouseLeave);
+    state.hoverTargets.add(target);
+  });
+
+  Array.from(state.hoverTargets).forEach((target) => {
+    if (currentTargets.has(target)) return;
+    if (typeof target.removeEventListener === 'function') {
+      target.removeEventListener('mouseenter', state.eventHandlers.mouseEnter);
+      target.removeEventListener('mouseleave', state.eventHandlers.mouseLeave);
+    }
+    state.hoverTargets.delete(target);
+  });
+}
 
 // 检测是否为macOS系统
 function isMac() {
@@ -3968,10 +4043,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     }
     state.lastHideTime = now;
     
-    // 使用CSS类切换，避免直接操作style
-    if (!buttonContainer.classList.contains('psm-hidden')) {
-      buttonContainer.classList.add('psm-hidden');
-    }
+    setHoverHideTargetsHidden(buttonContainer, true);
     state.isHidden = true;
   }
   
@@ -3990,10 +4062,7 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
       state.hideTimeout = null;
     }
     
-    // 使用CSS类切换
-    if (buttonContainer.classList.contains('psm-hidden')) {
-      buttonContainer.classList.remove('psm-hidden');
-    }
+    setHoverHideTargetsHidden(buttonContainer, false);
     state.isHidden = false;
   }
   
@@ -4011,11 +4080,8 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
     keyUp: boundKeyUp
   };
   
-  // 鼠标事件 - 使用mouseenter/mouseleave，更精确且不冒泡
-  topButton.addEventListener('mouseenter', boundMouseEnter);
-  topButton.addEventListener('mouseleave', boundMouseLeave);
-  bottomButton.addEventListener('mouseenter', boundMouseEnter);
-  bottomButton.addEventListener('mouseleave', boundMouseLeave);
+  // 鼠标事件 - 主按钮组和独立高级按钮容器都可触发悬停隐藏
+  syncHoverHideTriggerTargets(buttonContainer, state);
   
   // 键盘事件 - 仅使用document捕获阶段，避免重复监听
   document.addEventListener('keydown', boundKeyDown, true);
@@ -4052,10 +4118,15 @@ function setupHoverHideFunctionality(buttonContainer, topButton, bottomButton) {
   // 页面卸载时清理
   const cleanup = () => {
     // 移除事件监听器
-    topButton.removeEventListener('mouseenter', boundMouseEnter);
-    topButton.removeEventListener('mouseleave', boundMouseLeave);
-    bottomButton.removeEventListener('mouseenter', boundMouseEnter);
-    bottomButton.removeEventListener('mouseleave', boundMouseLeave);
+    if (state.hoverTargets) {
+      state.hoverTargets.forEach((target) => {
+        if (typeof target.removeEventListener === 'function') {
+          target.removeEventListener('mouseenter', boundMouseEnter);
+          target.removeEventListener('mouseleave', boundMouseLeave);
+        }
+      });
+      state.hoverTargets.clear();
+    }
     
     document.removeEventListener('keydown', boundKeyDown, true);
     document.removeEventListener('keyup', boundKeyUp, true);

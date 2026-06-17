@@ -441,6 +441,54 @@ function testMainOpacityAppliesToAllButtons() {
   );
 }
 
+function testHoverHideIncludesAdvancedFeatureContainers() {
+  const sandbox = createContext({
+    buttonSettings: { hoverHideKey: 'Alt' },
+    advancedSettings: {
+      autoScroll: { enabled: true, buttonPosition: 'pageTop' },
+      scrollBookmarks: { enabled: true, buttonPosition: 'pageBottom' },
+      outlineNavigation: { enabled: true, buttonPosition: 'pageTop' }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const buttonContainer = root.getElementById('page-scroll-master-button');
+  const autoScrollContainer = root.getElementById('page-scroll-master-auto-scroll-tool');
+  const bookmarkContainer = root.getElementById('page-scroll-master-bookmark-tool');
+  const outlineContainer = root.getElementById('page-scroll-master-outline-tool');
+  sandbox.performance.now = () => 250;
+
+  sandbox.__documentListeners.keydown.forEach((listener) => listener({
+    altKey: true,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    repeat: false,
+    target: sandbox.document.body
+  }));
+  assert(!buttonContainer.classList.contains('psm-hidden'), 'pressing the shortcut alone does not hide buttons');
+
+  autoScrollContainer.listeners.mouseenter[0]({ stopPropagation() {} });
+
+  assert(buttonContainer.classList.contains('psm-hidden'), 'hover shortcut hides the main button group');
+  assert(autoScrollContainer.classList.contains('psm-hidden'), 'hover shortcut hides the standalone auto scroll button');
+  assert(bookmarkContainer.classList.contains('psm-hidden'), 'hover shortcut hides the standalone bookmark button');
+  assert(outlineContainer.classList.contains('psm-hidden'), 'hover shortcut hides the standalone outline button');
+
+  sandbox.__documentListeners.keyup.forEach((listener) => listener({
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    repeat: false,
+    target: sandbox.document.body
+  }));
+
+  assert(!buttonContainer.classList.contains('psm-hidden'), 'releasing the shortcut shows the main button group');
+  assert(!autoScrollContainer.classList.contains('psm-hidden'), 'releasing the shortcut shows the auto scroll button');
+  assert(!bookmarkContainer.classList.contains('psm-hidden'), 'releasing the shortcut shows the bookmark button');
+  assert(!outlineContainer.classList.contains('psm-hidden'), 'releasing the shortcut shows the outline button');
+}
+
 function testIconSizingSurvivesIconRebuild() {
   const sandbox = createContext();
   const root = sandbox.getScrollRoot();
@@ -1711,6 +1759,7 @@ function testRemainingReadingTimeLabels() {
 
 testDefaultCreatesOnlyTwoButtons();
 testMainOpacityAppliesToAllButtons();
+testHoverHideIncludesAdvancedFeatureContainers();
 testIconSizingSurvivesIconRebuild();
 testAdvancedSettingsMergeAndProgressMath();
 testProgressClickRatios();
