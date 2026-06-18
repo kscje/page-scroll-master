@@ -12,7 +12,8 @@ function getSharedRuntimeSource(projectRoot, targetSourcePath) {
     fs.readFileSync(path.join(runtimeRoot, 'vendor', 'tldts.umd.min.js'), 'utf8'),
     fs.readFileSync(path.join(runtimeRoot, 'domain-utils.js'), 'utf8'),
     fs.readFileSync(path.join(runtimeRoot, 'analytics.js'), 'utf8'),
-    fs.readFileSync(path.join(runtimeRoot, 'feedback.js'), 'utf8')
+    fs.readFileSync(path.join(runtimeRoot, 'feedback.js'), 'utf8'),
+    fs.readFileSync(path.join(runtimeRoot, 'rating.js'), 'utf8')
   ].join('\n');
 }
 

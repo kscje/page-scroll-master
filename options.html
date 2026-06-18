@@ -301,6 +301,14 @@
       margin-top: 0;
     }
 
+    .about-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 20px 0 24px;
+    }
+
     label {
       display: block;
       margin-bottom: 8px;
@@ -495,6 +503,41 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-top: 10px;
+    }
+
+    .domain-state-tabs {
+      display: flex;
+      gap: 18px;
+      align-items: flex-end;
+      margin: 14px 0 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .domain-state-tab {
+      width: auto;
+      padding: 0 0 10px;
+      margin-top: 0;
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      box-shadow: none;
+      transform: none;
+      font-size: 14px;
+    }
+
+    .domain-state-tab:hover,
+    .domain-state-tab:active {
+      background: transparent;
+      color: var(--text);
+      transform: none;
+    }
+
+    .domain-state-tab.is-active {
+      background: transparent;
+      color: var(--primary);
+      border-bottom-color: var(--primary);
     }
 
     .domain-header,
@@ -1567,8 +1610,8 @@
 
             <label for="autoScrollButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
             <select id="autoScrollButtonPosition">
-              <option value="pageTop" data-i18n="settings.featureButtonPosition.pageTop">页面顶部</option>
-              <option value="pageBottom" selected data-i18n="settings.featureButtonPosition.pageBottom">页面底部</option>
+              <option value="pageTop" selected data-i18n="settings.featureButtonPosition.pageTop">页面顶部</option>
+              <option value="pageBottom" data-i18n="settings.featureButtonPosition.pageBottom">页面底部</option>
               <option value="pageMiddle" data-i18n="settings.featureButtonPosition.pageMiddle">页面中部</option>
             </select>
             <p class="muted-note" data-i18n="settings.featureButtonPosition.pageMiddleNote">页面中部会将阅读工具排列在“回到底部”按钮之后，不会夹在滚动方向按钮之间。</p>
@@ -1644,7 +1687,7 @@
 
             <div id="verticalProgressSettings">
               <label for="progressVerticalHeight" data-i18n="settings.progressVerticalHeight">纵向高度(px)</label>
-              <input type="number" id="progressVerticalHeight" min="40" max="400" value="120">
+              <input type="number" id="progressVerticalHeight" min="40" max="400" value="80">
             </div>
 
             <div id="horizontalProgressSettings">
@@ -1670,7 +1713,7 @@
             <select id="progressColorMode">
               <option value="followTopButton" data-i18n="settings.progressColorMode.followTopButton">跟随顶部按钮</option>
               <option value="followBottomButton" data-i18n="settings.progressColorMode.followBottomButton">跟随底部按钮</option>
-              <option value="custom" data-i18n="settings.progressColorMode.custom">自定义</option>
+              <option value="custom" selected data-i18n="settings.progressColorMode.custom">自定义</option>
             </select>
 
             <div id="progressCustomColorContainer">
@@ -1712,9 +1755,9 @@
 
             <label for="scrollBookmarkButtonColorMode" data-i18n="settings.featureButtonColorMode">按钮颜色</label>
             <select id="scrollBookmarkButtonColorMode">
-              <option value="followTopButton" selected data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followTopButton" data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
               <option value="followBottomButton" data-i18n="settings.featureButtonColorMode.followBottomButton">跟随底部按钮</option>
-              <option value="custom" data-i18n="settings.featureButtonColorMode.custom">自定义</option>
+              <option value="custom" selected data-i18n="settings.featureButtonColorMode.custom">自定义</option>
             </select>
 
             <div id="scrollBookmarkButtonCustomColorContainer">
@@ -1762,9 +1805,9 @@
 
             <label for="outlineButtonColorMode" data-i18n="settings.featureButtonColorMode">按钮颜色</label>
             <select id="outlineButtonColorMode">
-              <option value="followTopButton" selected data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
+              <option value="followTopButton" data-i18n="settings.featureButtonColorMode.followTopButton">跟随顶部按钮</option>
               <option value="followBottomButton" data-i18n="settings.featureButtonColorMode.followBottomButton">跟随底部按钮</option>
-              <option value="custom" data-i18n="settings.featureButtonColorMode.custom">自定义</option>
+              <option value="custom" selected data-i18n="settings.featureButtonColorMode.custom">自定义</option>
             </select>
 
             <div id="outlineButtonCustomColorContainer">
@@ -1829,6 +1872,10 @@
           </div>
           <div id="domainError" class="domain-error"></div>
 
+          <div class="domain-state-tabs" role="tablist" aria-label="Domain enable status">
+            <button type="button" id="domainEnabledTab" class="domain-state-tab is-active" data-domain-state-filter="enabled" data-i18n="settings.domainEnabledTab" aria-selected="true">已启用</button>
+            <button type="button" id="domainDisabledTab" class="domain-state-tab" data-domain-state-filter="disabled" data-i18n="settings.domainDisabledTab" aria-selected="false">已禁用</button>
+          </div>
           <div id="domainList" class="domain-list"></div>
           <p id="domainEmpty" class="muted-note" data-i18n="settings.domainEmpty">暂无手动设置的网站。</p>
           <div id="domainPagination" class="domain-pagination">
@@ -1916,8 +1963,11 @@
         <div class="setting-group feedback-card about-card">
           <h3 data-i18n="settings.about">关于插件</h3>
           <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
-          <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.2.0</span></p>
+          <div class="about-actions">
+            <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
+            <button type="button" id="openStoreRatingButton" class="onboarding-reopen-button" data-i18n="settings.openStoreRating">前往 Chrome Web Store 评分</button>
+          </div>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.4.0</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
@@ -1960,6 +2010,7 @@
   <script src="domain-utils.js"></script>
   <script src="analytics.js"></script>
   <script src="feedback.js"></script>
+  <script src="rating.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

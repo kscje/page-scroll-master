@@ -10,6 +10,8 @@ const POPUP_SOURCE = getSharedRuntimeSource(ROOT, POPUP_PATH) + '\n' +
   fs.readFileSync(POPUP_PATH, 'utf8');
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
 const STATES_KEY = 'domainFeatureStates';
+const RATING_REVIEW_URL = 'https://chromewebstore.google.com/detail/smart-scroll-navigator-%E2%80%93/ikdlbildhneobjlinadkkhnbeonkjbfm/reviews';
+const RATING_MIN_INSTALL_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 let passCount = 0;
 let failCount = 0;
@@ -29,7 +31,8 @@ function clone(value) {
 }
 
 function createElement(id) {
-  return {
+  const classNames = new Set();
+  const element = {
     id,
     checked: false,
     disabled: false,
@@ -37,6 +40,17 @@ function createElement(id) {
     style: {},
     dataset: {},
     listeners: {},
+    classList: {
+      add(className) {
+        classNames.add(className);
+      },
+      remove(className) {
+        classNames.delete(className);
+      },
+      contains(className) {
+        return classNames.has(className);
+      }
+    },
     addEventListener(type, callback) {
       this.listeners[type] = this.listeners[type] || [];
       this.listeners[type].push(callback);
@@ -45,6 +59,7 @@ function createElement(id) {
       (this.listeners[type] || []).forEach((callback) => callback({ target: this }));
     }
   };
+  return element;
 }
 
 function createStorageArea(data, namespace, listeners) {
@@ -88,7 +103,11 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
     outlineNavigationToggle: createElement('outlineNavigationToggle'),
     currentSite: createElement('currentSite'),
     unavailableMessage: createElement('unavailableMessage'),
-    openSettings: createElement('openSettings')
+    openSettings: createElement('openSettings'),
+    ratingPrompt: createElement('ratingPrompt'),
+    ratingPromptRate: createElement('ratingPromptRate'),
+    ratingPromptLater: createElement('ratingPromptLater'),
+    ratingPromptNever: createElement('ratingPromptNever')
   };
   const runtime = {
     lastError: null,
@@ -97,6 +116,9 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
     },
     getURL(pathname) {
       return `chrome-extension://test-extension/${pathname}`;
+    },
+    getManifest() {
+      return MANIFEST;
     },
     sendMessage(message, callback) {
       runtimeMessages.push(clone(message));
@@ -176,6 +198,8 @@ assert(
   POPUP_HTML.indexOf('id="screenNavigationToggle"') < POPUP_HTML.indexOf('id="progressBarToggle"'),
   'screen navigation is the first advanced feature in the popup'
 );
+assert(POPUP_HTML.includes('id="ratingPrompt"'), 'popup includes the rating prompt at the bottom');
+assert(POPUP_HTML.includes('rating.js'), 'popup loads the shared rating helper');
 
 console.log('\nTest 1: New domains default to extension on and advanced features off');
 let popup = openPopup('https://docs.example.co.uk/page');
@@ -259,6 +283,68 @@ popup = openPopup('chrome://extensions');
 assert(popup.elements.extensionToggle.disabled === true, 'extension switch is disabled');
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches are disabled');
 assert(popup.elements.unavailableMessage.style.display === 'block', 'unsupported-page notice is visible');
+
+console.log('\nTest 7: Rating prompt respects local frequency controls');
+const eligibleState = {
+  ratingPromptState: {
+    installedAt: Date.now() - RATING_MIN_INSTALL_AGE_MS - 1000,
+    popupOpenCount: 10,
+    totalShownCount: 0,
+    shownVersions: {},
+    dismissedUntil: 0,
+    neverAsk: false,
+    ratedClicked: false
+  }
+};
+popup = openPopup('https://rating.example/page', eligibleState);
+assert(popup.elements.ratingPrompt.classList.contains('is-visible'), 'eligible users see the rating prompt');
+assert(
+  popup.chrome.storage.local.data.ratingPromptState.popupOpenCount === 11 &&
+    popup.chrome.storage.local.data.ratingPromptState.totalShownCount === 1 &&
+    popup.chrome.storage.local.data.ratingPromptState.shownVersions[MANIFEST.version] === true,
+  'rendering the prompt records the popup open and current version display'
+);
+popup = openPopup('https://rating.example/page', popup.chrome.storage.local.data);
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'the same version is not prompted twice'
+);
+popup = openPopup('https://disabled.example/page', {
+  ...eligibleState,
+  domainFeatureStates: {
+    'disabled.example': {
+      extensionEnabled: false,
+      features: {}
+    }
+  }
+});
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible') &&
+    popup.chrome.storage.local.data.ratingPromptState.totalShownCount === 0,
+  'disabled domains do not show or consume rating prompt display count'
+);
+popup = openPopup('https://rating.example/page', eligibleState);
+popup.elements.ratingPromptLater.dispatch('click');
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible') &&
+    popup.chrome.storage.local.data.ratingPromptState.dismissedUntil > Date.now(),
+  'later hides the prompt and stores a cooldown'
+);
+popup = openPopup('https://rating.example/page', eligibleState);
+popup.elements.ratingPromptNever.dispatch('click');
+assert(
+  popup.chrome.storage.local.data.ratingPromptState.neverAsk === true &&
+    !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'never ask hides the prompt permanently'
+);
+popup = openPopup('https://rating.example/page', eligibleState);
+popup.elements.ratingPromptRate.dispatch('click');
+assert(
+  popup.chrome.storage.local.data.ratingPromptState.ratedClicked === true &&
+    popup.createdTabs[0].url === RATING_REVIEW_URL &&
+    !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'rating click stores ratedClicked and opens the Chrome Web Store review page'
+);
 
 console.log('\n=== Test summary ===');
 console.log(`Passed: ${passCount}`);

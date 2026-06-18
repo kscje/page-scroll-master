@@ -171,7 +171,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     autoScrollSpeedPreset: createElement('autoScrollSpeedPreset', { value: 'standard' }),
     autoScrollCustomSpeedContainer: createElement('autoScrollCustomSpeedContainer'),
     autoScrollCustomSpeed: createElement('autoScrollCustomSpeed', { value: '40' }),
-    autoScrollButtonPosition: createElement('autoScrollButtonPosition', { value: 'pageBottom' }),
+    autoScrollButtonPosition: createElement('autoScrollButtonPosition', { value: 'pageTop' }),
     autoScrollButtonColor: createElement('autoScrollButtonColor', { value: '#4A9EDD' }),
     autoScrollButtonColorHex: createElement('autoScrollButtonColorHex', { value: '#4A9EDD' }),
     autoScrollPauseOnUserScroll: createElement('autoScrollPauseOnUserScroll', { checked: true }),
@@ -191,26 +191,26 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     verticalProgressSettings: createElement('verticalProgressSettings'),
     horizontalProgressSettings: createElement('horizontalProgressSettings'),
     progressHorizontalPosition: createElement('progressHorizontalPosition', { value: 'top' }),
-    progressColorMode: createElement('progressColorMode', { value: 'followTopButton' }),
+    progressColorMode: createElement('progressColorMode', { value: 'custom' }),
     progressCustomColorContainer: createElement('progressCustomColorContainer'),
     progressCustomColor: createElement('progressCustomColor', { value: '#4a9edd' }),
     progressCustomColorHex: createElement('progressCustomColorHex', { value: '#4a9edd' }),
     progressThickness: createElement('progressThickness', { value: '4' }),
-    progressVerticalHeight: createElement('progressVerticalHeight', { value: '120' }),
+    progressVerticalHeight: createElement('progressVerticalHeight', { value: '80' }),
     progressClickToJump: createElement('progressClickToJump', { checked: true }),
     progressShowPercentage: createElement('progressShowPercentage', { checked: true }),
     progressShowRemainingTime: createElement('progressShowRemainingTime'),
     scrollBookmarksEnabled: createElement('scrollBookmarksEnabled'),
     scrollBookmarksSettings: createElement('scrollBookmarksSettings'),
     scrollBookmarkButtonPosition: createElement('scrollBookmarkButtonPosition', { value: 'pageBottom' }),
-    scrollBookmarkButtonColorMode: createElement('scrollBookmarkButtonColorMode', { value: 'followTopButton' }),
+    scrollBookmarkButtonColorMode: createElement('scrollBookmarkButtonColorMode', { value: 'custom' }),
     scrollBookmarkButtonCustomColorContainer: createElement('scrollBookmarkButtonCustomColorContainer'),
     scrollBookmarkButtonCustomColor: createElement('scrollBookmarkButtonCustomColor', { value: '#4a9edd' }),
     scrollBookmarkButtonCustomColorHex: createElement('scrollBookmarkButtonCustomColorHex', { value: '#4a9edd' }),
     outlineNavigationEnabled: createElement('outlineNavigationEnabled'),
     outlineNavigationSettings: createElement('outlineNavigationSettings'),
     outlineButtonPosition: createElement('outlineButtonPosition', { value: 'pageBottom' }),
-    outlineButtonColorMode: createElement('outlineButtonColorMode', { value: 'followTopButton' }),
+    outlineButtonColorMode: createElement('outlineButtonColorMode', { value: 'custom' }),
     outlineButtonCustomColorContainer: createElement('outlineButtonCustomColorContainer'),
     outlineButtonCustomColor: createElement('outlineButtonCustomColor', { value: '#4a9edd' }),
     outlineButtonCustomColorHex: createElement('outlineButtonCustomColorHex', { value: '#4a9edd' }),
@@ -235,6 +235,8 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     domainInput: createElement('domainInput'),
     domainInitialState: createElement('domainInitialState', { value: 'true' }),
     domainError: createElement('domainError'),
+    domainEnabledTab: createElement('domainEnabledTab', { className: 'domain-state-tab is-active' }),
+    domainDisabledTab: createElement('domainDisabledTab', { className: 'domain-state-tab' }),
     domainList: createElement('domainList'),
     domainEmpty: createElement('domainEmpty'),
     domainPagination: createElement('domainPagination'),
@@ -260,6 +262,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     onboardingGuide: createElement('onboardingGuide'),
     dismissOnboardingButton: createElement('dismissOnboardingButton'),
     reopenOnboardingButton: createElement('reopenOnboardingButton'),
+    openStoreRatingButton: createElement('openStoreRatingButton'),
     saveButton: createElement('saveButton', { textContent: 'Save' }),
     releaseNotesList: createElement('releaseNotesList'),
     previewTopButton: createElement('previewTopButton', {
@@ -628,8 +631,11 @@ assert(
   OPTIONS_HTML.includes('data-i18n="settings.progressColorMode">按钮颜色</label>'),
   'progress color mode uses the button color label'
 );
-assert(page.elements.scrollBookmarkButtonColorMode.value === 'followTopButton', 'scroll bookmark color defaults to the top button');
-assert(page.elements.outlineButtonColorMode.value === 'followTopButton', 'outline color defaults to the top button');
+assert(page.elements.autoScrollButtonPosition.value === 'pageTop', 'auto scroll button defaults to page top');
+assert(page.elements.progressColorMode.value === 'custom', 'progress color defaults to custom');
+assert(page.elements.progressVerticalHeight.value === 80, 'progress vertical height defaults to 80px');
+assert(page.elements.scrollBookmarkButtonColorMode.value === 'custom', 'scroll bookmark color defaults to custom');
+assert(page.elements.outlineButtonColorMode.value === 'custom', 'outline color defaults to custom');
 assert(page.elements.outlineSourceH1.checked === true && page.elements.outlineSourceH2.checked === true, 'old settings receive default H1 and H2 sources');
 assert(page.elements.outlineMaxItems.value === 30, 'old settings receive the default outline batch size');
 assert(page.elements.scrollBookmarkRestoreMode.value === 'prompt', 'scroll bookmark restore mode defaults to prompt');
@@ -752,6 +758,16 @@ const domainTablePage = createOptionsPage({}, {
         scrollBookmarks: false,
         outlineNavigation: true
       }
+    },
+    'disabled.example': {
+      extensionEnabled: false,
+      features: {
+        autoScroll: true,
+        progressBar: true,
+        screenNavigation: false,
+        scrollBookmarks: false,
+        outlineNavigation: false
+      }
     }
   }
 });
@@ -788,6 +804,40 @@ assert(
   domainDeleteButton.getAttribute('aria-label') === 'Delete' &&
     domainDeleteButton.getAttribute('title') === 'Delete',
   'domain delete icon retains an accessible label and tooltip'
+);
+assert(
+  OPTIONS_HTML.includes('id="domainEnabledTab"') &&
+    OPTIONS_HTML.includes('id="domainDisabledTab"') &&
+    OPTIONS_HTML.includes('class="domain-state-tab is-active"') &&
+    OPTIONS_HTML.includes('border-bottom: 2px solid transparent;'),
+  'domain management separates enabled and disabled records into list tabs'
+);
+assert(
+  OPTIONS_HTML.indexOf('id="domainError"') <
+    OPTIONS_HTML.indexOf('class="domain-state-tabs" role="tablist"') &&
+    OPTIONS_HTML.indexOf('class="domain-state-tabs" role="tablist"') <
+    OPTIONS_HTML.indexOf('id="domainList"'),
+  'domain status tabs sit between the domain input row and the list'
+);
+assert(
+  domainRow.children[0].textContent === 'example.com' &&
+    domainTablePage.elements.domainEnabledTab.classList.contains('is-active') &&
+    !domainTablePage.elements.domainDisabledTab.classList.contains('is-active'),
+  'domain management defaults to the enabled tab'
+);
+domainTablePage.elements.domainDisabledTab.dispatch('click');
+assert(
+  domainTablePage.elements.domainList.children[1].children[0].textContent === 'disabled.example' &&
+    domainTablePage.elements.domainDisabledTab.classList.contains('is-active') &&
+    !domainTablePage.elements.domainEnabledTab.classList.contains('is-active'),
+  'domain disabled tab shows only disabled extension records'
+);
+domainTablePage.elements.domainList.children[1].children[1].children[0].checked = true;
+domainTablePage.elements.domainList.children[1].children[1].children[0].dispatch('change');
+assert(
+  domainTablePage.elements.domainList.children.length === 0 &&
+    domainTablePage.elements.domainEmpty.style.display === 'block',
+  'reenabling a disabled domain moves it out of the disabled tab'
 );
 const manyDomainStates = {};
 for (let index = 1; index <= 51; index += 1) {
@@ -866,9 +916,32 @@ assert(
 const aboutCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card about-card"');
 const releaseNotesCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card release-notes-card"');
 assert(aboutCardIndex >= 0 && releaseNotesCardIndex > aboutCardIndex, 'release notes appear after the about card');
+assert(
+  OPTIONS_HTML.includes('id="openStoreRatingButton"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.openStoreRating"') &&
+    OPTIONS_HTML.includes('class="about-actions"') &&
+    OPTIONS_HTML.includes('id="openStoreRatingButton" class="onboarding-reopen-button"') &&
+    OPTIONS_HTML.includes('rating.js'),
+  'about card exposes the store rating entry as a matching action button'
+);
+assert(
+  OPTIONS_HTML.indexOf('id="reopenOnboardingButton"') <
+    OPTIONS_HTML.indexOf('id="openStoreRatingButton"') &&
+    OPTIONS_HTML.indexOf('id="openStoreRatingButton"') <
+    OPTIONS_HTML.indexOf('id="manifestVersion"'),
+  'store rating button sits beside the quick-start button before version metadata'
+);
+page.elements.openStoreRatingButton.dispatch('click');
+assert(
+  page.createdTabs[0].url === 'https://chromewebstore.google.com/detail/smart-scroll-navigator-%E2%80%93/ikdlbildhneobjlinadkkhnbeonkjbfm/reviews' &&
+    page.localData.ratingPromptState.ratedClicked === true &&
+    page.localData.ratingPromptState.totalShownCount === 0 &&
+    Object.keys(page.localData.ratingPromptState.shownVersions).length === 0,
+  'settings rating entry opens the review page without consuming popup prompt frequency'
+);
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1074,10 +1147,10 @@ console.log('\nTest 7: Progress settings update the real preview surface');
 let page4 = createOptionsPage();
 assert(page4.elements.previewProgressButton.style.display === 'flex', 'vertical progress preview is always available for configuration');
 assert(
-  page4.elements.previewPreviousScreenButton.style.top.includes('48') &&
+    page4.elements.previewPreviousScreenButton.style.top.includes('48') &&
     page4.elements.previewProgressButton.style.top.includes('96') &&
-    page4.elements.previewNextScreenButton.style.top.includes('224') &&
-    page4.elements.previewBottomButton.style.top.includes('272'),
+    page4.elements.previewNextScreenButton.style.top.includes('184') &&
+    page4.elements.previewBottomButton.style.top.includes('232'),
   'screen navigation preview follows top, previous, progress, next, bottom order'
 );
 page4.elements.previousScreenButtonColor.value = '#123456';
@@ -1090,7 +1163,7 @@ assert(page4.elements.previewTopButton.style.opacity === 0.2, 'main button opaci
 assert(page4.elements.previewPreviousScreenButton.style.opacity === 0.2, 'previous screen uses the main button opacity');
 assert(page4.elements.previewNextScreenButton.style.opacity === 0.2, 'next screen uses the main button opacity');
 assert(
-  page4.elements.previewBottomButton.style.top.includes('272'),
+  page4.elements.previewBottomButton.style.top.includes('232'),
   `bottom preview button is offset below vertical progress preview (${page4.elements.previewBottomButton.style.top})`
 );
 page4.elements.progressShowPercentage.checked = true;
@@ -1110,6 +1183,7 @@ assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bo
 assert(page5.elements.previewOutlineButton.style.display === 'flex', 'outline preview remains visible for configuration');
 page5.elements.scrollBookmarkButtonPosition.value = 'pageBottom';
 page5.elements.scrollBookmarkButtonColorMode.value = 'followTopButton';
+page5.elements.scrollBookmarkButtonColorMode.dispatch('change');
 assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview is shown when enabled');
 assert(page5.elements.previewBookmarkButton.style.backgroundColor === '#4A9EDD', 'scroll bookmark preview falls back to top button color');
 assert(page5.elements.previewBookmarkButton.style.bottom === '56px', 'page-bottom bookmark stacks before outline when scroll buttons are centered');

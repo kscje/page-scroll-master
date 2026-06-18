@@ -53,7 +53,11 @@ function createPopupContext() {
     outlineNavigationToggle: { addEventListener() {}, checked: false, disabled: false },
     currentSite: { textContent: '', style: {} },
     unavailableMessage: { textContent: '', style: {} },
-    openSettings: { addEventListener() {} }
+    openSettings: { addEventListener() {} },
+    ratingPrompt: { classList: { add() {}, remove() {}, contains() { return false; } } },
+    ratingPromptRate: { addEventListener() {} },
+    ratingPromptLater: { addEventListener() {} },
+    ratingPromptNever: { addEventListener() {} }
   };
   const sandbox = {
     console,
@@ -75,7 +79,7 @@ function createPopupContext() {
         },
         onChanged: { addListener() {} }
       },
-      runtime: { lastError: null, openOptionsPage() {} },
+      runtime: { lastError: null, openOptionsPage() {}, getManifest() { return { version: '2.4.0' }; } },
       tabs: {
         query(queryInfo, callback) { callback([]); },
         sendMessage(tabId, message, callback) { if (callback) callback(); }
@@ -240,7 +244,7 @@ expectedOptionLanguages.forEach((lang) => {
   );
 });
 
-assert(optionsContext.__releaseNotes[0].version === '2.2.0', 'release notes are ordered newest first');
+assert(optionsContext.__releaseNotes[0].version === '2.4.0', 'release notes are ordered newest first');
 assert(
   optionsContext.__releaseNotes[optionsContext.__releaseNotes.length - 1].version === '1.8.0',
   'release notes start at v1.8'

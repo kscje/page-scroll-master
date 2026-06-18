@@ -1,5 +1,6 @@
 var domainUtils = PageScrollMasterDomain;
 var STORAGE_KEYS = domainUtils.STORAGE_KEYS;
+var ratingUtils = PageScrollMasterRating;
 
 var extensionToggleEl = document.getElementById('extensionToggle');
 var featureToggleEls = {
@@ -12,6 +13,10 @@ var featureToggleEls = {
 var currentSiteEl = document.getElementById('currentSite');
 var unavailableEl = document.getElementById('unavailableMessage');
 var settingsBtn = document.getElementById('openSettings');
+var ratingPromptEl = document.getElementById('ratingPrompt');
+var ratingRateBtn = document.getElementById('ratingPromptRate');
+var ratingLaterBtn = document.getElementById('ratingPromptLater');
+var ratingNeverBtn = document.getElementById('ratingPromptNever');
 var currentDomainKey = '';
 var currentTabId = null;
 var domainFeatureStates = {};
@@ -30,7 +35,11 @@ var popupTranslations = {
     'popupScreenNavigation': '按屏跳转',
     'popupScrollBookmarks': '滚动位置书签',
     'popupOutlineNavigation': '智能段落跳转',
-    'popupUnavailable': '当前页面不支持扩展功能控制'
+    'popupUnavailable': '当前页面不支持扩展功能控制',
+    'popupRatingPromptText': '如果这个插件帮到了你，欢迎在 Chrome Web Store 给我们评分。',
+    'popupRatingPromptRate': '去评分',
+    'popupRatingPromptLater': '稍后再说',
+    'popupRatingPromptNever': '不再提示'
   },
   'en-US': {
     'popupSettings': 'Open settings',
@@ -42,7 +51,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Previous/next screen',
     'popupScrollBookmarks': 'Scroll position bookmarks',
     'popupOutlineNavigation': 'Smart section navigation',
-    'popupUnavailable': 'Extension controls are unavailable on this page'
+    'popupUnavailable': 'Extension controls are unavailable on this page',
+    'popupRatingPromptText': 'If this extension has helped you, you are welcome to rate it on the Chrome Web Store.',
+    'popupRatingPromptRate': 'Rate',
+    'popupRatingPromptLater': 'Later',
+    'popupRatingPromptNever': 'Do not show again'
   },
   'es-ES': {
     'popupSettings': 'Abrir configuración',
@@ -54,7 +67,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Pantalla anterior/siguiente',
     'popupScrollBookmarks': 'Marcadores de posición',
     'popupOutlineNavigation': 'Navegación por secciones',
-    'popupUnavailable': 'Los controles no están disponibles en esta página'
+    'popupUnavailable': 'Los controles no están disponibles en esta página',
+    'popupRatingPromptText': 'Si esta extensión te ha ayudado, puedes valorarla en Chrome Web Store.',
+    'popupRatingPromptRate': 'Valorar',
+    'popupRatingPromptLater': 'Más tarde',
+    'popupRatingPromptNever': 'No mostrar más'
   },
   'ja-JP': {
     'popupSettings': '設定を開く',
@@ -66,7 +83,11 @@ var popupTranslations = {
     'popupScreenNavigation': '前後の画面へ移動',
     'popupScrollBookmarks': 'スクロール位置ブックマーク',
     'popupOutlineNavigation': 'スマートセクション移動',
-    'popupUnavailable': 'このページでは拡張機能を制御できません'
+    'popupUnavailable': 'このページでは拡張機能を制御できません',
+    'popupRatingPromptText': 'この拡張機能がお役に立った場合は、Chrome ウェブストアで評価できます。',
+    'popupRatingPromptRate': '評価する',
+    'popupRatingPromptLater': '後で',
+    'popupRatingPromptNever': '今後表示しない'
   },
   'de-DE': {
     'popupSettings': 'Einstellungen öffnen',
@@ -78,7 +99,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Vorheriger/nächster Bildschirm',
     'popupScrollBookmarks': 'Scrollpositions-Lesezeichen',
     'popupOutlineNavigation': 'Abschnittsnavigation',
-    'popupUnavailable': 'Steuerung auf dieser Seite nicht verfügbar'
+    'popupUnavailable': 'Steuerung auf dieser Seite nicht verfügbar',
+    'popupRatingPromptText': 'Wenn diese Erweiterung Ihnen geholfen hat, können Sie sie im Chrome Web Store bewerten.',
+    'popupRatingPromptRate': 'Bewerten',
+    'popupRatingPromptLater': 'Später',
+    'popupRatingPromptNever': 'Nicht mehr anzeigen'
   },
   'fr-FR': {
     'popupSettings': 'Ouvrir les paramètres',
@@ -90,7 +115,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Écran précédent/suivant',
     'popupScrollBookmarks': 'Marque-pages de position',
     'popupOutlineNavigation': 'Navigation par sections',
-    'popupUnavailable': 'Commandes indisponibles sur cette page'
+    'popupUnavailable': 'Commandes indisponibles sur cette page',
+    'popupRatingPromptText': 'Si cette extension vous a aidé, vous pouvez la noter sur le Chrome Web Store.',
+    'popupRatingPromptRate': 'Noter',
+    'popupRatingPromptLater': 'Plus tard',
+    'popupRatingPromptNever': 'Ne plus afficher'
   },
   'pt-BR': {
     'popupSettings': 'Abrir configurações',
@@ -102,7 +131,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Tela anterior/seguinte',
     'popupScrollBookmarks': 'Favoritos de posição',
     'popupOutlineNavigation': 'Navegação por seções',
-    'popupUnavailable': 'Controles indisponíveis nesta página'
+    'popupUnavailable': 'Controles indisponíveis nesta página',
+    'popupRatingPromptText': 'Se esta extensão ajudou você, sinta-se à vontade para avaliá-la na Chrome Web Store.',
+    'popupRatingPromptRate': 'Avaliar',
+    'popupRatingPromptLater': 'Depois',
+    'popupRatingPromptNever': 'Não mostrar novamente'
   },
   'zh-TW': {
     'popupSettings': '開啟設定',
@@ -114,7 +147,11 @@ var popupTranslations = {
     'popupScreenNavigation': '上一屏／下一屏',
     'popupScrollBookmarks': '捲動位置書籤',
     'popupOutlineNavigation': '智慧段落跳轉',
-    'popupUnavailable': '目前頁面不支援外掛功能控制'
+    'popupUnavailable': '目前頁面不支援外掛功能控制',
+    'popupRatingPromptText': '如果這個外掛幫到了你，歡迎在 Chrome Web Store 給我們評分。',
+    'popupRatingPromptRate': '去評分',
+    'popupRatingPromptLater': '稍後再說',
+    'popupRatingPromptNever': '不再提示'
   },
   'ko-KR': {
     'popupSettings': '설정 열기',
@@ -126,7 +163,11 @@ var popupTranslations = {
     'popupScreenNavigation': '이전/다음 화면',
     'popupScrollBookmarks': '스크롤 위치 북마크',
     'popupOutlineNavigation': '스마트 구간 이동',
-    'popupUnavailable': '이 페이지에서는 확장 기능을 제어할 수 없습니다'
+    'popupUnavailable': '이 페이지에서는 확장 기능을 제어할 수 없습니다',
+    'popupRatingPromptText': '이 확장 프로그램이 도움이 되었다면 Chrome 웹 스토어에서 평가해 주세요.',
+    'popupRatingPromptRate': '평가하기',
+    'popupRatingPromptLater': '나중에',
+    'popupRatingPromptNever': '다시 표시 안 함'
   },
   'it-IT': {
     'popupSettings': 'Apri impostazioni',
@@ -138,7 +179,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Schermata precedente/successiva',
     'popupScrollBookmarks': 'Segnalibri posizione',
     'popupOutlineNavigation': 'Navigazione sezioni',
-    'popupUnavailable': 'Controlli non disponibili in questa pagina'
+    'popupUnavailable': 'Controlli non disponibili in questa pagina',
+    'popupRatingPromptText': 'Se questa estensione ti è stata utile, puoi valutarla sul Chrome Web Store.',
+    'popupRatingPromptRate': 'Valuta',
+    'popupRatingPromptLater': 'Più tardi',
+    'popupRatingPromptNever': 'Non mostrare più'
   },
   'ru-RU': {
     'popupSettings': 'Открыть настройки',
@@ -150,7 +195,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Предыдущий/следующий экран',
     'popupScrollBookmarks': 'Закладки позиции',
     'popupOutlineNavigation': 'Навигация по разделам',
-    'popupUnavailable': 'Управление расширением недоступно на этой странице'
+    'popupUnavailable': 'Управление расширением недоступно на этой странице',
+    'popupRatingPromptText': 'Если расширение вам помогло, вы можете оценить его в Chrome Web Store.',
+    'popupRatingPromptRate': 'Оценить',
+    'popupRatingPromptLater': 'Позже',
+    'popupRatingPromptNever': 'Больше не показывать'
   },
   'tr-TR': {
     'popupSettings': 'Ayarları aç',
@@ -162,7 +211,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Önceki/sonraki ekran',
     'popupScrollBookmarks': 'Kaydırma konumu yer imleri',
     'popupOutlineNavigation': 'Akıllı bölüm gezintisi',
-    'popupUnavailable': 'Bu sayfada uzantı kontrolleri kullanılamaz'
+    'popupUnavailable': 'Bu sayfada uzantı kontrolleri kullanılamaz',
+    'popupRatingPromptText': 'Bu uzantı size yardımcı olduysa Chrome Web Store’da puan verebilirsiniz.',
+    'popupRatingPromptRate': 'Puan ver',
+    'popupRatingPromptLater': 'Daha sonra',
+    'popupRatingPromptNever': 'Bir daha gösterme'
   },
   'id-ID': {
     'popupSettings': 'Buka pengaturan',
@@ -174,7 +227,11 @@ var popupTranslations = {
     'popupScreenNavigation': 'Layar sebelumnya/berikutnya',
     'popupScrollBookmarks': 'Bookmark posisi gulir',
     'popupOutlineNavigation': 'Navigasi bagian pintar',
-    'popupUnavailable': 'Kontrol ekstensi tidak tersedia di halaman ini'
+    'popupUnavailable': 'Kontrol ekstensi tidak tersedia di halaman ini',
+    'popupRatingPromptText': 'Jika ekstensi ini membantu Anda, silakan beri rating di Chrome Web Store.',
+    'popupRatingPromptRate': 'Beri rating',
+    'popupRatingPromptLater': 'Nanti',
+    'popupRatingPromptNever': 'Jangan tampilkan lagi'
   }
 };
 
@@ -246,7 +303,31 @@ function renderState(state, canEdit) {
 function showUnavailable() {
   currentSiteEl.style.display = 'none';
   unavailableEl.style.display = 'block';
+  hideRatingPrompt();
   renderState(domainUtils.normalizeState(null, domainFeatureDefaults), false);
+  recordRatingPopupOpen(false);
+}
+
+function hideRatingPrompt() {
+  if (!ratingPromptEl) return;
+  ratingPromptEl.classList.remove('is-visible');
+}
+
+function showRatingPrompt(state, version) {
+  if (!ratingPromptEl) return;
+  ratingPromptEl.classList.add('is-visible');
+  ratingUtils.recordShown(state, version, function () {});
+}
+
+function recordRatingPopupOpen(domainEnabled) {
+  if (!chrome.storage || !chrome.storage.local || !ratingUtils) return;
+  ratingUtils.recordPopupOpen(domainEnabled, function (result) {
+    if (!result.shouldShow) {
+      hideRatingPrompt();
+      return;
+    }
+    showRatingPrompt(result.state, result.version);
+  });
 }
 
 function notifyCurrentTab(state) {
@@ -337,10 +418,9 @@ function loadStorageAndRender() {
       domainFeatureStates = migration.states;
       domainFeatureDefaults = migration.defaults;
       var finish = function () {
-        renderState(
-          domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults),
-          true
-        );
+        var currentState = domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults);
+        renderState(currentState, true);
+        recordRatingPopupOpen(currentState.extensionEnabled);
       };
       if (!migration.needsWrite) {
         finish();
@@ -383,6 +463,24 @@ Object.keys(featureToggleEls).forEach(function (key) {
 settingsBtn.addEventListener('click', function () {
   chrome.runtime.openOptionsPage();
 });
+if (ratingRateBtn) {
+  ratingRateBtn.addEventListener('click', function () {
+    ratingUtils.recordRatedClicked(function () {
+      hideRatingPrompt();
+      chrome.tabs.create({ url: ratingUtils.STORE_REVIEW_URL });
+    });
+  });
+}
+if (ratingLaterBtn) {
+  ratingLaterBtn.addEventListener('click', function () {
+    ratingUtils.remindLater(hideRatingPrompt);
+  });
+}
+if (ratingNeverBtn) {
+  ratingNeverBtn.addEventListener('click', function () {
+    ratingUtils.neverAsk(hideRatingPrompt);
+  });
+}
 
 chrome.storage.onChanged.addListener(function (changes, namespace) {
   if (namespace !== 'local' || pendingLocalChange || !currentDomainKey) return;

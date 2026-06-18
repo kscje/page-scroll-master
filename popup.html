@@ -118,6 +118,48 @@
       background-color: #ddd;
       color: #222;
     }
+    .rating-prompt {
+      display: none;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid rgba(74, 158, 221, 0.18);
+    }
+    .rating-prompt.is-visible {
+      display: grid;
+    }
+    .rating-prompt-text {
+      margin: 0;
+      color: #444;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .rating-prompt-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .rating-prompt button {
+      padding: 6px 8px;
+      border: 1px solid #d8d8d8;
+      border-radius: 6px;
+      background: #f8f8f8;
+      color: #444;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .rating-prompt button:hover {
+      background: #eeeeee;
+      color: #222;
+    }
+    .rating-primary {
+      border-color: #4CAF50 !important;
+      background: #4CAF50 !important;
+      color: #ffffff !important;
+    }
   </style>
 </head>
 <body>
@@ -170,9 +212,18 @@
       </label>
     </div>
     <button class="settings-button" id="openSettings" data-i18n="popupSettings">Settings</button>
+    <div id="ratingPrompt" class="rating-prompt" aria-live="polite">
+      <p class="rating-prompt-text" data-i18n="popupRatingPromptText">If this extension has helped you, you are welcome to rate it on the Chrome Web Store.</p>
+      <div class="rating-prompt-actions">
+        <button type="button" id="ratingPromptRate" class="rating-primary" data-i18n="popupRatingPromptRate">Rate</button>
+        <button type="button" id="ratingPromptLater" data-i18n="popupRatingPromptLater">Later</button>
+        <button type="button" id="ratingPromptNever" data-i18n="popupRatingPromptNever">Do not show again</button>
+      </div>
+    </div>
   </div>
   <script src="vendor/tldts.umd.min.js"></script>
   <script src="domain-utils.js"></script>
+  <script src="rating.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

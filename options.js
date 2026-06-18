@@ -2,6 +2,7 @@ const domainUtils = PageScrollMasterDomain;
 const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 const analyticsUtils = PageScrollMasterAnalytics;
 const feedbackUtils = PageScrollMasterFeedback;
+const ratingUtils = PageScrollMasterRating;
 let analyticsRuntimeState = {
   configured: false,
   permissionOrigin: '',
@@ -13,6 +14,7 @@ let feedbackStatusKey = '';
 let feedbackSubmitting = false;
 const AUTO_SCROLL_ICON_SIZE = '48%';
 const DOMAIN_PAGE_SIZE = 50;
+const DOMAIN_STATE_FILTERS = ['enabled', 'disabled'];
 
 // 多语言翻译数据
 const translations = {
@@ -32,6 +34,7 @@ const translations = {
     'settings.aboutDescription': '智能页面滚动导航器用于在网页中快速跳转到顶部或底部，并支持阅读进度、进度跳转与站点启用状态配置。',
     'settings.versionLabel': '当前版本：',
     'settings.authorLabel': '插件作者：',
+    'settings.openStoreRating': '前往 Chrome Web Store 评分',
     'settings.language': '语言',
     'settings.scrollSpeed': '滚动速度',
     'settings.buttonPosition': '按钮位置',
@@ -88,6 +91,7 @@ const translations = {
     'settings.aboutDescription': 'Smart Scroll Navigator helps you jump to the top or bottom of pages, track reading progress, and manage per-site enable settings.',
     'settings.versionLabel': 'Version: ',
     'settings.authorLabel': 'Author: ',
+    'settings.openStoreRating': 'Rate on the Chrome Web Store',
     'settings.language': 'Language',
     'settings.scrollSpeed': 'Scroll Speed',
     'settings.buttonPosition': 'Button Position',
@@ -201,6 +205,10 @@ Object.assign(translations['zh-CN'], {
   'settings.domainInput': 'example.com 或 https://example.com/page',
   'settings.domainEnabled': '启用',
   'settings.domainDisabled': '禁用',
+  'settings.domainEnabledTab': '已启用',
+  'settings.domainDisabledTab': '已禁用',
+  'settings.domainEnabledEmpty': '暂无已启用的手动设置网站。',
+  'settings.domainDisabledEmpty': '暂无已禁用的手动设置网站。',
   'settings.domainEmpty': '暂无手动设置的网站。',
   'settings.addDomain': '添加域名',
   'settings.clearDisabledSites': '清除已关闭站点',
@@ -281,6 +289,10 @@ Object.assign(translations['en-US'], {
   'settings.domainInput': 'example.com or https://example.com/page',
   'settings.domainEnabled': 'Enabled',
   'settings.domainDisabled': 'Disabled',
+  'settings.domainEnabledTab': 'Enabled',
+  'settings.domainDisabledTab': 'Disabled',
+  'settings.domainEnabledEmpty': 'No enabled manually configured sites.',
+  'settings.domainDisabledEmpty': 'No disabled manually configured sites.',
   'settings.domainEmpty': 'No manually configured sites yet.',
   'settings.addDomain': 'Add domain',
   'settings.clearDisabledSites': 'Clear disabled sites',
@@ -1229,6 +1241,33 @@ Object.keys(translations).forEach((lang) => {
     'ko-KR': ['이전 페이지', '다음 페이지'],
     'it-IT': ['Pagina precedente', 'Pagina successiva']
   }[lang] || ['Previous page', 'Next page'];
+  const domainStateTranslations = {
+    'zh-CN': ['已启用', '已禁用', '暂无已启用的手动设置网站。', '暂无已禁用的手动设置网站。'],
+    'zh-TW': ['已啟用', '已停用', '尚無已啟用的手動設定網站。', '尚無已停用的手動設定網站。'],
+    'en-US': ['Enabled', 'Disabled', 'No enabled manually configured sites.', 'No disabled manually configured sites.'],
+    'es-ES': ['Activados', 'Desactivados', 'No hay sitios configurados manualmente como activados.', 'No hay sitios configurados manualmente como desactivados.'],
+    'ja-JP': ['有効', '無効', '有効に手動設定されたサイトはありません。', '無効に手動設定されたサイトはありません。'],
+    'de-DE': ['Aktiviert', 'Deaktiviert', 'Keine manuell aktivierten Websites.', 'Keine manuell deaktivierten Websites.'],
+    'fr-FR': ['Activés', 'Désactivés', 'Aucun site activé manuellement.', 'Aucun site désactivé manuellement.'],
+    'pt-BR': ['Ativados', 'Desativados', 'Nenhum site ativado manualmente.', 'Nenhum site desativado manualmente.'],
+    'ko-KR': ['활성화됨', '비활성화됨', '수동으로 활성화한 사이트가 없습니다.', '수동으로 비활성화한 사이트가 없습니다.'],
+    'it-IT': ['Attivati', 'Disattivati', 'Nessun sito attivato manualmente.', 'Nessun sito disattivato manualmente.']
+  }[lang] || ['Enabled', 'Disabled', 'No enabled manually configured sites.', 'No disabled manually configured sites.'];
+  const storeRatingTranslations = {
+    'zh-CN': '前往 Chrome Web Store 评分',
+    'zh-TW': '前往 Chrome Web Store 評分',
+    'en-US': 'Rate on the Chrome Web Store',
+    'es-ES': 'Valorar en Chrome Web Store',
+    'ja-JP': 'Chrome ウェブストアで評価',
+    'de-DE': 'Im Chrome Web Store bewerten',
+    'fr-FR': 'Noter sur le Chrome Web Store',
+    'pt-BR': 'Avaliar na Chrome Web Store',
+    'ko-KR': 'Chrome 웹 스토어에서 평가',
+    'it-IT': 'Valuta sul Chrome Web Store',
+    'ru-RU': 'Оценить в Chrome Web Store',
+    'tr-TR': 'Chrome Web Store’da puan ver',
+    'id-ID': 'Beri rating di Chrome Web Store'
+  }[lang] || 'Rate on the Chrome Web Store';
   const advancedIntroTranslations = {
     'zh-CN': [
       '按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。',
@@ -1339,6 +1378,11 @@ Object.keys(translations).forEach((lang) => {
     'settings.domainActions': domainFeatureTranslations[10],
     'settings.domainPreviousPage': domainPaginationTranslations[0],
     'settings.domainNextPage': domainPaginationTranslations[1],
+    'settings.domainEnabledTab': domainStateTranslations[0],
+    'settings.domainDisabledTab': domainStateTranslations[1],
+    'settings.domainEnabledEmpty': domainStateTranslations[2],
+    'settings.domainDisabledEmpty': domainStateTranslations[3],
+    'settings.openStoreRating': storeRatingTranslations,
     'settings.globalScrollShortcuts': globalShortcutTranslations[0],
     'settings.scrollToTopShortcut': globalShortcutTranslations[1],
     'settings.scrollToBottomShortcut': globalShortcutTranslations[2],
@@ -2131,6 +2175,10 @@ const v23LanguageTranslations = {
       currentVersion: 'Текущая версия',
       categories: { added: 'Новые функции', improved: 'Улучшения', fixed: 'Исправления' },
       items: {
+        autoScrollPlayback: 'Добавлена автопрокрутка вниз с постоянной скоростью.',
+        autoScrollPauses: 'Автопрокрутка приостанавливается при ручной прокрутке, выделении текста, вводе, скрытой вкладке, полноэкранном режиме или воспроизведении основного видео.',
+        russianTurkishIndonesian: 'Добавлены интерфейсы на русском, турецком и индонезийском языках.',
+        readingToolControls: 'Добавлены элементы управления и настройки автопрокрутки с включением по доменам.',
         globalShortcutManagement: 'Добавлен просмотр текущих глобальных сочетаний прокрутки и переход к управлению ими в браузере.',
         screenNavigation: 'Добавлен переход на предыдущий и следующий экран для корневых и пользовательских контейнеров прокрутки.',
         feedbackService: 'Добавлена отправка предложений и отзывов внутри расширения с необязательными контактами и изображениями.',
@@ -2385,6 +2433,10 @@ const v23LanguageTranslations = {
       currentVersion: 'Geçerli sürüm',
       categories: { added: 'Yeni özellikler', improved: 'İyileştirmeler', fixed: 'Hata düzeltmeleri' },
       items: {
+        autoScrollPlayback: 'Sabit hızla aşağı doğru otomatik kaydırma oynatması eklendi.',
+        autoScrollPauses: 'Otomatik kaydırma; kullanıcı kaydırınca, metin seçilince, düzenleme sırasında, sekme gizlenince, tam ekranda veya ana video oynarken duraklar.',
+        russianTurkishIndonesian: 'Rusça, Türkçe ve Endonezce arayüzler eklendi.',
+        readingToolControls: 'Alan adına göre etkinleştirilen otomatik kaydırma kontrolleri ve ayarları eklendi.',
         globalShortcutManagement: 'Geçerli genel kaydırma kısayollarını gösterme ve tarayıcı yönetimi bağlantısı eklendi.',
         screenNavigation: 'Kök ve özel kaydırma kapsayıcıları için önceki ve sonraki ekran gezintisi eklendi.',
         feedbackService: 'İsteğe bağlı iletişim bilgileri ve görsellerle uzantı içinden öneri ve geri bildirim gönderme eklendi.',
@@ -2639,6 +2691,10 @@ const v23LanguageTranslations = {
       currentVersion: 'Versi saat ini',
       categories: { added: 'Fitur baru', improved: 'Peningkatan fitur', fixed: 'Perbaikan bug' },
       items: {
+        autoScrollPlayback: 'Ditambahkan pemutaran gulir otomatis ke bawah dengan kecepatan stabil.',
+        autoScrollPauses: 'Gulir otomatis dijeda saat pengguna menggulir, memilih teks, mengedit, tab tersembunyi, layar penuh, atau video utama diputar.',
+        russianTurkishIndonesian: 'Ditambahkan antarmuka bahasa Rusia, Turki, dan Indonesia.',
+        readingToolControls: 'Ditambahkan kontrol dan pengaturan gulir otomatis dengan aktivasi per domain.',
         globalShortcutManagement: 'Ditambahkan tampilan pintasan gulir global saat ini dan tautan pengelolaan di browser.',
         screenNavigation: 'Ditambahkan navigasi layar sebelumnya dan berikutnya untuk kontainer gulir root dan kustom.',
         feedbackService: 'Ditambahkan pengiriman saran dan masukan di dalam ekstensi dengan kontak dan gambar opsional.',
@@ -2740,6 +2796,28 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.4.0',
+    categories: {
+      improved: [
+        'defaultParameterSettings',
+        'domainManagementList'
+      ]
+    }
+  },
+  {
+    version: '2.3.0',
+    categories: {
+      added: [
+        'autoScrollPlayback',
+        'autoScrollPauses',
+        'russianTurkishIndonesian'
+      ],
+      improved: [
+        'readingToolControls'
+      ]
+    }
+  },
+  {
     version: '2.2.0',
     categories: {
       added: [
@@ -2818,6 +2896,12 @@ const releaseNotesTranslations = {
     currentVersion: '当前版本',
     categories: { added: '新功能', improved: '功能优化', fixed: 'Bug 修复' },
     items: {
+      defaultParameterSettings: '调整插件的默认参数设定。',
+      domainManagementList: '优化域名管理列表。',
+      autoScrollPlayback: '新增自动滚屏播放，可按稳定速度连续向下滚动。',
+      autoScrollPauses: '自动滚屏会在用户滚动、选中文字、编辑输入、切换标签页、全屏或主要视频播放时暂停。',
+      russianTurkishIndonesian: '新增俄语、土耳其语和印度尼西亚语界面。',
+      readingToolControls: '阅读工具新增自动滚屏按钮和设置项，并继续按主域名启停。',
       globalShortcutManagement: '新增全局滚动快捷键查看和浏览器管理入口。',
       screenNavigation: '新增上一屏和下一屏跳转，支持自定义滚动容器。',
       feedbackService: '新增扩展内建议与反馈提交，支持可选联系方式和图片。',
@@ -2849,6 +2933,12 @@ const releaseNotesTranslations = {
     currentVersion: '目前版本',
     categories: { added: '新功能', improved: '功能最佳化', fixed: 'Bug 修正' },
     items: {
+      defaultParameterSettings: '調整外掛的預設參數設定。',
+      domainManagementList: '最佳化網域管理清單。',
+      autoScrollPlayback: '新增自動捲動播放，可依穩定速度連續向下捲動。',
+      autoScrollPauses: '自動捲動會在使用者捲動、選取文字、編輯輸入、切換分頁、全螢幕或主要影片播放時暫停。',
+      russianTurkishIndonesian: '新增俄語、土耳其語與印尼語介面。',
+      readingToolControls: '閱讀工具新增自動捲動按鈕與設定項，並繼續依主網域啟停。',
       globalShortcutManagement: '新增全域捲動快捷鍵查看與瀏覽器管理入口。',
       screenNavigation: '新增上一屏與下一屏跳轉，支援自訂捲動容器。',
       feedbackService: '新增擴充功能內建議與回饋提交，支援選填聯絡方式與圖片。',
@@ -2880,6 +2970,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Current version',
     categories: { added: 'New features', improved: 'Feature improvements', fixed: 'Bug fixes' },
     items: {
+      defaultParameterSettings: 'Adjusted the extension default parameter settings.',
+      domainManagementList: 'Improved the domain management list.',
+      autoScrollPlayback: 'Added auto-scroll playback that moves down the page at a steady speed.',
+      autoScrollPauses: 'Auto scroll now pauses for user scrolling, text selection, editing, hidden tabs, fullscreen, or primary video playback.',
+      russianTurkishIndonesian: 'Added Russian, Turkish, and Indonesian interfaces.',
+      readingToolControls: 'Added auto-scroll controls and settings while keeping per-domain feature toggles.',
       globalShortcutManagement: 'Added current shortcut display and a browser-managed shortcut entry.',
       screenNavigation: 'Added previous-screen and next-screen navigation for root and custom scroll containers.',
       feedbackService: 'Added in-extension feedback submission with optional contact details and images.',
@@ -2911,6 +3007,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Versión actual',
     categories: { added: 'Nuevas funciones', improved: 'Mejoras de funciones', fixed: 'Correcciones de errores' },
     items: {
+      defaultParameterSettings: 'Se ajustaron los parámetros predeterminados de la extensión.',
+      domainManagementList: 'Se mejoró la lista de gestión de dominios.',
+      autoScrollPlayback: 'Se añadió reproducción de desplazamiento automático a velocidad estable.',
+      autoScrollPauses: 'El desplazamiento automático se pausa al desplazar manualmente, seleccionar texto, editar, ocultar la pestaña, usar pantalla completa o reproducir el video principal.',
+      russianTurkishIndonesian: 'Se añadieron interfaces en ruso, turco e indonesio.',
+      readingToolControls: 'Se añadieron controles y ajustes de desplazamiento automático con activación por dominio.',
       globalShortcutManagement: 'Se añadió la visualización de atajos y el acceso a su gestión en el navegador.',
       screenNavigation: 'Se añadió la navegación por pantalla anterior y siguiente para contenedores de desplazamiento personalizados.',
       feedbackService: 'Se añadió el envío de comentarios con contacto e imágenes opcionales.',
@@ -2942,6 +3044,12 @@ const releaseNotesTranslations = {
     currentVersion: '現在のバージョン',
     categories: { added: '新機能', improved: '機能改善', fixed: '不具合修正' },
     items: {
+      defaultParameterSettings: '拡張機能の既定パラメーター設定を調整しました。',
+      domainManagementList: 'ドメイン管理リストを改善しました。',
+      autoScrollPlayback: '一定速度で下方向に進む自動スクロール再生を追加しました。',
+      autoScrollPauses: '自動スクロールは手動スクロール、テキスト選択、入力編集、タブ非表示、全画面、主要動画の再生で一時停止します。',
+      russianTurkishIndonesian: 'ロシア語、トルコ語、インドネシア語表示を追加しました。',
+      readingToolControls: 'ドメイン別切り替えに対応した自動スクロールの操作と設定を追加しました。',
       globalShortcutManagement: '現在のショートカット表示とブラウザーの管理画面への入口を追加しました。',
       screenNavigation: 'ルートおよびカスタムスクロール領域に前後1画面の移動を追加しました。',
       feedbackService: '任意の連絡先と画像に対応したフィードバック送信を追加しました。',
@@ -2973,6 +3081,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Aktuelle Version',
     categories: { added: 'Neue Funktionen', improved: 'Funktionsverbesserungen', fixed: 'Fehlerbehebungen' },
     items: {
+      defaultParameterSettings: 'Die Standardparameter der Erweiterung wurden angepasst.',
+      domainManagementList: 'Die Domainverwaltungsliste wurde verbessert.',
+      autoScrollPlayback: 'Automatische Wiedergabe mit gleichmäßigem Abwärtsscrollen hinzugefügt.',
+      autoScrollPauses: 'Automatisches Scrollen pausiert bei manuellem Scrollen, Textauswahl, Eingabe, ausgeblendetem Tab, Vollbild oder Hauptvideo.',
+      russianTurkishIndonesian: 'Russische, türkische und indonesische Oberflächen hinzugefügt.',
+      readingToolControls: 'Auto-Scroll-Steuerung und Einstellungen mit Domain-Schaltern hinzugefügt.',
       globalShortcutManagement: 'Anzeige aktueller Tastenkürzel und Zugang zur Browserverwaltung hinzugefügt.',
       screenNavigation: 'Navigation zur vorherigen und nächsten Bildschirmseite für eigene Scroll-Container hinzugefügt.',
       feedbackService: 'Feedbackversand mit optionalen Kontaktdaten und Bildern hinzugefügt.',
@@ -3004,6 +3118,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Version actuelle',
     categories: { added: 'Nouvelles fonctions', improved: 'Améliorations', fixed: 'Corrections de bugs' },
     items: {
+      defaultParameterSettings: 'Ajustement des paramètres par défaut de l’extension.',
+      domainManagementList: 'Amélioration de la liste de gestion des domaines.',
+      autoScrollPlayback: 'Ajout du défilement automatique à vitesse constante vers le bas.',
+      autoScrollPauses: 'Le défilement automatique se met en pause lors du défilement manuel, de la sélection de texte, de la saisie, d’un onglet masqué, du plein écran ou d’une vidéo principale.',
+      russianTurkishIndonesian: 'Ajout des interfaces russe, turque et indonésienne.',
+      readingToolControls: 'Ajout des commandes et réglages de défilement automatique avec activation par domaine.',
       globalShortcutManagement: 'Ajout de l’affichage des raccourcis et de l’accès à leur gestion par le navigateur.',
       screenNavigation: 'Ajout de la navigation par écran précédent et suivant pour les conteneurs de défilement personnalisés.',
       feedbackService: 'Ajout de l’envoi d’avis avec contact et images facultatifs.',
@@ -3035,6 +3155,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Versão atual',
     categories: { added: 'Novos recursos', improved: 'Melhorias de recursos', fixed: 'Correções de bugs' },
     items: {
+      defaultParameterSettings: 'Ajustados os parâmetros padrão da extensão.',
+      domainManagementList: 'Melhorada a lista de gerenciamento de domínios.',
+      autoScrollPlayback: 'Adicionada rolagem automática em velocidade constante para baixo.',
+      autoScrollPauses: 'A rolagem automática pausa ao rolar manualmente, selecionar texto, editar, ocultar a aba, entrar em tela cheia ou reproduzir o vídeo principal.',
+      russianTurkishIndonesian: 'Adicionadas interfaces em russo, turco e indonésio.',
+      readingToolControls: 'Adicionados controles e configurações de rolagem automática com alternância por domínio.',
       globalShortcutManagement: 'Adicionada a exibição dos atalhos e o acesso ao gerenciamento pelo navegador.',
       screenNavigation: 'Adicionada navegação para a tela anterior e seguinte em contêineres de rolagem personalizados.',
       feedbackService: 'Adicionado envio de feedback com contato e imagens opcionais.',
@@ -3066,6 +3192,12 @@ const releaseNotesTranslations = {
     currentVersion: '현재 버전',
     categories: { added: '새 기능', improved: '기능 개선', fixed: '버그 수정' },
     items: {
+      defaultParameterSettings: '확장 프로그램의 기본 매개변수 설정을 조정했습니다.',
+      domainManagementList: '도메인 관리 목록을 개선했습니다.',
+      autoScrollPlayback: '일정한 속도로 아래로 이동하는 자동 스크롤 재생을 추가했습니다.',
+      autoScrollPauses: '자동 스크롤은 사용자 스크롤, 텍스트 선택, 입력 편집, 숨겨진 탭, 전체 화면 또는 주요 동영상 재생 중에 일시 정지됩니다.',
+      russianTurkishIndonesian: '러시아어, 터키어, 인도네시아어 인터페이스를 추가했습니다.',
+      readingToolControls: '도메인별 기능 전환과 함께 자동 스크롤 컨트롤과 설정을 추가했습니다.',
       globalShortcutManagement: '현재 단축키 표시와 브라우저 단축키 관리 진입점을 추가했습니다.',
       screenNavigation: '루트 및 사용자 지정 스크롤 영역에 이전 화면과 다음 화면 이동을 추가했습니다.',
       feedbackService: '선택 연락처와 이미지를 포함할 수 있는 피드백 제출을 추가했습니다.',
@@ -3097,6 +3229,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Versione attuale',
     categories: { added: 'Nuove funzioni', improved: 'Miglioramenti', fixed: 'Correzioni di bug' },
     items: {
+      defaultParameterSettings: 'Regolate le impostazioni predefinite dei parametri dell’estensione.',
+      domainManagementList: 'Migliorato l’elenco di gestione dei domini.',
+      autoScrollPlayback: 'Aggiunto lo scorrimento automatico verso il basso a velocità costante.',
+      autoScrollPauses: 'Lo scorrimento automatico si mette in pausa con scorrimento manuale, selezione del testo, modifica, scheda nascosta, schermo intero o video principale.',
+      russianTurkishIndonesian: 'Aggiunte le interfacce in russo, turco e indonesiano.',
+      readingToolControls: 'Aggiunti controlli e impostazioni dello scorrimento automatico con attivazione per dominio.',
       globalShortcutManagement: 'Aggiunta la visualizzazione delle scorciatoie e l’accesso alla gestione del browser.',
       screenNavigation: 'Aggiunta la navigazione alla schermata precedente e successiva per contenitori di scorrimento personalizzati.',
       feedbackService: 'Aggiunto l’invio di feedback con contatto e immagini facoltativi.',
@@ -3139,7 +3277,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     speedPreset: 'standard',
     customSpeed: 40,
-    buttonPosition: 'pageBottom',
+    buttonPosition: 'pageTop',
     buttonColor: '#4A9EDD',
     pauseOnUserScroll: true,
     pauseOnTextSelection: true,
@@ -3158,10 +3296,10 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     mode: 'verticalButton',
     horizontalPosition: 'top',
-    colorMode: 'followTopButton',
+    colorMode: 'custom',
     customColor: '#4a9edd',
     thickness: 4,
-    verticalHeight: 120,
+    verticalHeight: 80,
     clickToJump: true,
     showPercentage: true,
     showRemainingTime: false
@@ -3179,7 +3317,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
   scrollBookmarks: {
     enabled: false,
     buttonPosition: 'pageBottom',
-    buttonColorMode: 'followTopButton',
+    buttonColorMode: 'custom',
     buttonCustomColor: '#4a9edd',
     matchMode: 'exact',
     perDomainLimit: 1,
@@ -3189,7 +3327,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
   outlineNavigation: {
     enabled: false,
     buttonPosition: 'pageBottom',
-    buttonColorMode: 'followTopButton',
+    buttonColorMode: 'custom',
     buttonCustomColor: '#4a9edd',
     sources: {
       h1: true,
@@ -3207,6 +3345,7 @@ let advancedSettingsState = mergeAdvancedSettings();
 let domainFeatureStates = {};
 let domainFeatureDefaults = domainUtils.normalizeDefaults();
 let domainSearchText = '';
+let domainStateFilter = 'enabled';
 let domainCurrentPage = 1;
 let savedBookmarks = {};
 
@@ -3393,7 +3532,7 @@ function mergeAdvancedSettings(savedSettings) {
     '#4A9EDD'
   );
   merged.progressBar.thickness = normalizeProgressThickness(merged.progressBar.thickness);
-  merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, 120);
+  merged.progressBar.verticalHeight = clampNumber(merged.progressBar.verticalHeight, 40, 400, DEFAULT_ADVANCED_SETTINGS.progressBar.verticalHeight);
   merged.iconCustomization.enabled = true;
   merged.iconCustomization.iconSet = normalizeIconSet(merged.iconCustomization.iconSet);
   merged.iconCustomization.iconColor = validateHexColor(merged.iconCustomization.iconColor, '#FFFFFF');
@@ -3406,10 +3545,14 @@ function mergeAdvancedSettings(savedSettings) {
     : savedFeatures.outlineNavigation === true;
   merged.scrollBookmarks.enabled = bookmarkEnabled;
   merged.scrollBookmarks.buttonPosition = normalizeFeatureButtonPosition(
-    savedScrollBookmarks.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.scrollBookmarks.buttonPosition
+    savedScrollBookmarks.buttonPosition === undefined && savedReadingTools.buttonPosition !== undefined
+      ? savedReadingTools.buttonPosition
+      : merged.scrollBookmarks.buttonPosition
   );
   merged.scrollBookmarks.buttonColorMode = normalizeFeatureButtonColorMode(
-    savedScrollBookmarks.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.scrollBookmarks.buttonColorMode
+    savedScrollBookmarks.buttonColorMode === undefined && savedReadingTools.buttonColorMode !== undefined
+      ? savedReadingTools.buttonColorMode
+      : merged.scrollBookmarks.buttonColorMode
   );
   merged.scrollBookmarks.buttonCustomColor = validateHexColor(
     savedScrollBookmarks.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.scrollBookmarks.buttonCustomColor,
@@ -3417,10 +3560,14 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.outlineNavigation.enabled = outlineEnabled;
   merged.outlineNavigation.buttonPosition = normalizeFeatureButtonPosition(
-    savedOutline.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.outlineNavigation.buttonPosition
+    savedOutline.buttonPosition === undefined && savedReadingTools.buttonPosition !== undefined
+      ? savedReadingTools.buttonPosition
+      : merged.outlineNavigation.buttonPosition
   );
   merged.outlineNavigation.buttonColorMode = normalizeFeatureButtonColorMode(
-    savedOutline.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.outlineNavigation.buttonColorMode
+    savedOutline.buttonColorMode === undefined && savedReadingTools.buttonColorMode !== undefined
+      ? savedReadingTools.buttonColorMode
+      : merged.outlineNavigation.buttonColorMode
   );
   merged.outlineNavigation.buttonCustomColor = validateHexColor(
     savedOutline.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.outlineNavigation.buttonCustomColor,
@@ -3580,6 +3727,13 @@ function openGlobalShortcutManager() {
     return;
   }
   chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+}
+
+function openStoreRatingPage() {
+  if (!chrome.tabs || !chrome.tabs.create || !ratingUtils) return;
+  ratingUtils.recordRatedClicked(() => {
+    chrome.tabs.create({ url: ratingUtils.STORE_REVIEW_URL });
+  });
 }
 
 // 获取当前语言
@@ -3751,7 +3905,7 @@ function updatePreviewButtons() {
     document.getElementById('progressVerticalHeight')?.value,
     40,
     400,
-    120
+    DEFAULT_ADVANCED_SETTINGS.progressBar.verticalHeight
   );
   const isVerticalProgressPreview = progressEnabled && progressMode === 'verticalButton';
   const isHorizontalProgressPreview = progressEnabled && progressMode === 'horizontalBar';
@@ -4313,7 +4467,12 @@ function getAdvancedSettingsFromControls() {
     document.getElementById('nextScreenButtonColor').value,
     '#4A9EDD'
   );
-  const verticalHeight = clampNumber(document.getElementById('progressVerticalHeight').value, 40, 400, 120);
+  const verticalHeight = clampNumber(
+    document.getElementById('progressVerticalHeight').value,
+    40,
+    400,
+    DEFAULT_ADVANCED_SETTINGS.progressBar.verticalHeight
+  );
   const customColor = validateHexColor(document.getElementById('progressCustomColor').value, '#4a9edd');
   const iconColor = validateHexColor(document.getElementById('iconColor').value, '#FFFFFF');
   const scrollBookmarkCustomColor = validateHexColor(document.getElementById('scrollBookmarkButtonCustomColor').value, '#4a9edd');
@@ -4481,11 +4640,24 @@ function updateDomainPaginationControls(lang, totalItems, totalPages) {
   nextButton.setAttribute('title', nextLabel);
 }
 
+function updateDomainStateTabs() {
+  DOMAIN_STATE_FILTERS.forEach((filter) => {
+    const tab = document.getElementById(
+      filter === 'disabled' ? 'domainDisabledTab' : 'domainEnabledTab'
+    );
+    if (!tab) return;
+    const isActive = domainStateFilter === filter;
+    tab.classList.toggle('is-active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+  });
+}
+
 function renderDomainFeatureStatesList() {
   const list = document.getElementById('domainList');
   const empty = document.getElementById('domainEmpty');
   if (!list || !empty) return;
   list.innerHTML = '';
+  updateDomainStateTabs();
 
   const lang = document.getElementById('languageSelector')?.value === 'auto'
     ? normalizeLanguage(navigator.language || navigator.userLanguage)
@@ -4493,12 +4665,21 @@ function renderDomainFeatureStatesList() {
   const query = domainSearchText.toLowerCase();
   const domainKeys = Object.keys(domainFeatureStates)
     .sort()
-    .filter((domainKey) => domainKey.toLowerCase().includes(query));
+    .filter((domainKey) => {
+      const state = domainUtils.getState(domainFeatureStates, domainKey, domainFeatureDefaults);
+      const matchesState = domainStateFilter === 'disabled'
+        ? state.extensionEnabled === false
+        : state.extensionEnabled !== false;
+      return matchesState && domainKey.toLowerCase().includes(query);
+    });
   const totalPages = Math.max(1, Math.ceil(domainKeys.length / DOMAIN_PAGE_SIZE));
   domainCurrentPage = Math.min(Math.max(domainCurrentPage, 1), totalPages);
   const pageStart = (domainCurrentPage - 1) * DOMAIN_PAGE_SIZE;
   const visibleDomainKeys = domainKeys.slice(pageStart, pageStart + DOMAIN_PAGE_SIZE);
 
+  empty.textContent = translations[lang]?.[
+    domainStateFilter === 'disabled' ? 'settings.domainDisabledEmpty' : 'settings.domainEnabledEmpty'
+  ] || translations[lang]?.['settings.domainEmpty'] || '';
   empty.style.display = domainKeys.length === 0 ? 'block' : 'none';
   updateDomainPaginationControls(lang, domainKeys.length, totalPages);
   if (domainKeys.length > 0) {
@@ -5487,6 +5668,18 @@ function init() {
     domainCurrentPage += 1;
     renderDomainFeatureStatesList();
   });
+  DOMAIN_STATE_FILTERS.forEach((filter) => {
+    const tab = document.getElementById(
+      filter === 'disabled' ? 'domainDisabledTab' : 'domainEnabledTab'
+    );
+    if (!tab) return;
+    tab.addEventListener('click', () => {
+      if (domainStateFilter === filter) return;
+      domainStateFilter = filter;
+      domainCurrentPage = 1;
+      renderDomainFeatureStatesList();
+    });
+  });
   document.getElementById('addDomainButton').addEventListener('click', () => {
     const input = document.getElementById('domainInput');
     const domainKey = parseHostnameInput(input.value);
@@ -5498,8 +5691,10 @@ function init() {
     }
     showDomainError('');
     domainCurrentPage = 1;
+    const extensionEnabled = document.getElementById('domainInitialState').value === 'true';
+    domainStateFilter = extensionEnabled ? 'enabled' : 'disabled';
     saveDomainFeatureState(domainKey, {
-      extensionEnabled: document.getElementById('domainInitialState').value === 'true',
+      extensionEnabled,
       features: {
         progressBar: false,
         screenNavigation: false,
@@ -5717,6 +5912,7 @@ function init() {
   document.getElementById('dismissOnboardingButton').addEventListener('click', dismissOnboarding);
   document.getElementById('reopenOnboardingButton').addEventListener('click', reopenOnboarding);
   document.getElementById('manageGlobalShortcuts').addEventListener('click', openGlobalShortcutManager);
+  document.getElementById('openStoreRatingButton').addEventListener('click', openStoreRatingPage);
 
   // 设置预览按钮交互
   setupPreviewButtonInteractions();

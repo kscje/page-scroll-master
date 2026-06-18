@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-06-18
+
+### Changed
+- ✅ 调整插件的默认参数设定
+- ✅ 优化域名管理列表
+
+## [2.3.0] - 2026-06-16
+
+### Added
+- ✅ 新增自动滚屏播放，支持以稳定像素速度连续向下滚动
+- ✅ 新增自动滚屏独立按钮、Popup 主域名启停和设置页速度/暂停规则配置
+- ✅ 自动滚屏支持用户滚动、选中文字、编辑输入、标签页隐藏、全屏和主要视频播放时智能暂停
+- ✅ 新增俄语、土耳其语和印度尼西亚语界面支持，语言总数扩展到 13 种
+
+### Changed
+- ✅ 设置页预览、域名状态管理、快速开始和更新记录同步展示自动滚屏
+- ✅ 发布构建白名单纳入 `_locales/ru`、`_locales/tr` 和 `_locales/id`
+
 ## [2.2.0] - 2026-06-15
 
 ### Added
@@ -210,6 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.4.0
+[2.3.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.3.0
 [2.2.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.2.0
 [2.1.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.1.0
 [2.0.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.0.0

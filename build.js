@@ -14,6 +14,7 @@ const INCLUDED_FILES = [
   'background.js',
   'analytics.js',
   'feedback.js',
+  'rating.js',
   'domain-utils.js',
   'content.js',
   'popup.html',
@@ -34,6 +35,9 @@ const INCLUDED_FILES = [
   '_locales/pt_BR/messages.json',
   '_locales/ko/messages.json',
   '_locales/it/messages.json',
+  '_locales/ru/messages.json',
+  '_locales/tr/messages.json',
+  '_locales/id/messages.json',
   'vendor/tldts.umd.min.js',
   'vendor/TLDTS_LICENSE.txt',
 ];
