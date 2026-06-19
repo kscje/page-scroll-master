@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "ページの先頭や末尾へ移動し、進捗表示と長ページのジャンプに対応します",
+    "message": "長いページの読書助手：先頭/末尾移動、自動スクロール、進捗表示、目次ジャンプ、読書位置保存、Notion/Wiki 対応。",
     "description": "Extension description"
   },
   "commandScrollToTop": {

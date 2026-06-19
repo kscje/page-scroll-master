@@ -6,3 +6,5 @@ dist/
 .playwright-cli/
 .wrangler/
 analytics-backend/.wrangler/
+chrome-web-store/assets/screenshots/**/iShot_*.png
+chrome-web-store/tools/previews/

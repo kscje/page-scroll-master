@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Ve al inicio o final, sigue el progreso y salta por paginas largas",
+    "message": "Asistente para páginas largas: inicio/final, auto scroll, progreso, secciones, marcadores y soporte para Notion/Wiki.",
     "description": "Extension description"
   },
   "commandScrollToTop": {

@@ -4,7 +4,7 @@
     "description": "插件名稱"
   },
   "extensionDescription": {
-    "message": "一鍵跳轉頁面頂部或底部，顯示閱讀進度，並支援長頁面快速定位",
+    "message": "長網頁閱讀助手：一鍵回到頂部/底部，自動捲動，顯示頁面進度，支援目錄跳轉、閱讀位置書籤和 Notion/Wiki。",
     "description": "插件描述"
   },
   "commandScrollToTop": {

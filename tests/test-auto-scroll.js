@@ -150,7 +150,7 @@ const defaults = sandbox.mergeAdvancedSettings({});
 assert(defaults.autoScroll.enabled === false, 'auto scroll defaults to disabled');
 assert(defaults.autoScroll.speedPreset === 'standard', 'auto scroll defaults to standard speed');
 assert(defaults.autoScroll.customSpeed === 40, 'auto scroll custom speed defaults to 40 px/s');
-assert(defaults.autoScroll.buttonPosition === 'pageBottom', 'auto scroll button defaults to page bottom');
+assert(defaults.autoScroll.buttonPosition === 'pageTop', 'auto scroll button defaults to page top');
 assert(defaults.autoScroll.buttonColor === '#4A9EDD', 'auto scroll button has one custom color');
 assert(!Object.prototype.hasOwnProperty.call(defaults.autoScroll, 'buttonColorMode'), 'auto scroll has no color-follow mode');
 

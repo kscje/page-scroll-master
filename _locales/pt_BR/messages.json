@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "Role até o topo ou fim, acompanhe o progresso e navegue por páginas longas",
+    "message": "Assistente para páginas longas: topo/fim, rolagem automática, progresso, seções, posições salvas e Notion/Wiki.",
     "description": "Extension description"
   },
   "commandScrollToTop": {

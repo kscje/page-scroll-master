@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extensionDescription": {
-    "message": "페이지 상단이나 하단으로 스크롤하고, 진행률을 추적하며, 긴 페이지를 빠르게 이동합니다",
+    "message": "긴 페이지 읽기 도우미: 맨 위/아래 이동, 자동 스크롤, 진행률, 목차 탐색, 위치 저장 및 Notion/Wiki 지원.",
     "description": "Extension description"
   },
   "commandScrollToTop": {

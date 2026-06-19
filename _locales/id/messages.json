@@ -3,7 +3,7 @@
     "message": "Smart Scroll Navigator – Atas, Bawah & Progres"
   },
   "extensionDescription": {
-    "message": "Gulir ke atas atau bawah, lacak progres halaman, dan jelajahi halaman panjang"
+    "message": "Asisten baca halaman panjang: ke atas/bawah, gulir otomatis, progres, bagian, bookmark posisi, dan Notion/Wiki."
   },
   "commandScrollToTop": {
     "message": "Gulir ke bagian atas halaman"

@@ -420,6 +420,11 @@ function testDefaultCreatesOnlyTwoButtons() {
     styleElement.textContent.includes('padding: 0;'),
     'content button container must not add padding on top of edge distance'
   );
+  assert(
+    styleElement.textContent.includes('position: sticky;') &&
+      styleElement.textContent.includes('background: rgba(17, 24, 39, 0.98);'),
+    'outline menu heading must stay visible while the directory list scrolls'
+  );
 }
 
 function testMainOpacityAppliesToAllButtons() {

@@ -11,7 +11,7 @@ let currentDomainFeatureState = domainUtils.getState({}, currentDomainKey, domai
 let currentScrollContainer = null; // 当前页面的滚动容器
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const DEFAULT_ICON_COLOR = '#FFFFFF';
-const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 120;
+const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 80;
 const MAX_PROGRESS_VERTICAL_HEIGHT = 400;
 const READING_SPEED_CJK_CHARS_PER_MINUTE = 500;
 const READING_SPEED_LATIN_WORDS_PER_MINUTE = 225;
@@ -60,7 +60,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     speedPreset: 'standard',
     customSpeed: 40,
-    buttonPosition: 'pageBottom',
+    buttonPosition: 'pageTop',
     buttonColor: DEFAULT_BUTTON_COLOR,
     pauseOnUserScroll: true,
     pauseOnTextSelection: true,
@@ -79,7 +79,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
     enabled: false,
     mode: 'verticalButton',
     horizontalPosition: 'top',
-    colorMode: 'followTopButton',
+    colorMode: 'custom',
     customColor: '#4a9edd',
     thickness: 4,
     verticalHeight: DEFAULT_PROGRESS_VERTICAL_HEIGHT,
@@ -100,7 +100,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
   scrollBookmarks: {
     enabled: false,
     buttonPosition: 'pageBottom',
-    buttonColorMode: 'followTopButton',
+    buttonColorMode: 'custom',
     buttonCustomColor: '#4a9edd',
     matchMode: 'exact',
     perDomainLimit: 1,
@@ -110,7 +110,7 @@ const DEFAULT_ADVANCED_SETTINGS = {
   outlineNavigation: {
     enabled: false,
     buttonPosition: 'pageBottom',
-    buttonColorMode: 'followTopButton',
+    buttonColorMode: 'custom',
     buttonCustomColor: '#4a9edd',
     sources: {
       h1: true,
@@ -283,10 +283,14 @@ function mergeAdvancedSettings(savedSettings) {
     : savedFeatures.outlineNavigation === true;
   merged.scrollBookmarks.enabled = bookmarkEnabled;
   merged.scrollBookmarks.buttonPosition = normalizeFeatureButtonPosition(
-    savedScrollBookmarks.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.scrollBookmarks.buttonPosition
+    savedScrollBookmarks.buttonPosition === undefined && savedReadingTools.buttonPosition !== undefined
+      ? savedReadingTools.buttonPosition
+      : merged.scrollBookmarks.buttonPosition
   );
   merged.scrollBookmarks.buttonColorMode = normalizeFeatureButtonColorMode(
-    savedScrollBookmarks.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.scrollBookmarks.buttonColorMode
+    savedScrollBookmarks.buttonColorMode === undefined && savedReadingTools.buttonColorMode !== undefined
+      ? savedReadingTools.buttonColorMode
+      : merged.scrollBookmarks.buttonColorMode
   );
   merged.scrollBookmarks.buttonCustomColor = validateHexColor(
     savedScrollBookmarks.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.scrollBookmarks.buttonCustomColor,
@@ -294,10 +298,14 @@ function mergeAdvancedSettings(savedSettings) {
   );
   merged.outlineNavigation.enabled = outlineEnabled;
   merged.outlineNavigation.buttonPosition = normalizeFeatureButtonPosition(
-    savedOutline.buttonPosition === undefined ? savedReadingTools.buttonPosition : merged.outlineNavigation.buttonPosition
+    savedOutline.buttonPosition === undefined && savedReadingTools.buttonPosition !== undefined
+      ? savedReadingTools.buttonPosition
+      : merged.outlineNavigation.buttonPosition
   );
   merged.outlineNavigation.buttonColorMode = normalizeFeatureButtonColorMode(
-    savedOutline.buttonColorMode === undefined ? savedReadingTools.buttonColorMode : merged.outlineNavigation.buttonColorMode
+    savedOutline.buttonColorMode === undefined && savedReadingTools.buttonColorMode !== undefined
+      ? savedReadingTools.buttonColorMode
+      : merged.outlineNavigation.buttonColorMode
   );
   merged.outlineNavigation.buttonCustomColor = validateHexColor(
     savedOutline.buttonCustomColor === undefined ? savedReadingTools.buttonCustomColor : merged.outlineNavigation.buttonCustomColor,
@@ -3682,11 +3690,15 @@ function addButtonStyles(root) {
     }
 
     .psm-reading-menu-heading {
+      position: sticky;
+      top: 0;
+      z-index: 1;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       padding: 7px 10px 5px;
+      background: rgba(17, 24, 39, 0.98);
       color: rgba(255, 255, 255, 0.72);
       font-size: 11px;
       font-weight: 700;

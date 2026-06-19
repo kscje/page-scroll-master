@@ -3,7 +3,7 @@
     "message": "Smart Scroll Navigator – Üst, Alt ve İlerleme"
   },
   "extensionDescription": {
-    "message": "Sayfanın üstüne veya altına kaydırın, sayfa ilerlemesini izleyin ve uzun sayfalarda gezinin"
+    "message": "Uzun sayfa okuma yardımcısı: üste/alta git, otomatik kaydır, ilerlemeyi izle, bölümler, yer imleri ve Notion/Wiki."
   },
   "commandScrollToTop": {
     "message": "Sayfanın en üstüne kaydır"

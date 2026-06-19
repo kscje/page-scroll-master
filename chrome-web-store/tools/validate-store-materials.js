@@ -4,13 +4,13 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const STORE_ROOT = path.join(ROOT, 'chrome-web-store');
-const LOCALES = ['en', 'zh-CN', 'zh-TW', 'es', 'ja', 'de', 'fr', 'pt', 'ko', 'it'];
+const PROMO_LOCALES = ['en', 'zh-CN', 'zh-TW', 'es', 'ja', 'de', 'fr', 'pt', 'ko', 'it'];
+const SCREENSHOT_LOCALES = ['en', 'zh-CN', 'zh-TW', 'es', 'ja', 'de', 'fr', 'pt', 'ko', 'it', 'ru', 'tr', 'id'];
 const PRIVACY_FILES = ['en', 'zh-CN', 'zh-TW', 'es', 'ja', 'de', 'fr', 'pt-BR', 'ko', 'it'];
 const SCREENSHOTS = [
   '01-overview.png',
   '02-domain-control.png',
-  '03-reading-tools.png',
-  '04-onboarding-privacy.png'
+  '03-reading-tools.png'
 ];
 
 function fail(message) {
@@ -73,9 +73,12 @@ requirePng('assets/icon/icon128.png', 128, 128);
 requirePng('assets/promotional/generic/small-promo-440x280.png', 440, 280);
 requirePng('assets/promotional/generic/marquee-promo-1400x560.png', 1400, 560);
 
-for (const locale of LOCALES) {
+for (const locale of PROMO_LOCALES) {
   requirePng(`assets/promotional/localized/${locale}/small-promo-440x280.png`, 440, 280);
   requirePng(`assets/promotional/localized/${locale}/marquee-promo-1400x560.png`, 1400, 560);
+}
+
+for (const locale of SCREENSHOT_LOCALES) {
   for (const screenshot of SCREENSHOTS) {
     requirePng(`assets/screenshots/${locale}/${screenshot}`, 1280, 800);
   }

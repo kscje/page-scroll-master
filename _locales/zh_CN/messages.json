@@ -4,7 +4,7 @@
     "description": "插件名称"
   },
   "extensionDescription": {
-    "message": "一键跳转页面顶部或底部，显示阅读进度，并支持长页面快速定位",
+    "message": "长网页阅读助手：一键回到顶部/底部，自动滚屏，显示页面进度，支持目录跳转、滚动书签和 Notion/Wiki 适配。",
     "description": "插件描述"
   },
   "commandScrollToTop": {

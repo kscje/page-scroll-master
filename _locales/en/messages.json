@@ -4,7 +4,7 @@
     "description": "插件名称"
   },
   "extensionDescription": {
-    "message": "Scroll to top or bottom, track page progress, and jump through long pages",
+    "message": "Long-page reading assistant: top/bottom jumps, auto scroll, progress, sections, saved positions, and Notion/Wiki support.",
     "description": "插件描述"
   },
   "commandScrollToTop": {
