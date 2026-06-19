@@ -1,0 +1,11 @@
+{
+  "name": "page-scroll-master",
+  "version": "2.4.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "terser": "^5.48.0"
+  }
+}
