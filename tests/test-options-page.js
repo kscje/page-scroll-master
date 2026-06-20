@@ -82,6 +82,8 @@ function createElement(id, options = {}) {
       (this.listeners[type] || []).forEach((callback) => {
         callback({
           target: this,
+          preventDefault() {},
+          stopPropagation() {},
           ...event
         });
       });
@@ -263,6 +265,29 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     dismissOnboardingButton: createElement('dismissOnboardingButton'),
     reopenOnboardingButton: createElement('reopenOnboardingButton'),
     openStoreRatingButton: createElement('openStoreRatingButton'),
+    resetBasicSettingsButton: createElement('resetBasicSettingsButton'),
+    resetAllSyncSettingsButton: createElement('resetAllSyncSettingsButton'),
+    resetAutoScrollDefaultsButton: createElement('resetAutoScrollDefaultsButton', {
+      attributes: { 'data-reset-module': 'autoScroll' }
+    }),
+    resetScreenNavigationDefaultsButton: createElement('resetScreenNavigationDefaultsButton', {
+      attributes: { 'data-reset-module': 'screenNavigation' }
+    }),
+    resetProgressBarDefaultsButton: createElement('resetProgressBarDefaultsButton', {
+      attributes: { 'data-reset-module': 'progressBar' }
+    }),
+    resetScrollBookmarksDefaultsButton: createElement('resetScrollBookmarksDefaultsButton', {
+      attributes: { 'data-reset-module': 'scrollBookmarks' }
+    }),
+    resetOutlineNavigationDefaultsButton: createElement('resetOutlineNavigationDefaultsButton', {
+      attributes: { 'data-reset-module': 'outlineNavigation' }
+    }),
+    advancedModuleAutoScroll: createElement('advancedModuleAutoScroll'),
+    advancedModuleScreenNavigation: createElement('advancedModuleScreenNavigation'),
+    advancedModuleProgressBar: createElement('advancedModuleProgressBar'),
+    advancedModuleScrollBookmarks: createElement('advancedModuleScrollBookmarks'),
+    advancedModuleOutlineNavigation: createElement('advancedModuleOutlineNavigation'),
+    advancedResetDefaultsModule: createElement('advancedResetDefaultsModule'),
     saveButton: createElement('saveButton', { textContent: 'Save' }),
     releaseNotesList: createElement('releaseNotesList'),
     previewTopButton: createElement('previewTopButton', {
@@ -384,6 +409,13 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       return 1;
     },
     window: {
+      location: {
+        hash: '',
+        search: ''
+      },
+      confirm() {
+        return true;
+      },
       scrollTo() {},
       addEventListener(type, callback) {
         windowListeners[type] = windowListeners[type] || [];
@@ -577,6 +609,23 @@ assert(
   OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyOff"'),
   'onboarding visibly states that anonymous analytics is off by default'
 );
+assert(
+  (OPTIONS_HTML.match(/<details[^>]*class="[^"]*advanced-module/g) || []).length === 6,
+  'advanced feature details and restore defaults are grouped into collapsible modules'
+);
+assert(
+  OPTIONS_HTML.includes('id="resetBasicSettingsButton"') &&
+    OPTIONS_HTML.includes('id="resetAllSyncSettingsButton"') &&
+    OPTIONS_HTML.includes('data-reset-module="progressBar"'),
+  'advanced settings expose global and per-module restore defaults controls'
+);
+assert(
+  OPTIONS_HTML.includes('id="iconCustomizationSettings"') &&
+    OPTIONS_HTML.indexOf('<div id="iconCustomizationSettings"') <
+      OPTIONS_HTML.indexOf('<section class="tab-panel" data-tab-panel="advanced"') &&
+    !OPTIONS_HTML.includes('id="advancedModuleIconCustomization"'),
+  'button icon customization stays in the basic tab'
+);
 assert(page.elements.onboardingGuide.style.display === 'none', 'existing users do not see onboarding without the install marker');
 const newUserPage = createOptionsPage({}, { showOnboarding: true });
 assert(newUserPage.elements.onboardingGuide.style.display === 'block', 'new installations see onboarding while the marker is active');
@@ -639,6 +688,33 @@ assert(page.elements.outlineButtonColorMode.value === 'custom', 'outline color d
 assert(page.elements.outlineSourceH1.checked === true && page.elements.outlineSourceH2.checked === true, 'old settings receive default H1 and H2 sources');
 assert(page.elements.outlineMaxItems.value === 30, 'old settings receive the default outline batch size');
 assert(page.elements.scrollBookmarkRestoreMode.value === 'prompt', 'scroll bookmark restore mode defaults to prompt');
+assert(page.elements.advancedModuleProgressBar.open !== true, 'advanced modules are collapsed on first settings visit');
+const expandedModulePage = createOptionsPage({}, {
+  advancedModuleCollapseState: {
+    progressBar: true,
+    autoScroll: false
+  }
+});
+assert(
+  expandedModulePage.elements.advancedModuleProgressBar.open === true &&
+    expandedModulePage.elements.advancedModuleAutoScroll.open !== true,
+  'advanced module expanded state persists in local storage'
+);
+expandedModulePage.elements.advancedModuleAutoScroll.open = true;
+expandedModulePage.elements.advancedModuleAutoScroll.dispatch('toggle');
+assert(
+  expandedModulePage.localData.advancedModuleCollapseState.autoScroll === true,
+  'toggling an advanced module stores only local collapse state'
+);
+assert(
+  OPTIONS_HTML.indexOf('id="advancedResetDefaultsModule"') >
+    OPTIONS_HTML.indexOf('id="advancedModuleOutlineNavigation"'),
+  'restore defaults appears as the last advanced module'
+);
+assert(
+  !/<details[^>]*id="advancedResetDefaultsModule"[^>]*\sopen(?:\s|=|>)/.test(OPTIONS_HTML),
+  'restore defaults module is collapsed by default'
+);
 assert(page.elements.analyticsEnabled.checked === false, 'anonymous analytics defaults to disabled');
 assert(page.elements.analyticsEnabled.disabled === false, 'analytics local consent remains available before upload is configured');
 assert(page.elements.analyticsPreviewData.textContent === '[]', 'analytics preview starts empty');
@@ -955,7 +1031,7 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1118,12 +1194,89 @@ assert(
   'save submits a bucketed settings snapshot without exact colors'
 );
 
-console.log('\nTest 4: Preview controls survive packaged output execution');
+console.log('\nTest 4: Restore defaults only resets sync settings');
+const resetPage = createOptionsPage({
+  scrollSpeed: 880,
+  buttonSettings: {
+    horizontalPosition: 'left',
+    verticalAlignment: 'bottom',
+    buttonSize: 72,
+    buttonShape: 'square',
+    buttonSpacing: 24,
+    edgeDistance: 18,
+    topButtonColor: '#111111',
+    bottomButtonColor: '#222222',
+    opacity: 44,
+    enableHoverHide: false,
+    hoverHideKey: 'Alt'
+  },
+  language: 'en-US',
+  advancedSettings: {
+    progressBar: {
+      mode: 'horizontalBar',
+      horizontalPosition: 'bottom',
+      thickness: 16,
+      verticalHeight: 200,
+      showPercentage: false
+    },
+    scrollBookmarks: {
+      perDomainLimit: 3,
+      restoreMode: 'auto'
+    },
+    iconCustomization: {
+      iconSet: 'doubleArrow',
+      iconColor: '#123456'
+    }
+  }
+}, {
+  domainFeatureStates: {
+    'example.test': {
+      extensionEnabled: false,
+      features: {
+        autoScroll: true,
+        progressBar: true,
+        screenNavigation: false,
+        scrollBookmarks: true,
+        outlineNavigation: false
+      }
+    }
+  },
+  bookmarks: {
+    'exact:https://example.test/a': {
+      url: 'https://example.test/a',
+      scrollPct: 0.3
+    }
+  },
+  analyticsConsent: {
+    enabled: true
+  },
+  ratingPromptState: {
+    ratedClicked: true
+  }
+});
+resetPage.elements.resetProgressBarDefaultsButton.dispatch('click');
+assert(resetPage.syncData.advancedSettings.progressBar.mode === 'verticalButton', 'module restore resets progress mode');
+assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3, 'module restore leaves unrelated advanced modules intact');
+assert(!Object.prototype.hasOwnProperty.call(resetPage.syncData.advancedSettings.progressBar, 'enabled'), 'module restore omits advanced feature enable state');
+assert(resetPage.localData.domainFeatureStates['example.test'].extensionEnabled === false, 'module restore does not clear domain states');
+assert(resetPage.localData.bookmarks['exact:https://example.test/a'], 'module restore does not clear local bookmarks');
+resetPage.elements.resetBasicSettingsButton.dispatch('click');
+assert(resetPage.syncData.scrollSpeed === 100, 'basic restore resets scroll speed');
+assert(resetPage.syncData.buttonSettings.buttonSize === 40, 'basic restore resets button size');
+assert(resetPage.syncData.advancedSettings.iconCustomization.iconSet === 'defaultArrow', 'basic restore resets button icon settings');
+assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3, 'basic restore does not reset advanced settings');
+resetPage.elements.resetAllSyncSettingsButton.dispatch('click');
+assert(resetPage.syncData.language === 'auto', 'all sync restore resets language to automatic');
+assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 1, 'all sync restore resets advanced settings');
+assert(resetPage.localData.analyticsConsent.enabled === true, 'all sync restore preserves analytics consent');
+assert(resetPage.localData.ratingPromptState.ratedClicked === true, 'all sync restore preserves rating prompt state');
+
+console.log('\nTest 5: Preview controls survive packaged output execution');
 assert(typeof page.elements.previewTopButton.listeners.click?.[0] === 'function', 'preview top click listener is registered');
 assert(typeof page.elements.previewBottomButton.listeners.click?.[0] === 'function', 'preview bottom click listener is registered');
 assert(page.appendedHeadElements.some((element) => element.id === 'preview-button-styles'), 'dynamic preview hover styles are injected');
 
-console.log('\nTest 5: Button shape change updates preview button border-radius');
+console.log('\nTest 6: Button shape change updates preview button border-radius');
 let page2 = createOptionsPage({
   buttonSettings: {
     buttonSize: 48,
@@ -1140,7 +1293,7 @@ page2.elements.buttonShape.dispatch('change');
 assert(page2.elements.previewTopButton.style.borderRadius === '4px', 'preview buttons use square border-radius after shape change');
 assert(page2.elements.previewBottomButton.style.borderRadius === '4px', 'preview bottom button border-radius updates to square');
 
-console.log('\nTest 6: Icon style changes update the real preview buttons');
+console.log('\nTest 7: Icon style changes update the real preview buttons');
 let page3 = createOptionsPage();
 page3.elements.iconSet.value = 'triangle';
 page3.elements.iconSet.dispatch('change');
@@ -1157,7 +1310,7 @@ assert(page3.elements.previewNextScreenButton.style.color === '#FFFFFF', 'next s
 page3.elements.saveButton.dispatch('click');
 assert(page3.syncData.advancedSettings.iconCustomization.enabled === true, 'icon customization is always saved as enabled');
 
-console.log('\nTest 7: Progress settings update the real preview surface');
+console.log('\nTest 8: Progress settings update the real preview surface');
 let page4 = createOptionsPage();
 assert(page4.elements.previewProgressButton.style.display === 'flex', 'vertical progress preview is always available for configuration');
 assert(
@@ -1191,7 +1344,7 @@ page4.elements.progressHorizontalPosition.value = 'bottom';
 page4.elements.progressHorizontalPosition.dispatch('change');
 assert(page4.elements.previewHorizontalProgress.style.bottom === '0', 'horizontal progress preview follows bottom position');
 
-console.log('\nTest 8: Advanced feature previews remain available and follow button geometry');
+console.log('\nTest 9: Advanced feature previews remain available and follow button geometry');
 let page5 = createOptionsPage();
 assert(page5.elements.previewBookmarkButton.style.display === 'flex', 'scroll bookmark preview remains visible for configuration');
 assert(page5.elements.previewOutlineButton.style.display === 'flex', 'outline preview remains visible for configuration');
@@ -1216,7 +1369,7 @@ assert(page5.elements.previewOutlineButton.style.top.includes('calc(50%'), 'page
 assert(page5.elements.previewBottomButton.style.top !== page5.elements.previewBookmarkButton.style.top, 'page-middle bookmark appears after the bottom button');
 assert(page5.elements.previewBookmarkButton.style.top !== page5.elements.previewOutlineButton.style.top, 'page-middle feature previews do not overlap');
 
-console.log('\nTest 9: Saved scroll bookmarks render and can be deleted');
+console.log('\nTest 10: Saved scroll bookmarks render and can be deleted');
 const savedBookmarksDetailsTag = OPTIONS_HTML.match(/<details\b[^>]*saved-bookmarks-details[^>]*>/)?.[0] || '';
 assert(Boolean(savedBookmarksDetailsTag), 'saved bookmarks use a collapsible details section');
 assert(!/\sopen(?:\s|=|>)/.test(savedBookmarksDetailsTag), 'saved bookmarks section is collapsed by default');
@@ -1260,7 +1413,7 @@ deleteButton.dispatch('click');
 assert(!page6.localData.bookmarks['exact:https://example.test/b'], 'delete removes the selected saved bookmark from storage');
 assert(page6.elements.savedBookmarksList.children.length === 1, 'saved bookmarks list rerenders after deletion');
 
-console.log('\nTest 10: Outline controls restore valid sources and validate item limits');
+console.log('\nTest 11: Outline controls restore valid sources and validate item limits');
 let page7 = createOptionsPage({
   advancedSettings: {
     readingTools: {

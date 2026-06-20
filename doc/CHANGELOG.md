@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-06-20
+
+### Added
+- ✅ 设置页高级功能按模块折叠，降低首次进入设置页的认知负担
+- ✅ 新增恢复默认入口，支持恢复基础按钮、单个高级模块或全部同步设置默认值
+
+### Changed
+- ✅ 统一顶部、底部、按屏、进度条、书签和目录跳转的滚动动画取消逻辑
+- ✅ 优化长页面平滑滚动的单帧位移保护和动态到底部目标刷新
+- ✅ 补齐未启用高级功能、重复启停和滚动动画竞争的回归测试
+
+### Fixed
+- ✅ 修复多个跳转入口连续触发时旧动画完成回调仍可能影响后续状态的问题
+- ✅ 修复部分动态内容页面回到底部时旧目标高度失效导致的收敛不准确问题
+
 ## [2.4.0] - 2026-06-18
 
 ### Changed
@@ -228,6 +243,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.0
 [2.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.4.0
 [2.3.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.3.0
 [2.2.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.2.0

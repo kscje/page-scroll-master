@@ -445,6 +445,103 @@
       padding-left: 0;
     }
 
+    .advanced-reset-panel {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .advanced-reset-panel p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .reset-button-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .reset-button-grid button,
+    .advanced-module-reset {
+      width: auto;
+      margin-top: 0;
+      padding: 8px 12px;
+      border: 1px solid rgba(74, 158, 221, 0.36);
+      background: #ffffff;
+      color: var(--primary-dark);
+      box-shadow: none;
+      font-size: 12px;
+    }
+
+    .reset-button-grid button:hover,
+    .advanced-module-reset:hover {
+      background: rgba(74, 158, 221, 0.08);
+      box-shadow: none;
+      transform: none;
+    }
+
+    .advanced-module {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .advanced-module summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 18px 20px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .advanced-module summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .advanced-module-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .advanced-module-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-right: 2px solid var(--primary-dark);
+      border-bottom: 2px solid var(--primary-dark);
+      transform: rotate(-45deg);
+      transition: transform 0.18s ease;
+    }
+
+    .advanced-module[open] .advanced-module-title::before {
+      transform: rotate(45deg);
+    }
+
+    .advanced-module h3 {
+      margin-bottom: 0;
+    }
+
+    .advanced-module-summary {
+      margin: 4px 0 0;
+      font-size: 12px;
+    }
+
+    .advanced-module-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .advanced-module-body {
+      padding: 0 20px 20px;
+      border-top: 1px solid var(--line);
+    }
+
     #iconCustomizationSettings {
       padding-left: 0;
     }
@@ -1193,6 +1290,14 @@
       .release-version-content {
         padding-left: 24px;
       }
+
+      .advanced-module summary {
+        grid-template-columns: 1fr;
+      }
+
+      .advanced-module-actions {
+        justify-content: flex-start;
+      }
     }
     
     /* 实际预览按钮样式 - 固定在设置页面上 */
@@ -1390,7 +1495,7 @@
       <section class="tab-panel is-active" data-tab-panel="basic">
         <div class="panel-heading">
           <h2 data-i18n="settings.tab.basic">基础设置</h2>
-          <p data-i18n="settings.basicIntro">调整滚动速度、按钮位置、外观图标和快捷键。</p>
+          <p data-i18n="settings.basicIntro">调整滚动速度、按钮位置、外观和快捷键。</p>
         </div>
 
         <section id="onboardingGuide" class="onboarding-guide" aria-labelledby="onboardingGuideTitle">
@@ -1595,13 +1700,20 @@
       <section class="tab-panel" data-tab-panel="advanced">
         <div class="panel-heading">
           <h2 data-i18n="settings.advancedFeatures">高级功能</h2>
-          <p data-i18n="settings.advancedIntro">配置高级功能的显示、位置和交互参数。</p>
+          <p data-i18n="settings.advancedIntro">按模块配置高级功能细节；功能是否启用仍由工具栏 Popup 按主域名控制。</p>
         </div>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.autoScroll">自动滚屏</h3>
-          <p class="muted-note" data-i18n="settings.autoScrollIntro">以稳定速度连续向下滚动，并在用户操作页面时智能暂停。</p>
+        <details id="advancedModuleAutoScroll" class="setting-group full-width advanced-module" data-advanced-module="autoScroll">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.autoScroll">自动滚屏</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.autoScrollIntro">以稳定速度连续向下滚动，并在用户操作页面时智能暂停。</p>
+            </div>
+          </summary>
 
+          <div class="advanced-module-body">
           <div id="autoScrollSettings" class="sub-setting">
             <label for="autoScrollSpeedPreset" data-i18n="settings.autoScrollSpeedPreset">滚动速度</label>
             <select id="autoScrollSpeedPreset">
@@ -1655,12 +1767,20 @@
               <label for="autoScrollPauseOnVideo" data-i18n="settings.autoScrollPauseOnVideo">主要视频播放时暂停</label>
             </div>
           </div>
-        </div>
+          </div>
+        </details>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.screenNavigation">按屏跳转</h3>
-          <p class="muted-note" data-i18n="settings.screenNavigationIntro">按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。</p>
+        <details id="advancedModuleScreenNavigation" class="setting-group full-width advanced-module" data-advanced-module="screenNavigation">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.screenNavigation">按屏跳转</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.screenNavigationIntro">按当前可视区域高度跳转上一屏或下一屏，并保留阅读上下文。</p>
+            </div>
+          </summary>
 
+          <div class="advanced-module-body">
           <div id="screenNavigationSettings" class="sub-setting">
             <label for="screenStepRatio" data-i18n="settings.screenStepRatio">每次滚动距离（可视区域百分比）</label>
             <div class="number-suffix-input">
@@ -1680,12 +1800,20 @@
               <input type="text" id="nextScreenButtonColorHex" value="#4A9EDD" placeholder="#4A9EDD">
             </div>
           </div>
-        </div>
+          </div>
+        </details>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.progressBar">页面进度条</h3>
-          <p class="muted-note" data-i18n="settings.progressBarIntro">显示当前页面阅读进度，并可点击快速跳转到指定位置。</p>
+        <details id="advancedModuleProgressBar" class="setting-group full-width advanced-module" data-advanced-module="progressBar">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.progressBar">页面进度条</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.progressBarIntro">显示当前页面阅读进度，并可点击快速跳转到指定位置。</p>
+            </div>
+          </summary>
 
+          <div class="advanced-module-body">
           <div id="progressBarSettings" class="sub-setting">
             <label for="progressBarMode" data-i18n="settings.progressBarMode">显示样式</label>
             <select id="progressBarMode">
@@ -1746,12 +1874,20 @@
             </div>
             <p class="muted-note" data-i18n="settings.progressInfiniteNote">无限滚动页面中进度可能随着内容加载而变化。</p>
           </div>
-        </div>
+          </div>
+        </details>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.scrollBookmarks">滚动位置书签</h3>
-          <p class="muted-note" data-i18n="settings.scrollBookmarksIntro">保存当前阅读位置，方便稍后返回并继续阅读。</p>
+        <details id="advancedModuleScrollBookmarks" class="setting-group full-width advanced-module" data-advanced-module="scrollBookmarks">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.scrollBookmarks">滚动位置书签</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.scrollBookmarksIntro">保存当前阅读位置，方便稍后返回并继续阅读。</p>
+            </div>
+          </summary>
 
+          <div class="advanced-module-body">
           <div id="scrollBookmarksSettings" class="sub-setting">
             <label for="scrollBookmarkButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
             <select id="scrollBookmarkButtonPosition">
@@ -1796,12 +1932,20 @@
             <div id="savedBookmarksList"></div>
             <p id="savedBookmarksEmpty" class="muted-note" data-i18n="settings.savedBookmarksEmpty">暂无已保存的阅读位置。</p>
           </details>
-        </div>
+          </div>
+        </details>
 
-        <div class="setting-group full-width">
-          <h3 data-i18n="settings.outlineNavigation">智能段落跳转</h3>
-          <p class="muted-note" data-i18n="settings.outlineNavigationIntro">识别页面标题结构，快速查看目录并跳转到上一段或下一段。</p>
+        <details id="advancedModuleOutlineNavigation" class="setting-group full-width advanced-module" data-advanced-module="outlineNavigation">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.outlineNavigation">智能段落跳转</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.outlineNavigationIntro">识别页面标题结构，快速查看目录并跳转到上一段或下一段。</p>
+            </div>
+          </summary>
 
+          <div class="advanced-module-body">
           <div id="outlineNavigationSettings" class="sub-setting">
             <label for="outlineButtonPosition" data-i18n="settings.featureButtonPosition">按钮位置</label>
             <select id="outlineButtonPosition">
@@ -1858,7 +2002,31 @@
               <label for="outlineHighlightCurrentSection" data-i18n="settings.outlineHighlightCurrentSection">当前章节高亮</label>
             </div>
           </div>
-        </div>
+          </div>
+        </details>
+
+        <details id="advancedResetDefaultsModule" class="setting-group full-width advanced-module advanced-reset-panel">
+          <summary>
+            <div>
+              <div class="advanced-module-title">
+                <h3 data-i18n="settings.resetDefaults">恢复默认</h3>
+              </div>
+              <p class="advanced-module-summary" data-i18n="settings.resetDefaultsIntro">只恢复同步保存的详细设置，不清除主域名启停状态、书签、统计同意或评分提示。</p>
+            </div>
+          </summary>
+
+          <div class="advanced-module-body">
+            <div class="reset-button-grid">
+              <button type="button" id="resetBasicSettingsButton" data-reset-scope="basic" data-i18n="settings.resetBasicDefaults">恢复基础按钮默认</button>
+              <button type="button" id="resetProgressBarDefaultsButton" class="advanced-module-reset" data-reset-module="progressBar" data-i18n="settings.resetProgressBarDefaults">恢复页面进度条默认</button>
+              <button type="button" id="resetScreenNavigationDefaultsButton" class="advanced-module-reset" data-reset-module="screenNavigation" data-i18n="settings.resetScreenNavigationDefaults">恢复按屏跳转默认</button>
+              <button type="button" id="resetScrollBookmarksDefaultsButton" class="advanced-module-reset" data-reset-module="scrollBookmarks" data-i18n="settings.resetScrollBookmarksDefaults">恢复滚动位置书签默认</button>
+              <button type="button" id="resetOutlineNavigationDefaultsButton" class="advanced-module-reset" data-reset-module="outlineNavigation" data-i18n="settings.resetOutlineNavigationDefaults">恢复智能段落跳转默认</button>
+              <button type="button" id="resetAutoScrollDefaultsButton" class="advanced-module-reset" data-reset-module="autoScroll" data-i18n="settings.resetAutoScrollDefaults">恢复自动滚屏默认</button>
+              <button type="button" id="resetAllSyncSettingsButton" data-reset-scope="all" data-i18n="settings.resetAllSyncDefaults">恢复全部同步设置默认</button>
+            </div>
+          </div>
+        </details>
       </section>
 
       <section class="tab-panel" data-tab-panel="domains">

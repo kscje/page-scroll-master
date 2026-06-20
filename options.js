@@ -15,6 +15,14 @@ let feedbackSubmitting = false;
 const AUTO_SCROLL_ICON_SIZE = '48%';
 const DOMAIN_PAGE_SIZE = 50;
 const DOMAIN_STATE_FILTERS = ['enabled', 'disabled'];
+const ADVANCED_MODULE_COLLAPSE_KEY = 'advancedModuleCollapseState';
+const ADVANCED_MODULES = [
+  'autoScroll',
+  'screenNavigation',
+  'progressBar',
+  'scrollBookmarks',
+  'outlineNavigation'
+];
 
 // 多语言翻译数据
 const translations = {
@@ -25,8 +33,8 @@ const translations = {
     'settings.tab.advanced': '高级功能',
     'settings.tab.domains': '域名管理',
     'settings.tab.feedback': '建议&关于插件',
-    'settings.basicIntro': '调整滚动速度、按钮位置、外观图标和快捷键。',
-    'settings.advancedIntro': '配置页面进度条的显示方式和交互行为。',
+    'settings.basicIntro': '调整滚动速度、按钮位置、外观和快捷键。',
+    'settings.advancedIntro': '按模块配置高级功能细节；功能是否启用仍由工具栏 Popup 按主域名控制。',
     'settings.domainIntro': '管理不同网站中滚动按钮的启用或禁用状态。',
     'settings.scrollBehavior': '滚动行为',
     'settings.buttonIcons': '按钮图标',
@@ -82,8 +90,8 @@ const translations = {
     'settings.tab.advanced': 'Advanced Features',
     'settings.tab.domains': 'Domain Management',
     'settings.tab.feedback': 'Suggestions & About',
-    'settings.basicIntro': 'Adjust scroll speed, button position, appearance, icons, and shortcuts.',
-    'settings.advancedIntro': 'Configure page progress display and interaction behavior.',
+    'settings.basicIntro': 'Adjust scroll speed, button position, appearance, and shortcuts.',
+    'settings.advancedIntro': 'Configure advanced feature details by module. Feature enablement still lives in the toolbar Popup per domain.',
     'settings.domainIntro': 'Manage whether scroll buttons are enabled or disabled on specific sites.',
     'settings.scrollBehavior': 'Scroll Behavior',
     'settings.buttonIcons': 'Button Icons',
@@ -201,6 +209,19 @@ Object.assign(translations['zh-CN'], {
   'settings.iconColor': '图标颜色',
   'settings.customIconComingSoon': '上传自定义图标 Coming soon。',
   'settings.siteManagement': '网站启用状态',
+  'settings.iconCustomizationIntro': '配置顶部和底部按钮的图标样式与图标颜色。',
+  'settings.resetDefaults': '恢复默认',
+  'settings.resetDefaultsIntro': '只恢复同步保存的详细设置，不清除主域名启停状态、书签、统计同意或评分提示。',
+  'settings.resetBasicDefaults': '恢复基础按钮默认',
+  'settings.resetProgressBarDefaults': '恢复页面进度条默认',
+  'settings.resetScreenNavigationDefaults': '恢复按屏跳转默认',
+  'settings.resetScrollBookmarksDefaults': '恢复滚动位置书签默认',
+  'settings.resetOutlineNavigationDefaults': '恢复智能段落跳转默认',
+  'settings.resetAutoScrollDefaults': '恢复自动滚屏默认',
+  'settings.resetIconCustomizationDefaults': '恢复按钮图标默认',
+  'settings.resetAllSyncDefaults': '恢复全部同步设置默认',
+  'settings.resetModuleDefaults': '恢复本模块默认',
+  'settings.resetConfirm': '确定要恢复这些同步设置的默认值吗？本地站点启停状态、书签、统计同意和评分提示不会被清除。',
   'settings.domainSearch': '搜索域名',
   'settings.domainInput': 'example.com 或 https://example.com/page',
   'settings.domainEnabled': '启用',
@@ -285,6 +306,19 @@ Object.assign(translations['en-US'], {
   'settings.iconColor': 'Icon color',
   'settings.customIconComingSoon': 'Custom icon upload Coming soon.',
   'settings.siteManagement': 'Site Enable Status',
+  'settings.iconCustomizationIntro': 'Configure the icon style and icon color for the top and bottom buttons.',
+  'settings.resetDefaults': 'Restore Defaults',
+  'settings.resetDefaultsIntro': 'Only restores detailed settings saved in sync storage. Domain states, bookmarks, analytics consent, and rating prompts stay untouched.',
+  'settings.resetBasicDefaults': 'Restore basic button defaults',
+  'settings.resetProgressBarDefaults': 'Restore page progress defaults',
+  'settings.resetScreenNavigationDefaults': 'Restore screen navigation defaults',
+  'settings.resetScrollBookmarksDefaults': 'Restore scroll bookmark defaults',
+  'settings.resetOutlineNavigationDefaults': 'Restore section navigation defaults',
+  'settings.resetAutoScrollDefaults': 'Restore auto scroll defaults',
+  'settings.resetIconCustomizationDefaults': 'Restore button icon defaults',
+  'settings.resetAllSyncDefaults': 'Restore all sync defaults',
+  'settings.resetModuleDefaults': 'Restore this module',
+  'settings.resetConfirm': 'Restore these sync settings to their defaults? Local domain states, bookmarks, analytics consent, and rating prompts will not be cleared.',
   'settings.domainSearch': 'Search domains',
   'settings.domainInput': 'example.com or https://example.com/page',
   'settings.domainEnabled': 'Enabled',
@@ -309,8 +343,8 @@ translations['es-ES'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': 'Avanzado',
   'settings.tab.domains': 'Dominios',
   'settings.tab.feedback': 'Sugerencias y acerca de',
-  'settings.basicIntro': 'Ajusta velocidad, posicion, apariencia, iconos y atajos.',
-  'settings.advancedIntro': 'Configura la visualizacion e interaccion del progreso de lectura.',
+  'settings.basicIntro': 'Ajusta velocidad, posicion, apariencia y atajos.',
+  'settings.advancedIntro': 'Configura los detalles de funciones avanzadas por modulo.',
   'settings.domainIntro': 'Gestiona si los botones estan activos o inactivos en sitios concretos.',
   'settings.scrollBehavior': 'Desplazamiento',
   'settings.buttonIcons': 'Iconos de botones',
@@ -374,8 +408,8 @@ translations['ja-JP'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': '高度な機能',
   'settings.tab.domains': 'ドメイン管理',
   'settings.tab.feedback': 'ご意見・拡張機能について',
-  'settings.basicIntro': 'スクロール速度、ボタン位置、外観、アイコン、ショートカットを調整します。',
-  'settings.advancedIntro': '読書進捗バーの表示と操作を設定します。',
+  'settings.basicIntro': 'スクロール速度、ボタン位置、外観、ショートカットを調整します。',
+  'settings.advancedIntro': '高度な機能の詳細をモジュールごとに設定します。',
   'settings.domainIntro': 'サイトごとのスクロールボタンの有効・無効を管理します。',
   'settings.scrollBehavior': 'スクロール動作',
   'settings.buttonIcons': 'ボタンアイコン',
@@ -439,8 +473,8 @@ translations['zh-TW'] = Object.assign({}, translations['zh-CN'], {
   'settings.tab.advanced': '進階功能',
   'settings.tab.domains': '網域管理',
   'settings.tab.feedback': '建議與關於外掛',
-  'settings.basicIntro': '調整捲動速度、按鈕位置、外觀圖示和快捷鍵。',
-  'settings.advancedIntro': '設定頁面進度條的顯示方式和互動行為。',
+  'settings.basicIntro': '調整捲動速度、按鈕位置、外觀和快捷鍵。',
+  'settings.advancedIntro': '按模組設定進階功能細節；功能啟用仍由工具列 Popup 按網域控制。',
   'settings.domainIntro': '管理不同網站中捲動按鈕的啟用或停用狀態。',
   'settings.scrollBehavior': '捲動行為',
   'settings.buttonIcons': '按鈕圖示',
@@ -559,8 +593,8 @@ translations['de-DE'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': 'Erweiterte Funktionen',
   'settings.tab.domains': 'Domainverwaltung',
   'settings.tab.feedback': 'Vorschläge & Info',
-  'settings.basicIntro': 'Scrollgeschwindigkeit, Schaltflächenposition, Darstellung, Symbole und Tastenkürzel anpassen.',
-  'settings.advancedIntro': 'Anzeige und Interaktion der Seitenfortschrittsleiste konfigurieren.',
+  'settings.basicIntro': 'Scrollgeschwindigkeit, Schaltflächenposition, Darstellung und Tastenkürzel anpassen.',
+  'settings.advancedIntro': 'Details erweiterter Funktionen nach Modul konfigurieren.',
   'settings.domainIntro': 'Verwalten Sie, ob Scroll-Schaltflächen auf bestimmten Websites aktiviert sind.',
   'settings.scrollBehavior': 'Scrollverhalten',
   'settings.buttonIcons': 'Schaltflächensymbole',
@@ -682,8 +716,8 @@ translations['fr-FR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': 'Fonctions avancées',
   'settings.tab.domains': 'Gestion des domaines',
   'settings.tab.feedback': 'Suggestions et à propos',
-  'settings.basicIntro': 'Ajustez la vitesse de défilement, la position, l’apparence, les icônes et les raccourcis.',
-  'settings.advancedIntro': 'Configurez l’affichage et les interactions de la barre de progression.',
+  'settings.basicIntro': 'Ajustez la vitesse de défilement, la position, l’apparence et les raccourcis.',
+  'settings.advancedIntro': 'Configurez les details des fonctions avancees par module.',
   'settings.domainIntro': 'Gérez l’activation des boutons de défilement sur des sites précis.',
   'settings.scrollBehavior': 'Comportement du défilement',
   'settings.buttonIcons': 'Icônes des boutons',
@@ -805,8 +839,8 @@ translations['pt-BR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': 'Recursos avançados',
   'settings.tab.domains': 'Gerenciamento de domínios',
   'settings.tab.feedback': 'Sugestões e sobre',
-  'settings.basicIntro': 'Ajuste velocidade de rolagem, posição, aparência, ícones e atalhos.',
-  'settings.advancedIntro': 'Configure a exibição e a interação da barra de progresso da página.',
+  'settings.basicIntro': 'Ajuste velocidade de rolagem, posição, aparência e atalhos.',
+  'settings.advancedIntro': 'Configure os detalhes dos recursos avancados por modulo.',
   'settings.domainIntro': 'Gerencie se os botões de rolagem ficam ativados em sites específicos.',
   'settings.scrollBehavior': 'Comportamento de rolagem',
   'settings.buttonIcons': 'Ícones dos botões',
@@ -928,8 +962,8 @@ translations['ko-KR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': '고급 기능',
   'settings.tab.domains': '도메인 관리',
   'settings.tab.feedback': '제안 및 확장 프로그램 정보',
-  'settings.basicIntro': '스크롤 속도, 버튼 위치, 모양, 아이콘, 단축키를 조정합니다.',
-  'settings.advancedIntro': '페이지 진행률 표시와 상호작용 방식을 설정합니다.',
+  'settings.basicIntro': '스크롤 속도, 버튼 위치, 모양, 단축키를 조정합니다.',
+  'settings.advancedIntro': '고급 기능 세부 설정을 모듈별로 구성합니다.',
   'settings.domainIntro': '특정 사이트에서 스크롤 버튼 사용 여부를 관리합니다.',
   'settings.scrollBehavior': '스크롤 동작',
   'settings.buttonIcons': '버튼 아이콘',
@@ -1051,8 +1085,8 @@ translations['it-IT'] = Object.assign({}, translations['en-US'], {
   'settings.tab.advanced': 'Funzioni avanzate',
   'settings.tab.domains': 'Gestione domini',
   'settings.tab.feedback': 'Suggerimenti e informazioni',
-  'settings.basicIntro': 'Regola velocità di scorrimento, posizione, aspetto, icone e scorciatoie.',
-  'settings.advancedIntro': 'Configura visualizzazione e interazioni della barra di progresso.',
+  'settings.basicIntro': 'Regola velocità di scorrimento, posizione, aspetto e scorciatoie.',
+  'settings.advancedIntro': 'Configura i dettagli delle funzioni avanzate per modulo.',
   'settings.domainIntro': 'Gestisci se i pulsanti di scorrimento sono attivi su siti specifici.',
   'settings.scrollBehavior': 'Comportamento di scorrimento',
   'settings.buttonIcons': 'Icone dei pulsanti',
@@ -1982,8 +2016,8 @@ const v23LanguageTranslations = {
       'settings.tab.advanced': 'Дополнительные функции',
       'settings.tab.domains': 'Управление доменами',
       'settings.tab.feedback': 'Предложения и о расширении',
-      'settings.basicIntro': 'Настройте скорость прокрутки, положение кнопок, внешний вид, значки и сочетания клавиш.',
-      'settings.advancedIntro': 'Настройте отображение, положение и поведение дополнительных функций.',
+      'settings.basicIntro': 'Настройте скорость прокрутки, положение кнопок, внешний вид и сочетания клавиш.',
+      'settings.advancedIntro': 'Настройте детали дополнительных функций по модулям.',
       'settings.domainIntro': 'Управляйте расширением и дополнительными функциями по регистрируемому домену.',
       'settings.scrollBehavior': 'Поведение прокрутки',
       'settings.buttonIcons': 'Значки кнопок',
@@ -2240,8 +2274,8 @@ const v23LanguageTranslations = {
       'settings.tab.advanced': 'Gelişmiş Özellikler',
       'settings.tab.domains': 'Alan Adı Yönetimi',
       'settings.tab.feedback': 'Öneriler ve Hakkında',
-      'settings.basicIntro': 'Kaydırma hızını, düğme konumunu, görünümü, simgeleri ve kısayolları ayarlayın.',
-      'settings.advancedIntro': 'Gelişmiş özelliklerin görünüm, konum ve etkileşim ayrıntılarını yapılandırın.',
+      'settings.basicIntro': 'Kaydırma hızını, düğme konumunu, görünümü ve kısayolları ayarlayın.',
+      'settings.advancedIntro': 'Gelişmiş özellik ayrıntılarını modüllere göre yapılandırın.',
       'settings.domainIntro': 'Uzantıyı ve gelişmiş özellikleri kayıtlı ana alan adına göre yönetin.',
       'settings.scrollBehavior': 'Kaydırma Davranışı',
       'settings.buttonIcons': 'Düğme Simgeleri',
@@ -2498,8 +2532,8 @@ const v23LanguageTranslations = {
       'settings.tab.advanced': 'Fitur Lanjutan',
       'settings.tab.domains': 'Manajemen Domain',
       'settings.tab.feedback': 'Saran & Tentang',
-      'settings.basicIntro': 'Atur kecepatan gulir, posisi tombol, tampilan, ikon, dan pintasan.',
-      'settings.advancedIntro': 'Atur tampilan, posisi, dan detail interaksi untuk fitur lanjutan.',
+      'settings.basicIntro': 'Atur kecepatan gulir, posisi tombol, tampilan, dan pintasan.',
+      'settings.advancedIntro': 'Atur detail fitur lanjutan per modul.',
       'settings.domainIntro': 'Kelola ekstensi dan fitur lanjutan berdasarkan domain terdaftar.',
       'settings.scrollBehavior': 'Perilaku Gulir',
       'settings.buttonIcons': 'Ikon Tombol',
@@ -2821,6 +2855,23 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.0',
+    categories: {
+      added: [
+        'advancedModuleCollapse',
+        'restoreDefaults'
+      ],
+      improved: [
+        'scrollAnimationCancellation',
+        'scrollPerformance'
+      ],
+      fixed: [
+        'staleScrollCompletion',
+        'dynamicBottomTarget'
+      ]
+    }
+  },
+  {
     version: '2.4.0',
     categories: {
       improved: [
@@ -2921,6 +2972,12 @@ const releaseNotesTranslations = {
     currentVersion: '当前版本',
     categories: { added: '新功能', improved: '功能优化', fixed: 'Bug 修复' },
     items: {
+      advancedModuleCollapse: '设置页高级功能现在按模块折叠，首次进入更容易浏览。',
+      restoreDefaults: '新增恢复默认入口，可恢复基础按钮、单个高级模块或全部同步设置。',
+      scrollAnimationCancellation: '顶部、底部、按屏、进度条、书签和目录跳转会统一取消未完成的旧滚动动画。',
+      scrollPerformance: '优化长页面平滑滚动的位移保护和动态到底部目标刷新。',
+      staleScrollCompletion: '修复连续触发跳转后旧动画完成回调仍可能影响后续状态的问题。',
+      dynamicBottomTarget: '修复动态内容增加后回到底部目标高度失效的问题。',
       defaultParameterSettings: '调整插件的默认参数设定。',
       domainManagementList: '优化域名管理列表。',
       autoScrollPlayback: '新增自动滚屏播放，可按稳定速度连续向下滚动。',
@@ -2958,6 +3015,12 @@ const releaseNotesTranslations = {
     currentVersion: '目前版本',
     categories: { added: '新功能', improved: '功能最佳化', fixed: 'Bug 修正' },
     items: {
+      advancedModuleCollapse: '設定頁進階功能現在按模組折疊，首次進入更容易瀏覽。',
+      restoreDefaults: '新增恢復預設入口，可恢復基礎按鈕、單個進階模組或全部同步設定。',
+      scrollAnimationCancellation: '頂部、底部、按屏、進度條、書籤與目錄跳轉會統一取消未完成的舊捲動動畫。',
+      scrollPerformance: '最佳化長頁面平滑捲動的位移保護與動態到底部目標刷新。',
+      staleScrollCompletion: '修正連續觸發跳轉後舊動畫完成回調仍可能影響後續狀態的問題。',
+      dynamicBottomTarget: '修正動態內容增加後回到底部目標高度失效的問題。',
       defaultParameterSettings: '調整外掛的預設參數設定。',
       domainManagementList: '最佳化網域管理清單。',
       autoScrollPlayback: '新增自動捲動播放，可依穩定速度連續向下捲動。',
@@ -2995,6 +3058,12 @@ const releaseNotesTranslations = {
     currentVersion: 'Current version',
     categories: { added: 'New features', improved: 'Feature improvements', fixed: 'Bug fixes' },
     items: {
+      advancedModuleCollapse: 'Advanced settings are now grouped into collapsible modules for easier browsing.',
+      restoreDefaults: 'Added restore-default controls for basic buttons, individual advanced modules, or all sync settings.',
+      scrollAnimationCancellation: 'Top, bottom, screen, progress, bookmark, and outline jumps now cancel unfinished scroll animations consistently.',
+      scrollPerformance: 'Improved long-page smooth scrolling with displacement guarding and dynamic bottom-target refresh.',
+      staleScrollCompletion: 'Fixed stale completion callbacks from interrupted scroll animations affecting later state.',
+      dynamicBottomTarget: 'Fixed bottom jumps using stale targets after dynamic content increases page height.',
       defaultParameterSettings: 'Adjusted the extension default parameter settings.',
       domainManagementList: 'Improved the domain management list.',
       autoScrollPlayback: 'Added auto-scroll playback that moves down the page at a steady speed.',
@@ -3297,6 +3366,14 @@ Object.keys(v23LanguageTranslations).forEach((lang) => {
   });
 });
 
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  releaseNotesTranslations[lang].items = Object.assign(
+    {},
+    releaseNotesTranslations['en-US'].items,
+    releaseNotesTranslations[lang].items
+  );
+});
+
 const DEFAULT_ADVANCED_SETTINGS = {
   autoScroll: {
     enabled: false,
@@ -3366,6 +3443,23 @@ const DEFAULT_ADVANCED_SETTINGS = {
   }
 };
 
+const DEFAULT_SCROLL_SPEED = 100;
+const DEFAULT_BUTTON_SETTINGS = {
+  showButton: true,
+  horizontalPosition: 'right',
+  verticalAlignment: 'center',
+  buttonSize: 40,
+  buttonSizeUnit: 'px',
+  buttonShape: 'round',
+  buttonSpacing: 8,
+  edgeDistance: 8,
+  topButtonColor: '#4A9EDD',
+  bottomButtonColor: '#4A9EDD',
+  opacity: 100,
+  enableHoverHide: true,
+  hoverHideKey: 'Ctrl'
+};
+
 let advancedSettingsState = mergeAdvancedSettings();
 let domainFeatureStates = {};
 let domainFeatureDefaults = domainUtils.normalizeDefaults();
@@ -3373,6 +3467,7 @@ let domainSearchText = '';
 let domainStateFilter = 'enabled';
 let domainCurrentPage = 1;
 let savedBookmarks = {};
+let advancedModuleCollapseState = {};
 
 // 检测操作系统平台
 function detectPlatform() {
@@ -3420,6 +3515,23 @@ function deepMergeDefaults(defaults, saved) {
       : (savedValue === undefined ? defaultValue : savedValue);
   });
   return result;
+}
+
+function clonePlainObject(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function getDefaultAdvancedSettingsForSync() {
+  return domainUtils.stripLegacyEnabled(clonePlainObject(DEFAULT_ADVANCED_SETTINGS));
+}
+
+function getDefaultSyncSettings() {
+  return {
+    scrollSpeed: DEFAULT_SCROLL_SPEED,
+    buttonSettings: clonePlainObject(DEFAULT_BUTTON_SETTINGS),
+    advancedSettings: getDefaultAdvancedSettingsForSync(),
+    language: 'auto'
+  };
 }
 
 function validateHexColor(color, fallback) {
@@ -4980,6 +5092,88 @@ function activateTab(targetTab) {
   });
 }
 
+function getAdvancedModuleElement(moduleKey) {
+  return document.getElementById(
+    'advancedModule' + moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1)
+  );
+}
+
+function normalizeAdvancedModuleCollapseState(value) {
+  const state = {};
+  ADVANCED_MODULES.forEach((moduleKey) => {
+    state[moduleKey] = value && value[moduleKey] === true;
+  });
+  return state;
+}
+
+function persistAdvancedModuleState(moduleKey, open) {
+  advancedModuleCollapseState[moduleKey] = open === true;
+  chrome.storage.local.set({
+    [ADVANCED_MODULE_COLLAPSE_KEY]: advancedModuleCollapseState
+  }, () => {});
+}
+
+function applyAdvancedModuleCollapseState() {
+  ADVANCED_MODULES.forEach((moduleKey) => {
+    const element = getAdvancedModuleElement(moduleKey);
+    if (!element) return;
+    element.open = advancedModuleCollapseState[moduleKey] === true;
+  });
+}
+
+function openAdvancedModule(moduleKey, scrollIntoView) {
+  const element = getAdvancedModuleElement(moduleKey);
+  if (!element) return;
+  element.open = true;
+  persistAdvancedModuleState(moduleKey, true);
+  activateTab('advanced');
+  if (scrollIntoView && typeof element.scrollIntoView === 'function') {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function openTargetAdvancedModuleFromLocation() {
+  const hash = (window.location && window.location.hash || '').replace(/^#/, '');
+  const query = window.location && window.location.search || '';
+  const queryMatch = query.match(/[?&](?:module|advancedModule)=([^&]+)/);
+  const target = decodeURIComponent(queryMatch ? queryMatch[1] : hash);
+  const moduleByTarget = {
+    autoScroll: 'autoScroll',
+    autoScrollSettings: 'autoScroll',
+    screenNavigation: 'screenNavigation',
+    screenNavigationSettings: 'screenNavigation',
+    progressBar: 'progressBar',
+    progressBarSettings: 'progressBar',
+    scrollBookmarks: 'scrollBookmarks',
+    scrollBookmarksSettings: 'scrollBookmarks',
+    outlineNavigation: 'outlineNavigation',
+    outlineNavigationSettings: 'outlineNavigation'
+  };
+  if (moduleByTarget[target]) {
+    openAdvancedModule(moduleByTarget[target], true);
+  }
+}
+
+function loadAdvancedModuleCollapseState() {
+  chrome.storage.local.get([ADVANCED_MODULE_COLLAPSE_KEY], (result) => {
+    advancedModuleCollapseState = normalizeAdvancedModuleCollapseState(
+      result[ADVANCED_MODULE_COLLAPSE_KEY]
+    );
+    applyAdvancedModuleCollapseState();
+    openTargetAdvancedModuleFromLocation();
+  });
+}
+
+function setupAdvancedModules() {
+  ADVANCED_MODULES.forEach((moduleKey) => {
+    const element = getAdvancedModuleElement(moduleKey);
+    if (!element) return;
+    element.addEventListener('toggle', () => {
+      persistAdvancedModuleState(moduleKey, element.open === true);
+    });
+  });
+}
+
 function setupTabs() {
   const tabButtons = document.querySelectorAll('.tab-button');
 
@@ -5497,6 +5691,136 @@ function loadSettings() {
   });
 }
 
+function notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings) {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    const tab = tabs[0];
+    if (!tab || !tab.id) {
+      return;
+    }
+
+    chrome.tabs.sendMessage(tab.id, {action: 'updateSpeed', speed: scrollSpeed}, () => {
+      if (chrome.runtime.lastError) {
+        return;
+      }
+    });
+    chrome.tabs.sendMessage(tab.id, {action: 'updateButtonSettings', settings: buttonSettings}, () => {
+      if (chrome.runtime.lastError) {
+        return;
+      }
+    });
+    chrome.tabs.sendMessage(tab.id, {action: 'updateAdvancedSettings', settings: advancedSettings}, () => {
+      if (chrome.runtime.lastError) {
+        return;
+      }
+    });
+  });
+}
+
+function confirmResetDefaults() {
+  const fallback = 'Restore these sync settings to their defaults? Local domain states, bookmarks, analytics consent, and rating prompts will not be cleared.';
+  const message = translations[getAnalyticsLanguage()]?.['settings.resetConfirm'] ||
+    translations['en-US']['settings.resetConfirm'] ||
+    fallback;
+  if (typeof window.confirm !== 'function') return true;
+  return window.confirm(message);
+}
+
+function persistResetDefaults(nextSettings) {
+  chrome.storage.sync.set(nextSettings, () => {
+    const scrollSpeed = Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed')
+      ? nextSettings.scrollSpeed
+      : parseInt(document.getElementById('scrollSpeed').value);
+    const buttonSettings = nextSettings.buttonSettings || {
+      showButton: true,
+      horizontalPosition: document.getElementById('horizontalPosition').value,
+      verticalAlignment: document.getElementById('verticalAlignment').value,
+      buttonSize: parseInt(document.getElementById('buttonSize').value),
+      buttonSizeUnit: 'px',
+      buttonShape: document.getElementById('buttonShape').value,
+      buttonSpacing: parseInt(document.getElementById('buttonSpacing').value),
+      edgeDistance: parseInt(document.getElementById('edgeDistance').value),
+      topButtonColor: validateHexColor(document.getElementById('topButtonColor').value, '#4A9EDD'),
+      bottomButtonColor: validateHexColor(document.getElementById('bottomButtonColor').value, '#4A9EDD'),
+      opacity: parseInt(document.getElementById('opacity').value),
+      enableHoverHide: document.getElementById('enableHoverHide').checked,
+      hoverHideKey: document.getElementById('hoverHideKey').value
+    };
+    const advancedSettings = nextSettings.advancedSettings ||
+      domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls());
+    const language = Object.prototype.hasOwnProperty.call(nextSettings, 'language')
+      ? nextSettings.language
+      : document.getElementById('languageSelector').value;
+
+    setAdvancedSettingsControls(advancedSettings);
+    if (nextSettings.buttonSettings || Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed') || Object.prototype.hasOwnProperty.call(nextSettings, 'language')) {
+      loadSettings();
+    } else {
+      updateAdvancedPreviewControls();
+      updatePreviewButtons();
+    }
+    notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
+    recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, () => {
+      refreshAnalyticsState();
+    });
+  });
+}
+
+function resetBasicDefaults() {
+  if (!confirmResetDefaults()) return;
+  chrome.storage.sync.get(['advancedSettings'], (result) => {
+    const advancedSettings = domainUtils.stripLegacyEnabled(mergeAdvancedSettings(result.advancedSettings));
+    const defaultAdvancedSettings = getDefaultAdvancedSettingsForSync();
+    advancedSettings.iconCustomization = clonePlainObject(defaultAdvancedSettings.iconCustomization);
+    persistResetDefaults({
+      scrollSpeed: DEFAULT_SCROLL_SPEED,
+      buttonSettings: clonePlainObject(DEFAULT_BUTTON_SETTINGS),
+      advancedSettings
+    });
+  });
+}
+
+function resetAdvancedModuleDefaults(moduleKey) {
+  if (!ADVANCED_MODULES.includes(moduleKey) || !confirmResetDefaults()) return;
+  chrome.storage.sync.get(['advancedSettings'], (result) => {
+    const advancedSettings = domainUtils.stripLegacyEnabled(mergeAdvancedSettings(result.advancedSettings));
+    const defaultAdvancedSettings = getDefaultAdvancedSettingsForSync();
+    advancedSettings[moduleKey] = clonePlainObject(defaultAdvancedSettings[moduleKey]);
+    persistResetDefaults({ advancedSettings });
+    openAdvancedModule(moduleKey, false);
+  });
+}
+
+function resetAllSyncDefaults() {
+  if (!confirmResetDefaults()) return;
+  persistResetDefaults(getDefaultSyncSettings());
+}
+
+function setupResetDefaults() {
+  const resetBasicButton = document.getElementById('resetBasicSettingsButton');
+  const resetAllButton = document.getElementById('resetAllSyncSettingsButton');
+  const resetButtonIds = {
+    autoScroll: 'resetAutoScrollDefaultsButton',
+    screenNavigation: 'resetScreenNavigationDefaultsButton',
+    progressBar: 'resetProgressBarDefaultsButton',
+    scrollBookmarks: 'resetScrollBookmarksDefaultsButton',
+    outlineNavigation: 'resetOutlineNavigationDefaultsButton'
+  };
+  if (resetBasicButton) {
+    resetBasicButton.addEventListener('click', resetBasicDefaults);
+  }
+  if (resetAllButton) {
+    resetAllButton.addEventListener('click', resetAllSyncDefaults);
+  }
+  ADVANCED_MODULES.forEach((moduleKey) => {
+    const resetButton = document.getElementById(resetButtonIds[moduleKey]);
+    if (!resetButton) return;
+    resetButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      resetAdvancedModuleDefaults(resetButton.getAttribute('data-reset-module'));
+    });
+  });
+}
 
 
 // 保存设置
@@ -5573,35 +5897,15 @@ function saveSettings() {
       }, 1500);
     });
 
-    // 通知所有标签页更新设置
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      const tab = tabs[0];
-      if (!tab || !tab.id) {
-        return;
-      }
-
-      chrome.tabs.sendMessage(tab.id, {action: 'updateSpeed', speed: scrollSpeed}, () => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-      });
-      chrome.tabs.sendMessage(tab.id, {action: 'updateButtonSettings', settings: buttonSettings}, () => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-      });
-      chrome.tabs.sendMessage(tab.id, {action: 'updateAdvancedSettings', settings: advancedSettings}, () => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-      });
-    });
+    notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
   });
 }
 
 // 初始化页面
 function init() {
   setupTabs();
+  setupAdvancedModules();
+  setupResetDefaults();
   setManifestVersion();
   renderReleaseNotes(normalizeLanguage(navigator.language || navigator.userLanguage));
   loadOnboardingState();
@@ -5610,6 +5914,7 @@ function init() {
     updateRangeFill(input);
   });
   loadSettings();
+  loadAdvancedModuleCollapseState();
   loadDomainFeatureStates();
   loadSavedBookmarks();
   refreshAnalyticsState();

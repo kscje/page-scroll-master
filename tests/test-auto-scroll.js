@@ -139,7 +139,10 @@ function createContext() {
     documentElement,
     window,
     runNextFrame,
-    dispatchDocument
+    dispatchDocument,
+    documentListenerTotal() {
+      return Array.from(documentListeners.values()).reduce((sum, listeners) => sum + listeners.size, 0);
+    }
   };
 }
 
@@ -169,8 +172,13 @@ assert(merged.autoScroll.buttonColor === '#4A9EDD', 'invalid auto scroll color f
 assert(merged.autoScroll.pauseOnVideo === false, 'pause settings merge independently');
 
 vm.runInContext('advancedSettings.autoScroll.enabled = true;', sandbox);
+const listenerBaseline = context.documentListenerTotal();
 assert(sandbox.startAutoScroll() === true, 'auto scroll starts on a scrollable root page');
 assert(vm.runInContext('autoScrollRuntime.state', sandbox) === 'playing', 'start enters playing state');
+const pauseListenerTotal = context.documentListenerTotal();
+assert(pauseListenerTotal > listenerBaseline, 'starting auto scroll binds pause listeners');
+assert(sandbox.startAutoScroll() === true, 'starting auto scroll again keeps playback active');
+assert(context.documentListenerTotal() === pauseListenerTotal, 'repeated auto scroll starts do not duplicate pause listeners');
 context.runNextFrame(0);
 for (let index = 1; index <= 10; index++) {
   context.runNextFrame(index * 100);
@@ -241,5 +249,9 @@ vm.runInContext('autoScrollRuntime.state = "playing"; updateAutoScrollButtonStat
 assert(autoScrollIconNode.style.width === '48%' && autoScrollIconNode.style.height === '48%', 'pause icon gets the same compact size');
 vm.runInContext('autoScrollRuntime.state = "paused"; updateAutoScrollButtonState();', sandbox);
 assert(autoScrollIconNode.style.width === '48%' && autoScrollIconNode.style.height === '48%', 'resumed play icon keeps the compact size');
+
+vm.runInContext('advancedSettings.autoScroll.enabled = false; stopAutoScroll(); unbindAutoScrollPauseListeners();', sandbox);
+assert(context.frames.size === 0, 'disabled auto scroll keeps no active animation frame');
+assert(context.documentListenerTotal() === listenerBaseline, 'disabled auto scroll removes pause listeners');
 
 console.log('auto scroll tests passed');
