@@ -9,6 +9,8 @@
   };
   var MIGRATION_VERSION = 1;
   var FEATURE_KEYS = ['autoScroll', 'progressBar', 'screenNavigation', 'scrollBookmarks', 'outlineNavigation'];
+  var CONTAINER_STRATEGIES = ['auto', 'page'];
+  var DEFAULT_CONTAINER_STRATEGY = 'auto';
   var DEFAULT_FEATURES = {
     autoScroll: false,
     progressBar: false,
@@ -23,6 +25,10 @@
 
   function normalizeBoolean(value, fallback) {
     return typeof value === 'boolean' ? value : fallback;
+  }
+
+  function normalizeContainerStrategy(value) {
+    return CONTAINER_STRATEGIES.indexOf(value) !== -1 ? value : DEFAULT_CONTAINER_STRATEGY;
   }
 
   function normalizeHostname(value) {
@@ -77,6 +83,7 @@
     var source = isPlainObject(defaults) ? defaults : {};
     return {
       extensionEnabled: normalizeBoolean(source.extensionEnabled, true),
+      containerStrategy: normalizeContainerStrategy(source.containerStrategy),
       features: normalizeFeatures(source.features, DEFAULT_FEATURES)
     };
   }
@@ -86,6 +93,7 @@
     var normalizedDefaults = normalizeDefaults(defaults);
     return {
       extensionEnabled: normalizeBoolean(source.extensionEnabled, normalizedDefaults.extensionEnabled),
+      containerStrategy: normalizeContainerStrategy(source.containerStrategy || normalizedDefaults.containerStrategy),
       features: normalizeFeatures(source.features, normalizedDefaults.features)
     };
   }
@@ -210,8 +218,11 @@
     STORAGE_KEYS: STORAGE_KEYS,
     MIGRATION_VERSION: MIGRATION_VERSION,
     FEATURE_KEYS: FEATURE_KEYS.slice(),
+    CONTAINER_STRATEGIES: CONTAINER_STRATEGIES.slice(),
+    DEFAULT_CONTAINER_STRATEGY: DEFAULT_CONTAINER_STRATEGY,
     getDomainKey: getDomainKey,
     normalizeHostname: normalizeHostname,
+    normalizeContainerStrategy: normalizeContainerStrategy,
     normalizeDefaults: normalizeDefaults,
     normalizeState: normalizeState,
     normalizeStates: normalizeStates,

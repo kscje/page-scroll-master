@@ -1435,6 +1435,31 @@ Object.keys(translations).forEach((lang) => {
   });
 });
 
+const containerStrategyTranslations = {
+  'zh-CN': ['兼容模式', '自动检测', '页面根滚动'],
+  'zh-TW': ['相容模式', '自動偵測', '頁面根捲動'],
+  'en-US': ['Compatibility', 'Auto detect', 'Page root'],
+  'es-ES': ['Compatibilidad', 'Detección automática', 'Raíz de página'],
+  'ja-JP': ['互換モード', '自動検出', 'ページルート'],
+  'de-DE': ['Kompatibilität', 'Automatisch erkennen', 'Seitenwurzel'],
+  'fr-FR': ['Compatibilité', 'Détection automatique', 'Racine de page'],
+  'pt-BR': ['Compatibilidade', 'Detecção automática', 'Raiz da página'],
+  'ko-KR': ['호환성', '자동 감지', '페이지 루트'],
+  'it-IT': ['Compatibilità', 'Rilevamento automatico', 'Radice pagina'],
+  'ru-RU': ['Совместимость', 'Автоопределение', 'Корень страницы'],
+  'tr-TR': ['Uyumluluk', 'Otomatik algıla', 'Sayfa kökü'],
+  'id-ID': ['Kompatibilitas', 'Deteksi otomatis', 'Akar halaman']
+};
+
+Object.keys(translations).forEach((lang) => {
+  const values = containerStrategyTranslations[lang] || containerStrategyTranslations['en-US'];
+  Object.assign(translations[lang], {
+    'settings.domainContainerStrategy': values[0],
+    'settings.domainContainerStrategy.auto': values[1],
+    'settings.domainContainerStrategy.page': values[2]
+  });
+});
+
 const analyticsTranslations = {
   'zh-CN': {
     title: '隐私与统计',
@@ -4619,6 +4644,32 @@ function createDomainToggle(lang, labelKey, checked, disabled, onChange) {
   return toggleLabel;
 }
 
+function createDomainContainerStrategySelect(lang, value, onChange) {
+  const label = translations[lang]?.['settings.domainContainerStrategy'] || 'Compatibility';
+  const select = document.createElement('select');
+  select.tagName = 'SELECT';
+  select.className = 'domain-container-strategy-select';
+  select.value = domainUtils.normalizeContainerStrategy(value);
+  select.setAttribute('aria-label', label);
+  select.setAttribute('title', label);
+
+  [
+    ['auto', 'settings.domainContainerStrategy.auto'],
+    ['page', 'settings.domainContainerStrategy.page']
+  ].forEach(([strategy, labelKey]) => {
+    const option = document.createElement('option');
+    option.value = strategy;
+    option.textContent = translations[lang]?.[labelKey] || strategy;
+    option.selected = select.value === strategy;
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', () => {
+    onChange(domainUtils.normalizeContainerStrategy(select.value));
+  });
+  return select;
+}
+
 function updateDomainPaginationControls(lang, totalItems, totalPages) {
   const pagination = document.getElementById('domainPagination');
   const previousButton = document.getElementById('domainPrevPageButton');
@@ -4693,6 +4744,7 @@ function renderDomainFeatureStatesList() {
       'settings.domainScreenNavigation',
       'settings.domainScrollBookmarks',
       'settings.domainOutlineNavigation',
+      'settings.domainContainerStrategy',
       'settings.domainActions'
     ].forEach((labelKey) => {
       const label = document.createElement('span');
@@ -4748,6 +4800,17 @@ function renderDomainFeatureStatesList() {
       );
     });
 
+    const containerStrategySelect = createDomainContainerStrategySelect(
+      lang,
+      state.containerStrategy,
+      (strategy) => {
+        saveDomainFeatureState(domainKey, (current) => ({
+          ...current,
+          containerStrategy: strategy
+        }));
+      }
+    );
+
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     const deleteLabel = translations[lang]?.['settings.deleteDomain'] || 'Delete';
@@ -4768,6 +4831,7 @@ function renderDomainFeatureStatesList() {
     row.appendChild(name);
     row.appendChild(extensionToggle);
     featureToggles.forEach((toggle) => row.appendChild(toggle));
+    row.appendChild(containerStrategySelect);
     row.appendChild(deleteButton);
     list.appendChild(row);
   });

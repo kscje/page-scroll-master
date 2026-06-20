@@ -284,6 +284,9 @@ function createContext(syncData = {}, initialLocalData = {}) {
       documentListeners[type] = documentListeners[type] || [];
       documentListeners[type].push(callback);
     },
+    removeEventListener(type, callback) {
+      documentListeners[type] = (documentListeners[type] || []).filter((listener) => listener !== callback);
+    },
     fullscreenElement: null
   };
 
@@ -351,7 +354,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
             if (callback) callback();
           }
         },
-        onChanged: { addListener() {} }
+        onChanged: { addListener() {}, removeListener() {} }
       },
       runtime: {
         onMessage: {
@@ -1059,6 +1062,7 @@ function testOutlineMenuCustomContainerJump() {
   });
   sandbox.document.body.appendChild(container);
   sandbox.document.querySelectorAll = () => [container];
+  sandbox.detectAndUpdateScrollContainer();
   const root = sandbox.getScrollRoot();
 
   sandbox.handleReadingToolClick({ stopPropagation() {} });

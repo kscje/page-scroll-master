@@ -14,6 +14,7 @@ class FakeElement {
     this.children = [];
     this.style = {};
     this.attributes = options.attributes || {};
+    this.isConnected = options.isConnected !== false;
     this.overflowY = options.overflowY || 'visible';
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
   }
@@ -143,7 +144,60 @@ function testMainContainerWinsOverSmallNestedCodeBlock() {
   assert(sandbox.findScrollContainer() === main, 'small code block should not beat the main scroll container');
 }
 
-function testClickResolvesContainerAfterLateContentAppears() {
+function testMainContainerWinsOverScrollableSidebar() {
+  const main = new FakeElement('main', {
+    scrollHeight: 3600,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 320, top: 20, right: 1200, bottom: 900, width: 880, height: 880 }
+  });
+  const sidebar = new FakeElement('aside', {
+    scrollHeight: 6400,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'complementary' },
+    rect: { left: 0, top: 20, right: 280, bottom: 900, width: 280, height: 880 }
+  });
+  const sandbox = createContext([main, sidebar]);
+
+  assert(sandbox.findScrollContainer() === main, 'main content should beat a narrow scrollable sidebar');
+}
+
+function testMainContainerWinsOverDialogPanel() {
+  const main = new FakeElement('main', {
+    scrollHeight: 2800,
+    clientHeight: 820,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 60, right: 1200, bottom: 900, width: 1200, height: 840 }
+  });
+  const dialog = new FakeElement('div', {
+    scrollHeight: 4000,
+    clientHeight: 360,
+    overflowY: 'auto',
+    attributes: { role: 'dialog' },
+    rect: { left: 360, top: 180, right: 840, bottom: 540, width: 480, height: 360 }
+  });
+  const sandbox = createContext([main, dialog]);
+
+  assert(sandbox.findScrollContainer() === main, 'main content should beat a scrollable dialog panel');
+}
+
+function testPageStrategyForcesRootScrollContainer() {
+  const main = new FakeElement('main', {
+    scrollHeight: 2400,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 20, right: 1200, bottom: 900, width: 1200, height: 880 }
+  });
+  const sandbox = createContext([main]);
+
+  assert(sandbox.findScrollContainer('page') === sandbox.document.documentElement, 'page strategy forces the root scroll element');
+}
+
+function testEventDrivenDetectionUpdatesLateContent() {
   const elements = [];
   const sandbox = createContext(elements);
 
@@ -158,11 +212,16 @@ function testClickResolvesContainerAfterLateContentAppears() {
   });
   elements.push(main);
 
-  assert(sandbox.resolveScrollContainer() === main, 'late content should be selected on demand before scrolling');
+  sandbox.detectAndUpdateScrollContainer();
+
+  assert(sandbox.resolveScrollContainer() === main, 'late content should be selected after event-driven detection');
 }
 
 testDelayedMainContainerWinsOverRootFallback();
 testMainContainerWinsOverSmallNestedCodeBlock();
-testClickResolvesContainerAfterLateContentAppears();
+testMainContainerWinsOverScrollableSidebar();
+testMainContainerWinsOverDialogPanel();
+testPageStrategyForcesRootScrollContainer();
+testEventDrivenDetectionUpdatesLateContent();
 
 console.log('scroll container detection tests passed');

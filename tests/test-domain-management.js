@@ -109,4 +109,17 @@ assert(migration.states['example.co.uk'].extensionEnabled === false, 'an explici
 assert(migration.defaults.features.progressBar === true, 'legacy progress behavior is preserved in migration defaults');
 assert(migration.defaults.features.scrollBookmarks === true, 'legacy bookmark behavior is preserved in migration defaults');
 
+const normalizedState = sandbox.PageScrollMasterDomain.normalizeState({
+  extensionEnabled: true,
+  containerStrategy: 'page',
+  features: {}
+});
+assert(normalizedState.containerStrategy === 'page', 'page container strategy is preserved');
+
+const invalidStrategyState = sandbox.PageScrollMasterDomain.normalizeState({
+  containerStrategy: 'largest',
+  features: {}
+});
+assert(invalidStrategyState.containerStrategy === 'auto', 'unknown container strategy falls back to auto');
+
 console.log('domain management tests passed');

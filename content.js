@@ -9,6 +9,7 @@ let domainFeatureStates = {};
 let domainFeatureDefaults = domainUtils.normalizeDefaults();
 let currentDomainFeatureState = domainUtils.getState({}, currentDomainKey, domainFeatureDefaults);
 let currentScrollContainer = null; // 当前页面的滚动容器
+let currentScrollContainerStrategy = domainUtils.DEFAULT_CONTAINER_STRATEGY;
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const DEFAULT_ICON_COLOR = '#FFFFFF';
 const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 80;
@@ -478,6 +479,36 @@ function getElementScrollRange(element) {
   return Math.max(0, (element.scrollHeight || 0) - (element.clientHeight || 0));
 }
 
+function getPageScrollContainer() {
+  return document.scrollingElement || document.documentElement;
+}
+
+function getEffectiveContainerStrategy() {
+  return domainUtils.normalizeContainerStrategy(currentDomainFeatureState.containerStrategy);
+}
+
+function isScrollContainerUsable(container) {
+  if (!container) return false;
+  if (!isRootScrollElement(container) && container.isConnected === false) return false;
+  return getElementScrollRange(container) > 1 || isRootScrollElement(container);
+}
+
+function nodeContains(container, target) {
+  if (!container || !target) return false;
+  if (container === target) return true;
+  return typeof container.contains === 'function' && container.contains(target);
+}
+
+function shouldReevaluateScrollContainer(mutations) {
+  if (!isScrollContainerUsable(currentScrollContainer)) return true;
+  if (!Array.isArray(mutations)) return false;
+
+  return mutations.some((mutation) => {
+    const removedNodes = Array.from(mutation.removedNodes || []);
+    return removedNodes.some((node) => nodeContains(node, currentScrollContainer));
+  });
+}
+
 function canScrollVertically(element) {
   if (!element || getElementScrollRange(element) <= 1) return false;
   if (isRootScrollElement(element)) return true;
@@ -511,23 +542,33 @@ function scoreScrollContainer(element) {
   score += viewportScore * 2000;
 
   if (isRootScrollElement(element)) score += 1000;
-  if (['main', 'article', 'section', 'body', 'html'].includes(tagName)) score += 500;
-  if (['main', 'document'].includes(role)) score += 400;
-  if (tagName === 'pre' || tagName === 'code') score -= 1500;
-  if (viewportScore < 0.08) score -= 1200;
+  if (['main', 'article'].includes(tagName)) score += 700;
+  if (tagName === 'section') score += 300;
+  if (['body', 'html'].includes(tagName)) score += 500;
+  if (['main', 'document'].includes(role)) score += 600;
+  if (['nav', 'aside', 'header', 'footer'].includes(tagName)) score -= 1800;
+  if (['navigation', 'complementary', 'banner', 'contentinfo', 'dialog'].includes(role)) score -= 1800;
+  if (tagName === 'pre' || tagName === 'code') score -= 2000;
+  if (viewportScore < 0.03) score -= 2500;
+  else if (viewportScore < 0.12) score -= 1500;
 
   return score;
 }
 
 // 自动检测页面的滚动容器
 // 策略：综合根滚动元素和常见内容容器，优先选择可见面积大、滚动范围大、语义更接近主内容的容器
-function findScrollContainer() {
-  const fallback = document.scrollingElement || document.documentElement;
+function findScrollContainer(strategy = getEffectiveContainerStrategy()) {
+  if (domainUtils.normalizeContainerStrategy(strategy) === 'page') {
+    return getPageScrollContainer();
+  }
+
+  const fallback = getPageScrollContainer();
   const candidates = [
+    fallback,
     document.scrollingElement,
     document.documentElement,
     document.body,
-    ...document.querySelectorAll('div, section, main, article, aside, nav, pre, code, [role="main"], [role="document"]')
+    ...document.querySelectorAll('div, section, main, article, aside, nav, header, footer, pre, code, [role="main"], [role="document"], [role="navigation"], [role="complementary"], [role="dialog"]')
   ].filter(Boolean);
   const seen = new Set();
   const scrollableElements = [];
@@ -562,12 +603,13 @@ function findScrollContainer() {
 }
 
 function resolveScrollContainer() {
-  const latestContainer = findScrollContainer();
-  if (latestContainer && latestContainer !== currentScrollContainer) {
-    currentScrollContainer = latestContainer;
+  const strategy = getEffectiveContainerStrategy();
+  if (strategy !== currentScrollContainerStrategy || !isScrollContainerUsable(currentScrollContainer)) {
+    currentScrollContainer = findScrollContainer(strategy);
+    currentScrollContainerStrategy = strategy;
   }
 
-  return currentScrollContainer || document.scrollingElement || document.documentElement;
+  return currentScrollContainer || getPageScrollContainer();
 }
 
 function getOutlineScanRoot(container) {
@@ -1380,10 +1422,12 @@ function applyEffectiveDomainFeatures() {
 
 function applyDomainFeatureState(nextState) {
   const wasEnabled = isExtensionEnabled;
+  const previousStrategy = getEffectiveContainerStrategy();
   currentDomainFeatureState = domainUtils.normalizeState(nextState, domainFeatureDefaults);
   isExtensionEnabled = currentDomainFeatureState.extensionEnabled;
   hasLoadedExtensionEnabledState = true;
   applyEffectiveDomainFeatures();
+  const nextStrategy = getEffectiveContainerStrategy();
 
   if (!isExtensionEnabled) {
     stopAutoScroll();
@@ -1393,6 +1437,9 @@ function applyDomainFeatureState(nextState) {
   if (!wasEnabled || !document.getElementById(HOST_ID)) {
     initializeButton();
     return;
+  }
+  if (nextStrategy !== previousStrategy) {
+    detectAndUpdateScrollContainer();
   }
   applyAdvancedSettings();
 }
@@ -4527,6 +4574,7 @@ function setupSpaDetection() {
       );
       
       if (!hasSignificantChanges) return;
+      const shouldRefreshContainer = shouldReevaluateScrollContainer(mutations);
       
       // 防抖处理，避免频繁检测
       if (spaDetectionState.debounceTimer) {
@@ -4534,7 +4582,9 @@ function setupSpaDetection() {
       }
       
       spaDetectionState.debounceTimer = setTimeout(() => {
-        detectAndUpdateScrollContainer();
+        if (shouldRefreshContainer) {
+          detectAndUpdateScrollContainer();
+        }
         handleOutlineDomChange();
       }, SPA_DETECTION_CONFIG.mutationDebounceDelay);
     });
@@ -4564,15 +4614,18 @@ function setupSpaDetection() {
 
 // 检测并更新滚动容器
 function detectAndUpdateScrollContainer() {
-  const newContainer = findScrollContainer();
+  const strategy = getEffectiveContainerStrategy();
+  const newContainer = findScrollContainer(strategy);
   const oldContainer = currentScrollContainer;
+  const oldStrategy = currentScrollContainerStrategy;
 
   // 新算法已排除嵌套子滚动组件，只要容器不同就需要更新
-  if (newContainer !== oldContainer) {
+  if (newContainer !== oldContainer || strategy !== oldStrategy) {
     if (autoScrollRuntime.state !== 'stopped' && autoScrollRuntime.container === oldContainer) {
       stopAutoScroll();
     }
     currentScrollContainer = newContainer;
+    currentScrollContainerStrategy = strategy;
 
     // 如果按钮已存在，更新滚动事件绑定
     const { root, topButton, bottomButton } = getButtonElements();
