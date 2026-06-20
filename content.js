@@ -31,6 +31,8 @@ const PENDING_BOOKMARK_RESTORE_STORAGE_KEY = 'pendingScrollBookmarkRestore';
 const PENDING_BOOKMARK_RESTORE_MAX_AGE = 2 * 60 * 1000;
 const PENDING_BOOKMARK_RESTORE_RETRY_DELAY = 250;
 const PENDING_BOOKMARK_RESTORE_MAX_RETRIES = 20;
+const SCROLL_ANIMATION_MAX_DURATION_FACTOR = 1.5;
+const SCROLL_ANIMATION_BOTTOM_REFRESH_MS = 200;
 let outlineHighlightScrollTarget = null;
 let outlineHighlightUpdateFrame = null;
 let outlineHighlightMenu = null;
@@ -173,6 +175,7 @@ let autoScrollRuntime = {
   listenersBound: false
 };
 const scrollAnimationStateMap = new WeakMap();
+let activeScrollAnimationState = null;
 let readingEstimateCache = {
   target: null,
   calculatedAt: 0,
@@ -894,6 +897,12 @@ function autoScrollFrame(timestamp) {
 
 function startAutoScroll() {
   if (!advancedSettings.autoScroll.enabled) return false;
+  if (autoScrollRuntime.state === 'playing') {
+    if (isAutoScrollContainerConnected(autoScrollRuntime.container)) {
+      return true;
+    }
+    stopAutoScroll();
+  }
   bindAutoScrollPauseListeners();
   if (advancedSettings.autoScroll.pauseWhenPageHidden && document.hidden) return false;
   if (advancedSettings.autoScroll.pauseOnFullscreen && fullscreenManager.checkFullscreen()) return false;
@@ -1178,11 +1187,7 @@ function handleOutlineRouteChange() {
   pendingBookmarkRestoreKeyInProgress = '';
   invalidateOutlineSnapshot();
   hideReadingToolMenu();
-  checkPendingScrollBookmarkRestore((handled) => {
-    if (!handled) {
-      checkBookmarkRestoreOnOpen();
-    }
-  });
+  checkBookmarkRestoreOnLifecycle();
   return true;
 }
 
@@ -1419,35 +1424,63 @@ function loadDomainFeatureState(legacyAdvancedSettings) {
 function smoothScrollTo(container, targetTop, options = {}) {
   if (!container) return;
   pauseAutoScroll();
-  const previousAnimation = scrollAnimationStateMap.get(container);
-  if (previousAnimation && previousAnimation.frame) {
-    cancelAnimationFrame(previousAnimation.frame);
-    if (typeof previousAnimation.onCancel === 'function') {
-      previousAnimation.onCancel();
-    }
+  if (activeScrollAnimationState && activeScrollAnimationState.container !== container) {
+    cancelScrollAnimation(activeScrollAnimationState.container);
   }
+  cancelScrollAnimation(container);
+
   const start = getScrollTop(container);
-  const range = getElementScrollRange(container);
-  const end = clampNumber(targetTop, 0, range, 0);
+  let range = getElementScrollRange(container);
+  let end = clampNumber(targetTop, 0, range, 0);
+  const targetMode = options.targetMode || '';
   const startTime = performance.now();
+  const duration = Math.max(1, scrollSpeed);
+  const maxDuration = duration * SCROLL_ANIMATION_MAX_DURATION_FACTOR;
   const animationState = {
     frame: null,
-    onCancel: options.onCancel
+    container,
+    onCancel: options.onCancel,
+    lastBottomRefreshTime: startTime
   };
   scrollAnimationStateMap.set(container, animationState);
+  activeScrollAnimationState = animationState;
 
   function scroll(currentTime) {
     if (scrollAnimationStateMap.get(container) !== animationState) return;
+    if (targetMode === 'bottom' && currentTime - animationState.lastBottomRefreshTime >= SCROLL_ANIMATION_BOTTOM_REFRESH_MS) {
+      animationState.lastBottomRefreshTime = currentTime;
+      range = getElementScrollRange(container);
+      if (range > end) {
+        end = range;
+      }
+    }
+
     const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / scrollSpeed, 1);
+    const progress = Math.min(elapsed / duration, 1);
     const easeProgress = easeInOutCubic(progress);
+    const currentTop = getScrollTop(container);
+    const idealTop = start + (end - start) * easeProgress;
+    const maxStep = getMaxScrollAnimationStep(container, end - start);
+    const delta = idealTop - currentTop;
+    let nextTop = idealTop;
+    let isStepLimited = false;
+    if (Math.abs(delta) > maxStep && elapsed < maxDuration) {
+      nextTop = currentTop + (Math.sign(delta) * maxStep);
+      isStepLimited = true;
+    }
 
-    setScrollTop(container, start + (end - start) * easeProgress);
+    setScrollTop(container, nextTop);
 
-    if (progress < 1) {
+    if (progress < 1 || (isStepLimited && elapsed < maxDuration)) {
       animationState.frame = requestAnimationFrame(scroll);
     } else {
       scrollAnimationStateMap.delete(container);
+      if (activeScrollAnimationState === animationState) {
+        activeScrollAnimationState = null;
+      }
+      if (targetMode === 'bottom') {
+        setScrollTop(container, getElementScrollRange(container));
+      }
       requestProgressUpdate();
       if (typeof options.onComplete === 'function') {
         options.onComplete();
@@ -1468,6 +1501,9 @@ function cancelScrollAnimation(container) {
     cancelAnimationFrame(animationState.frame);
   }
   scrollAnimationStateMap.delete(container);
+  if (activeScrollAnimationState === animationState) {
+    activeScrollAnimationState = null;
+  }
   if (typeof animationState.onCancel === 'function') {
     animationState.onCancel();
   }
@@ -1515,7 +1551,7 @@ function scrollToTop() {
 // 平滑滚动到底部
 function scrollToBottom() {
   const container = resolveScrollContainer();
-  smoothScrollTo(container, getElementScrollRange(container));
+  smoothScrollTo(container, getElementScrollRange(container), { targetMode: 'bottom' });
 }
 
 function getScrollContainerViewportHeight(container) {
@@ -1524,6 +1560,13 @@ function getScrollContainerViewportHeight(container) {
     return window.innerHeight || document.documentElement.clientHeight || container.clientHeight || 0;
   }
   return container.clientHeight || 0;
+}
+
+function getMaxScrollAnimationStep(container, distance) {
+  const viewportHeight = Math.max(1, getScrollContainerViewportHeight(container) || 0);
+  const expectedFrameCount = Math.max(1, scrollSpeed / 16);
+  const distancePerFrame = Math.abs(distance) / expectedFrameCount;
+  return Math.max(80, viewportHeight * 0.8, distancePerFrame * 2);
 }
 
 function getScreenNavigationTarget(container, direction, ratio = advancedSettings.screenNavigation.screenStepRatio) {
@@ -2772,6 +2815,13 @@ function ensureReadingToolControls() {
     stopAutoScroll();
     unbindAutoScrollPauseListeners();
   }
+  checkBookmarkRestoreOnLifecycle();
+}
+
+function checkBookmarkRestoreOnLifecycle() {
+  if (!advancedSettings.scrollBookmarks.enabled) {
+    return;
+  }
   checkPendingScrollBookmarkRestore((handled) => {
     if (!handled) {
       checkBookmarkRestoreOnOpen();
@@ -3210,6 +3260,9 @@ function checkAutomaticBookmarkRestore() {
 }
 
 function checkBookmarkRestoreOnOpen() {
+  if (!advancedSettings.scrollBookmarks.enabled) {
+    return;
+  }
   const key = getCurrentBookmarkKey();
   if (!key || bookmarkRestoreCheckedForKey === key) {
     return;

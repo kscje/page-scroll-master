@@ -458,7 +458,7 @@ const disabledDomainState = {
   features: enabledDomainState.features
 };
 
-for (let cycle = 1; cycle <= 3; cycle++) {
+for (let cycle = 1; cycle <= 10; cycle++) {
   lifecycle.sandbox.applyDomainFeatureState(enabledDomainState);
   assert(lifecycle.hostCount === 1, `cycle ${cycle}: enabling creates exactly one host`);
   assert(lifecycle.activeObserverCount() === 1, `cycle ${cycle}: enabling creates one active observer`);
@@ -473,7 +473,7 @@ for (let cycle = 1; cycle <= 3; cycle++) {
   lifecycle.sandbox.window.history.pushState({}, '', `/cycle-${cycle}`);
   assert(lifecycle.timers.size === 3, `cycle ${cycle}: SPA and route timers are tracked`);
 
-  if (cycle === 3) {
+  if (cycle === 10) {
     lifecycle.detachHost();
   }
   lifecycle.sandbox.applyDomainFeatureState(disabledDomainState);

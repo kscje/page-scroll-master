@@ -254,6 +254,8 @@ function createContext(syncData = {}, initialLocalData = {}) {
 
   const documentListeners = {};
   const windowListeners = {};
+  const localGetCalls = [];
+  let animationFrameCalls = 0;
   const mutationObservers = [];
   const runtimeMessageListeners = [];
   const location = {
@@ -336,6 +338,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
         },
         local: {
           get(keys, callback) {
+            localGetCalls.push(Array.isArray(keys) ? [...keys] : [keys]);
             const result = {};
             keys.forEach((key) => {
               if (localData[key] !== undefined) result[key] = localData[key];
@@ -364,6 +367,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
     navigator: { platform: 'MacIntel', userAgent: 'Chrome' },
     performance: { now: () => 0 },
     requestAnimationFrame(callback) {
+      animationFrameCalls++;
       callback(100);
       return 1;
     },
@@ -397,6 +401,8 @@ function createContext(syncData = {}, initialLocalData = {}) {
   sandbox.__localData = localData;
   sandbox.__documentListeners = documentListeners;
   sandbox.__windowListeners = windowListeners;
+  sandbox.__localGetCalls = localGetCalls;
+  sandbox.__getAnimationFrameCallCount = () => animationFrameCalls;
   sandbox.__mutationObservers = mutationObservers;
   sandbox.__runtimeMessageListeners = runtimeMessageListeners;
   return sandbox;
@@ -416,6 +422,11 @@ function testDefaultCreatesOnlyTwoButtons() {
   assert(buttons.length === 2, 'default advanced settings should create exactly two buttons');
   assert(!root.querySelector('.psm-progress-button'), 'default settings should not create vertical progress button');
   assert(!root.getElementById('page-scroll-master-horizontal-progress'), 'default settings should not create horizontal progress bar');
+  assert(sandbox.__getAnimationFrameCallCount() === 0, 'disabled progress should not schedule a progress animation frame');
+  assert(
+    !sandbox.__localGetCalls.some((keys) => keys.includes('pendingScrollBookmarkRestore') || keys.includes('bookmarks')),
+    'disabled scroll bookmarks should not run automatic restore storage checks'
+  );
   assert(
     styleElement.textContent.includes('padding: 0;'),
     'content button container must not add padding on top of edge distance'
