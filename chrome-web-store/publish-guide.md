@@ -452,4 +452,4 @@ node chrome-web-store/tools/validate-store-materials.js
 
 **发布时间**：2026-06-20
 **版本**：2.5.0
-**状态**：发布材料已同步，待生成发布包并提交商店后台
+**状态**：发布材料和发布 ZIP 已准备完成，待提交商店后台
