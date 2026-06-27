@@ -520,27 +520,84 @@ function canScrollVertically(element) {
   return SCROLLABLE_OVERFLOW_VALUES.has(overflowY);
 }
 
-function getElementViewportScore(element) {
-  if (!element || typeof element.getBoundingClientRect !== 'function') return 0;
+function getElementViewportMetrics(element) {
+  if (!element || typeof element.getBoundingClientRect !== 'function') {
+    return {
+      areaRatio: 0,
+      widthRatio: 0,
+      heightRatio: 0,
+      viewportHeight: 0,
+      touchesLeftEdge: false,
+      touchesRightEdge: false
+    };
+  }
 
   const rect = element.getBoundingClientRect();
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
-  if (!viewportWidth || !viewportHeight || rect.width <= 0 || rect.height <= 0) return 0;
+  if (!viewportWidth || !viewportHeight || rect.width <= 0 || rect.height <= 0) {
+    return {
+      areaRatio: 0,
+      widthRatio: 0,
+      heightRatio: 0,
+      viewportHeight,
+      touchesLeftEdge: false,
+      touchesRightEdge: false
+    };
+  }
 
   const visibleWidth = Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0));
   const visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
   const visibleArea = visibleWidth * visibleHeight;
   const viewportArea = viewportWidth * viewportHeight;
-  return visibleArea / viewportArea;
+  return {
+    areaRatio: visibleArea / viewportArea,
+    widthRatio: visibleWidth / viewportWidth,
+    heightRatio: visibleHeight / viewportHeight,
+    viewportHeight,
+    touchesLeftEdge: rect.left <= 12,
+    touchesRightEdge: rect.right >= viewportWidth - 12
+  };
+}
+
+function getElementViewportScore(element) {
+  const metrics = getElementViewportMetrics(element);
+  return metrics ? metrics.areaRatio || 0 : 0;
+}
+
+function isSemanticallyPrimaryScrollContainer(element) {
+  const tagName = element && element.tagName ? element.tagName.toLowerCase() : '';
+  const role = element && element.getAttribute ? (element.getAttribute('role') || '').toLowerCase() : '';
+  return ['main', 'article'].includes(tagName) || ['main', 'document'].includes(role);
+}
+
+function isLikelyPeripheralEdgeScrollContainer(element) {
+  if (!element || isRootScrollElement(element) || isSemanticallyPrimaryScrollContainer(element)) return false;
+  const metrics = getElementViewportMetrics(element);
+  return metrics.widthRatio > 0 &&
+    metrics.widthRatio < 0.36 &&
+    metrics.heightRatio > 0.45 &&
+    (metrics.touchesLeftEdge || metrics.touchesRightEdge);
+}
+
+function isRetainablePrimaryScrollContainer(element) {
+  if (!element) return false;
+  if (isRootScrollElement(element)) return true;
+  if (element.isConnected === false) return false;
+  if (isLikelyPeripheralEdgeScrollContainer(element)) return false;
+  const metrics = getElementViewportMetrics(element);
+  return isSemanticallyPrimaryScrollContainer(element) ||
+    (metrics.widthRatio >= 0.45 && metrics.heightRatio >= 0.4);
 }
 
 function scoreScrollContainer(element) {
   const range = getElementScrollRange(element);
-  const viewportScore = getElementViewportScore(element);
+  const viewportMetrics = getElementViewportMetrics(element);
+  const viewportScore = viewportMetrics ? viewportMetrics.areaRatio || 0 : 0;
   const tagName = element.tagName ? element.tagName.toLowerCase() : '';
   const role = element.getAttribute ? (element.getAttribute('role') || '').toLowerCase() : '';
-  let score = range;
+  const rangeCap = Math.max(1200, (viewportMetrics.viewportHeight || 0) * 4);
+  let score = Math.min(range, rangeCap);
 
   score += viewportScore * 2000;
 
@@ -554,13 +611,18 @@ function scoreScrollContainer(element) {
   if (tagName === 'pre' || tagName === 'code') score -= 2000;
   if (viewportScore < 0.03) score -= 2500;
   else if (viewportScore < 0.12) score -= 1500;
+  if (isLikelyPeripheralEdgeScrollContainer(element)) {
+    score -= 2600;
+  }
+  if (viewportMetrics.widthRatio >= 0.45 && viewportMetrics.heightRatio >= 0.5) score += 1200;
+  if (viewportMetrics.widthRatio >= 0.6) score += 800;
 
   return score;
 }
 
 // 自动检测页面的滚动容器
 // 策略：综合根滚动元素和常见内容容器，优先选择可见面积大、滚动范围大、语义更接近主内容的容器
-function findScrollContainer(strategy = getEffectiveContainerStrategy()) {
+function findScrollContainer(strategy = getEffectiveContainerStrategy(), options = {}) {
   if (domainUtils.normalizeContainerStrategy(strategy) === 'page') {
     return getPageScrollContainer();
   }
@@ -588,6 +650,12 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy()) {
   }
 
   if (scrollableElements.length === 1) {
+    if (isLikelyPeripheralEdgeScrollContainer(scrollableElements[0])) {
+      if (isRetainablePrimaryScrollContainer(options.preferredContainer)) {
+        return options.preferredContainer;
+      }
+      return fallback;
+    }
     return scrollableElements[0];
   }
 
@@ -608,7 +676,9 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy()) {
 function resolveScrollContainer() {
   const strategy = getEffectiveContainerStrategy();
   if (strategy !== currentScrollContainerStrategy || !isScrollContainerUsable(currentScrollContainer)) {
-    currentScrollContainer = findScrollContainer(strategy);
+    currentScrollContainer = findScrollContainer(strategy, {
+      preferredContainer: currentScrollContainer
+    });
     currentScrollContainerStrategy = strategy;
   }
 
@@ -1220,6 +1290,16 @@ function invalidateOutlineSnapshot() {
   unbindOutlineHighlightUpdates();
 }
 
+function restartSpaScrollContainerDetection() {
+  if (!spaDetectionState.isInitialized) return;
+  spaDetectionState.retryCount = 0;
+  if (spaDetectionState.retryTimer) {
+    clearTimeout(spaDetectionState.retryTimer);
+    spaDetectionState.retryTimer = null;
+  }
+  detectAndUpdateScrollContainer();
+}
+
 function handleOutlineRouteChange() {
   if (window.location.href === outlineLastKnownUrl) return false;
   stopAutoScroll();
@@ -1230,6 +1310,7 @@ function handleOutlineRouteChange() {
   invalidateOutlineSnapshot();
   hideReadingToolMenu();
   checkBookmarkRestoreOnLifecycle();
+  restartSpaScrollContainerDetection();
   return true;
 }
 
@@ -4668,9 +4749,11 @@ function setupSpaDetection() {
 // 检测并更新滚动容器
 function detectAndUpdateScrollContainer() {
   const strategy = getEffectiveContainerStrategy();
-  const newContainer = findScrollContainer(strategy);
   const oldContainer = currentScrollContainer;
   const oldStrategy = currentScrollContainerStrategy;
+  const newContainer = findScrollContainer(strategy, {
+    preferredContainer: oldContainer
+  });
 
   // 新算法已排除嵌套子滚动组件，只要容器不同就需要更新
   if (newContainer !== oldContainer || strategy !== oldStrategy) {

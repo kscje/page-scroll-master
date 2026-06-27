@@ -2857,17 +2857,16 @@ const RELEASE_NOTES = [
   {
     version: '2.5.0',
     categories: {
-      added: [
-        'advancedModuleCollapse',
-        'restoreDefaults'
-      ],
       improved: [
+        'advancedModuleCollapse',
+        'restoreDefaults',
         'scrollAnimationCancellation',
         'scrollPerformance'
       ],
       fixed: [
         'staleScrollCompletion',
-        'dynamicBottomTarget'
+        'dynamicBottomTarget',
+        'spaEdgePanelScrollContainer'
       ]
     }
   },
@@ -2973,11 +2972,12 @@ const releaseNotesTranslations = {
     categories: { added: '新功能', improved: '功能优化', fixed: 'Bug 修复' },
     items: {
       advancedModuleCollapse: '设置页高级功能现在按模块折叠，首次进入更容易浏览。',
-      restoreDefaults: '新增恢复默认入口，可恢复基础按钮、单个高级模块或全部同步设置。',
+      restoreDefaults: '优化恢复默认入口，可恢复基础按钮、单个高级模块或全部同步设置。',
       scrollAnimationCancellation: '顶部、底部、按屏、进度条、书签和目录跳转会统一取消未完成的旧滚动动画。',
       scrollPerformance: '优化长页面平滑滚动的位移保护和动态到底部目标刷新。',
       staleScrollCompletion: '修复连续触发跳转后旧动画完成回调仍可能影响后续状态的问题。',
       dynamicBottomTarget: '修复动态内容增加后回到底部目标高度失效的问题。',
+      spaEdgePanelScrollContainer: '修复部分 SPA 或聊天类页面切换内容后，按钮可能误滚动侧边栏或短暂失效的问题。',
       defaultParameterSettings: '调整插件的默认参数设定。',
       domainManagementList: '优化域名管理列表。',
       autoScrollPlayback: '新增自动滚屏播放，可按稳定速度连续向下滚动。',
@@ -3016,11 +3016,12 @@ const releaseNotesTranslations = {
     categories: { added: '新功能', improved: '功能最佳化', fixed: 'Bug 修正' },
     items: {
       advancedModuleCollapse: '設定頁進階功能現在按模組折疊，首次進入更容易瀏覽。',
-      restoreDefaults: '新增恢復預設入口，可恢復基礎按鈕、單個進階模組或全部同步設定。',
+      restoreDefaults: '最佳化恢復預設入口，可恢復基礎按鈕、單個進階模組或全部同步設定。',
       scrollAnimationCancellation: '頂部、底部、按屏、進度條、書籤與目錄跳轉會統一取消未完成的舊捲動動畫。',
       scrollPerformance: '最佳化長頁面平滑捲動的位移保護與動態到底部目標刷新。',
       staleScrollCompletion: '修正連續觸發跳轉後舊動畫完成回調仍可能影響後續狀態的問題。',
       dynamicBottomTarget: '修正動態內容增加後回到底部目標高度失效的問題。',
+      spaEdgePanelScrollContainer: '修正部分 SPA 或聊天類頁面切換內容後，按鈕可能誤捲動側邊欄或短暫失效的問題。',
       defaultParameterSettings: '調整外掛的預設參數設定。',
       domainManagementList: '最佳化網域管理清單。',
       autoScrollPlayback: '新增自動捲動播放，可依穩定速度連續向下捲動。',
@@ -3059,11 +3060,12 @@ const releaseNotesTranslations = {
     categories: { added: 'New features', improved: 'Feature improvements', fixed: 'Bug fixes' },
     items: {
       advancedModuleCollapse: 'Advanced settings are now grouped into collapsible modules for easier browsing.',
-      restoreDefaults: 'Added restore-default controls for basic buttons, individual advanced modules, or all sync settings.',
+      restoreDefaults: 'Improved restore-default controls for basic buttons, individual advanced modules, or all sync settings.',
       scrollAnimationCancellation: 'Top, bottom, screen, progress, bookmark, and outline jumps now cancel unfinished scroll animations consistently.',
       scrollPerformance: 'Improved long-page smooth scrolling with displacement guarding and dynamic bottom-target refresh.',
       staleScrollCompletion: 'Fixed stale completion callbacks from interrupted scroll animations affecting later state.',
       dynamicBottomTarget: 'Fixed bottom jumps using stale targets after dynamic content increases page height.',
+      spaEdgePanelScrollContainer: 'Fixed some SPA and chat-style pages scrolling an edge panel or briefly doing nothing after switching content.',
       defaultParameterSettings: 'Adjusted the extension default parameter settings.',
       domainManagementList: 'Improved the domain management list.',
       autoScrollPlayback: 'Added auto-scroll playback that moves down the page at a steady speed.',

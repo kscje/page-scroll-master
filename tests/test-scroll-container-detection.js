@@ -67,7 +67,7 @@ function createContext(elements, options = {}) {
       innerWidth: 1200,
       innerHeight: 900,
       pageYOffset: 0,
-      location: { hostname: 'example.test' },
+      location: { hostname: 'example.test', href: options.href || 'https://example.test/current' },
       scrollTo(x, y) {
         this.pageYOffset = y;
         documentElement.scrollTop = y;
@@ -164,6 +164,81 @@ function testMainContainerWinsOverScrollableSidebar() {
   assert(sandbox.findScrollContainer() === main, 'main content should beat a narrow scrollable sidebar');
 }
 
+function testWideMainContainerWinsOverLongUnlabeledEdgePanel() {
+  const mainContent = new FakeElement('div', {
+    scrollHeight: 1900,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 320, top: 0, right: 1200, bottom: 900, width: 880, height: 900 }
+  });
+  const edgePanel = new FakeElement('div', {
+    scrollHeight: 9200,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 300, bottom: 900, width: 300, height: 900 }
+  });
+  const sandbox = createContext([mainContent, edgePanel]);
+
+  assert(sandbox.findScrollContainer() === mainContent, 'wide main content should beat a long unlabeled edge panel');
+}
+
+function testTransientUnlabeledEdgePanelDoesNotBecomePrimaryContainer() {
+  const edgePanel = new FakeElement('div', {
+    scrollHeight: 9200,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 300, bottom: 900, width: 300, height: 900 }
+  });
+  const sandbox = createContext([edgePanel]);
+
+  assert(
+    sandbox.findScrollContainer() === sandbox.document.documentElement,
+    'transient unlabeled edge panel should not become the primary scroll container'
+  );
+}
+
+function testRouteChangeRetainsPreviousMainUntilNewMainAppears() {
+  const previousMainContent = new FakeElement('div', {
+    scrollHeight: 2600,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 320, top: 0, right: 1200, bottom: 900, width: 880, height: 900 }
+  });
+  const elements = [
+    new FakeElement('div', {
+      scrollHeight: 9200,
+      clientHeight: 840,
+      overflowY: 'auto',
+      rect: { left: 0, top: 0, right: 300, bottom: 900, width: 300, height: 900 }
+    })
+  ];
+  const sandbox = createContext(elements, { href: 'https://example.test/route-a' });
+  sandbox.previousMainContent = previousMainContent;
+  vm.runInContext(`
+    spaDetectionState.isInitialized = true;
+    outlineLastKnownUrl = 'https://example.test/route-a';
+    currentScrollContainer = previousMainContent;
+    window.location.href = 'https://example.test/route-b';
+  `, sandbox);
+
+  assert(sandbox.handleOutlineRouteChange() === true, 'route change should restart container detection');
+  assert(
+    sandbox.resolveScrollContainer() === previousMainContent,
+    'route change should retain the previous main container while only the edge panel is scrollable'
+  );
+
+  const nextMainContent = new FakeElement('div', {
+    scrollHeight: 1900,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 320, top: 0, right: 1200, bottom: 900, width: 880, height: 900 }
+  });
+  elements.unshift(nextMainContent);
+  sandbox.detectAndUpdateScrollContainer();
+
+  assert(sandbox.resolveScrollContainer() === nextMainContent, 'retry detection should bind to the wide main content when it appears');
+}
+
 function testMainContainerWinsOverDialogPanel() {
   const main = new FakeElement('main', {
     scrollHeight: 2800,
@@ -220,6 +295,9 @@ function testEventDrivenDetectionUpdatesLateContent() {
 testDelayedMainContainerWinsOverRootFallback();
 testMainContainerWinsOverSmallNestedCodeBlock();
 testMainContainerWinsOverScrollableSidebar();
+testWideMainContainerWinsOverLongUnlabeledEdgePanel();
+testTransientUnlabeledEdgePanelDoesNotBecomePrimaryContainer();
+testRouteChangeRetainsPreviousMainUntilNewMainAppears();
 testMainContainerWinsOverDialogPanel();
 testPageStrategyForcesRootScrollContainer();
 testEventDrivenDetectionUpdatesLateContent();
