@@ -1,6 +1,6 @@
 # Datenschutzrichtlinie für Smart Scroll Navigator
 
-**Letzte Aktualisierung**: 14. Juni 2026
+**Letzte Aktualisierung**: 5. Juli 2026
 
 ## Datenerhebung
 
@@ -49,7 +49,9 @@ Die Statistik dient ausschließlich zur Bewertung von Funktionsnutzung, Einstell
 
 Das optionale Feedback-Formular sendet Daten nur nach dem Absenden. Feedbacktyp, Nachricht, Erweiterungsversion und Oberflächensprache werden übertragen. Kontaktangaben und bis zu drei JPEG-, PNG- oder WebP-Bilder werden nur auf ausdrückliche Auswahl gesendet. Das Formular erfasst weder die Seiten-URL noch die Browsersprache. Die Erweiterung speichert das Feedback nicht.
 
-Der Entwickler betreibt den Endpunkt mit Cloudflare Workers und D1 und nutzt Resend zur E-Mail-Weiterleitung. Zur stündlichen Begrenzung wird nur ein gesalzener Hash der Netzwerkadresse verwendet; Klartext-IP-Adressen werden nicht gespeichert. Inhaltsfreie Protokolle werden höchstens 30 Tage aufbewahrt. Nachricht, Kontakt und Bilder werden nicht in D1 gespeichert. Die optionale Host-Berechtigung wird nur beim Absenden angefordert und danach widerrufen.
+Nach der Deinstallation kann der Browser eine freiwillige Umfrageseite des Entwicklers öffnen. Das Öffnen der Seite sendet keinen Deinstallationsgrund. Daten werden nur übertragen, wenn Sie die Umfrage absenden, und können ausgewählte Gründe, optionale Details, optionale Kontaktangaben, die Erweiterungsversion und die Oberflächensprache enthalten. Die Umfrage erfasst keine besuchten URLs, Seiteninhalte, Lesezeichen, Website-Status, Einstellungsdetails oder Analytics-Einwilligung.
+
+Der Entwickler betreibt den Endpunkt mit Cloudflare Workers und D1 und nutzt Resend zur E-Mail-Weiterleitung. Zur stündlichen Begrenzung wird nur ein gesalzener Hash der Netzwerkadresse verwendet; Klartext-IP-Adressen werden nicht gespeichert. Inhaltsfreie Protokolle werden höchstens 30 Tage aufbewahrt, etwa Anfrage-ID, Feedbacktyp, Bildanzahl, Deinstallationsgrund-Enums, ob optionale Felder enthalten waren, Zustellstatus und Zeitstempel. Nachricht, Deinstallationsdetails, Kontakt und Bilder werden nicht in D1 gespeichert. Die optionale Host-Berechtigung wird nur beim Absenden angefordert und danach widerrufen.
 
 ## Eingeschränkte Nutzung im Chrome Web Store
 

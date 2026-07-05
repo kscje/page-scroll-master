@@ -1,6 +1,6 @@
 # Informativa sulla privacy di Smart Scroll Navigator
 
-**Ultimo aggiornamento**: 14 giugno 2026
+**Ultimo aggiornamento**: 5 luglio 2026
 
 ## Raccolta dei dati
 
@@ -49,7 +49,9 @@ I dati vengono usati solo per valutare l'utilizzo delle funzioni, la distribuzio
 
 Il modulo facoltativo invia dati solo dopo la conferma. Vengono trasmessi tipo, messaggio, versione dell'estensione e lingua dell'interfaccia. Il contatto e fino a tre immagini JPEG, PNG o WebP vengono inviati solo se forniti. Il modulo non raccoglie l'URL corrente né la lingua del browser. L'estensione non salva il contenuto.
 
-Il servizio usa Cloudflare Workers e D1 e Resend per l'inoltro email. Per il limite orario viene usato solo un hash con salt dell'indirizzo di rete; l'IP in chiaro non viene memorizzato. Solo log privi di contenuto vengono conservati per un massimo di 30 giorni. Messaggio, contatto e immagini non vengono salvati in D1. L'autorizzazione host facoltativa viene richiesta all'invio e poi revocata.
+Dopo la disinstallazione, il browser può aprire una pagina di sondaggio volontaria gestita dallo sviluppatore. L'apertura della pagina non invia un motivo di disinstallazione. I dati vengono inviati solo se confermi il sondaggio e possono includere motivi selezionati, dettagli facoltativi, contatto facoltativo, versione dell'estensione e lingua dell'interfaccia. Il sondaggio non raccoglie URL visitati, contenuti pagina, segnalibri, stati dei siti, dettagli delle impostazioni o consenso alle statistiche.
+
+Il servizio usa Cloudflare Workers e D1 e Resend per l'inoltro email. Per il limite orario viene usato solo un hash con salt dell'indirizzo di rete; l'IP in chiaro non viene memorizzato. Solo log privi di contenuto vengono conservati per un massimo di 30 giorni, come ID richiesta, tipo di feedback, numero immagini, enum dei motivi di disinstallazione, presenza di campi facoltativi, stato di consegna e timestamp. Messaggio, dettagli del sondaggio di disinstallazione, contatto e immagini non vengono salvati in D1. L'autorizzazione host facoltativa viene richiesta all'invio e poi revocata.
 
 ## Uso limitato del Chrome Web Store
 

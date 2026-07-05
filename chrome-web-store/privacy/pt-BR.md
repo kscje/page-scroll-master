@@ -1,6 +1,6 @@
 # Política de Privacidade do Smart Scroll Navigator
 
-**Última atualização**: 14 de junho de 2026
+**Última atualização**: 5 de julho de 2026
 
 ## Coleta de dados
 
@@ -49,7 +49,9 @@ Os dados são usados apenas para avaliar o uso de recursos, a distribuição de 
 
 O formulário opcional só envia dados após a confirmação. São enviados tipo, mensagem, versão da extensão e idioma da interface. Contato e até três imagens JPEG, PNG ou WebP só são enviados quando fornecidos. O formulário não coleta a URL atual nem o idioma do navegador. A extensão não salva o conteúdo.
 
-O serviço usa Cloudflare Workers e D1 e o Resend para encaminhar o email. Um hash com salt do endereço de rede é usado apenas para o limite por hora; o IP em texto simples não é armazenado. Apenas logs sem conteúdo são mantidos por até 30 dias. Mensagem, contato e imagens não são salvos no D1. A permissão opcional de host é solicitada no envio e revogada ao final.
+Após a desinstalação, o navegador pode abrir uma página de pesquisa voluntária operada pelo desenvolvedor. Abrir a página não envia um motivo de desinstalação. Os dados só são enviados se você confirmar a pesquisa e podem incluir motivos selecionados, detalhes opcionais, contato opcional, versão da extensão e idioma da interface. A pesquisa não coleta URLs visitados, conteúdo de páginas, favoritos, estados de sites, detalhes de configurações ou consentimento de estatísticas.
+
+O serviço usa Cloudflare Workers e D1 e o Resend para encaminhar o email. Um hash com salt do endereço de rede é usado apenas para o limite por hora; o IP em texto simples não é armazenado. Apenas logs sem conteúdo são mantidos por até 30 dias, como ID da solicitação, tipo de feedback, contagem de imagens, enums de motivos de desinstalação, presença de campos opcionais, resultado de entrega e horários. Mensagem, detalhes da pesquisa de desinstalação, contato e imagens não são salvos no D1. A permissão opcional de host é solicitada no envio e revogada ao final.
 
 ## Uso limitado da Chrome Web Store
 

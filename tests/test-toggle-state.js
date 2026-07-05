@@ -257,7 +257,7 @@ assert(popup.elements.currentSite.textContent === 'example.co.uk', 'subdomains s
 assert(popup.elements.extensionToggle.checked === false, 'subdomain restores extension off state');
 assert(popup.elements.progressBarToggle.checked === true, 'subdomain restores retained feature state');
 
-console.log('\nTest 5: Legacy hostname and advanced settings migrate without losing behavior');
+console.log('\nTest 5: Legacy hostname migrates while advanced features stay off by default');
 popup = openPopup(
   'https://www.legacy.co.uk/page',
   {
@@ -275,8 +275,8 @@ popup = openPopup(
 );
 const migrated = popup.chrome.storage.local.data[STATES_KEY]['legacy.co.uk'];
 assert(migrated.extensionEnabled === false, 'legacy disabled hostname migrates to its main domain');
-assert(migrated.features.progressBar === true, 'legacy progress setting becomes a local migration default');
-assert(migrated.features.outlineNavigation === true, 'legacy outline setting is preserved');
+assert(migrated.features.progressBar === false, 'legacy progress setting does not become a local migration default');
+assert(migrated.features.outlineNavigation === false, 'legacy outline setting does not become a local migration default');
 
 console.log('\nTest 6: Unsupported pages expose no editable state');
 popup = openPopup('chrome://extensions');

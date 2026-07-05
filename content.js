@@ -188,6 +188,58 @@ let restorePromptShownForKey = '';
 let pendingBookmarkRestoreKeyInProgress = '';
 
 const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
+const PROGRAMMATIC_SCROLL_OVERFLOW_VALUES = new Set(['hidden']);
+const WHEEL_FALLBACK_MAX_STEPS = 28;
+const WHEEL_FALLBACK_INTERVAL_MS = 16;
+const SCROLL_CONTAINER_CANDIDATE_SELECTOR = [
+  'div',
+  'section',
+  'main',
+  'article',
+  'aside',
+  'nav',
+  'header',
+  'footer',
+  'pre',
+  'code',
+  '[role="main"]',
+  '[role="document"]',
+  '[role="navigation"]',
+  '[role="complementary"]',
+  '[role="dialog"]',
+  '[role="grid"]',
+  '[role="table"]',
+  '[role="tree"]',
+  '[role="listbox"]',
+  '[class*="scroll"]',
+  '[class*="Scroll"]',
+  '[class*="viewport"]',
+  '[class*="Viewport"]',
+  '[style*="overflow"]'
+].join(', ');
+const WHEEL_FALLBACK_TARGET_SELECTOR = [
+  'main',
+  'article',
+  'section',
+  '[role="main"]',
+  '[role="document"]',
+  '[role="grid"]',
+  '[role="table"]',
+  '[role="listbox"]',
+  '[role="tree"]',
+  '[class*="scroll"]',
+  '[class*="Scroll"]',
+  '[class*="viewport"]',
+  '[class*="Viewport"]',
+  '[class*="grid"]',
+  '[class*="Grid"]',
+  '[class*="table"]',
+  '[class*="Table"]',
+  '[class*="sheet"]',
+  '[class*="Sheet"]',
+  '[class*="base"]',
+  '[class*="Base"]'
+].join(', ');
 const OUTLINE_METADATA_TAGS = new Set([
   'table',
   'thead',
@@ -493,7 +545,7 @@ function getEffectiveContainerStrategy() {
 function isScrollContainerUsable(container) {
   if (!container) return false;
   if (!isRootScrollElement(container) && container.isConnected === false) return false;
-  return getElementScrollRange(container) > 1 || isRootScrollElement(container);
+  return getElementScrollRange(container) > 1;
 }
 
 function nodeContains(container, target) {
@@ -502,13 +554,40 @@ function nodeContains(container, target) {
   return typeof container.contains === 'function' && container.contains(target);
 }
 
+function isLikelyPrimaryScrollCandidate(element) {
+  if (!element || !element.tagName || !canScrollVertically(element)) return false;
+  if (isLikelyPeripheralEdgeScrollContainer(element)) return false;
+
+  const metrics = getElementViewportMetrics(element);
+  return isSemanticallyPrimaryScrollContainer(element) ||
+    (metrics.widthRatio >= 0.45 && metrics.heightRatio >= 0.35);
+}
+
+function hasAddedPrimaryScrollCandidate(node) {
+  if (!node || typeof node !== 'object') return false;
+  const candidates = [];
+  if (node.tagName) {
+    candidates.push(node);
+  }
+  if (typeof node.querySelectorAll === 'function') {
+    candidates.push(...Array.from(node.querySelectorAll(SCROLL_CONTAINER_CANDIDATE_SELECTOR)).slice(0, 80));
+  }
+
+  return candidates.some(isLikelyPrimaryScrollCandidate);
+}
+
 function shouldReevaluateScrollContainer(mutations) {
   if (!isScrollContainerUsable(currentScrollContainer)) return true;
   if (!Array.isArray(mutations)) return false;
 
   return mutations.some((mutation) => {
     const removedNodes = Array.from(mutation.removedNodes || []);
-    return removedNodes.some((node) => nodeContains(node, currentScrollContainer));
+    if (removedNodes.some((node) => nodeContains(node, currentScrollContainer))) {
+      return true;
+    }
+
+    const addedNodes = Array.from(mutation.addedNodes || []);
+    return addedNodes.some(hasAddedPrimaryScrollCandidate);
   });
 }
 
@@ -517,7 +596,15 @@ function canScrollVertically(element) {
   if (isRootScrollElement(element)) return true;
 
   const overflowY = window.getComputedStyle(element).overflowY;
-  return SCROLLABLE_OVERFLOW_VALUES.has(overflowY);
+  if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) return true;
+  if (!PROGRAMMATIC_SCROLL_OVERFLOW_VALUES.has(overflowY)) return false;
+
+  const originalScrollTop = element.scrollTop || 0;
+  const probeScrollTop = originalScrollTop <= 0 ? 1 : originalScrollTop - 1;
+  element.scrollTop = probeScrollTop;
+  const canSetScrollTop = element.scrollTop !== originalScrollTop;
+  element.scrollTop = originalScrollTop;
+  return canSetScrollTop;
 }
 
 function getElementViewportMetrics(element) {
@@ -563,6 +650,88 @@ function getElementViewportMetrics(element) {
 function getElementViewportScore(element) {
   const metrics = getElementViewportMetrics(element);
   return metrics ? metrics.areaRatio || 0 : 0;
+}
+
+function getWheelFallbackPointCandidates() {
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  if (!viewportWidth || !viewportHeight || typeof document.elementFromPoint !== 'function') {
+    return [];
+  }
+
+  return [
+    [viewportWidth * 0.5, viewportHeight * 0.55],
+    [viewportWidth * 0.5, viewportHeight * 0.7],
+    [viewportWidth * 0.62, viewportHeight * 0.55],
+    [viewportWidth * 0.38, viewportHeight * 0.55]
+  ]
+    .map(([x, y]) => document.elementFromPoint(Math.round(x), Math.round(y)))
+    .filter(Boolean);
+}
+
+function scoreWheelFallbackTarget(element) {
+  if (!element || !element.tagName || typeof element.getBoundingClientRect !== 'function') {
+    return -Infinity;
+  }
+
+  const tagName = element.tagName.toLowerCase();
+  const role = element.getAttribute ? (element.getAttribute('role') || '').toLowerCase() : '';
+  const className = typeof element.className === 'string' ? element.className : '';
+  const id = element.id || '';
+  const text = `${tagName} ${role} ${id} ${className}`;
+  const metrics = getElementViewportMetrics(element);
+  let score = (metrics.areaRatio || 0) * 3000;
+
+  if (['main', 'article', 'section'].includes(tagName)) score += 500;
+  if (['main', 'document', 'grid', 'table', 'listbox', 'tree'].includes(role)) score += 650;
+  if (/base|bitable|sheet|grid|table|view|viewport|scroll/i.test(text)) score += 500;
+  if (metrics.widthRatio >= 0.45 && metrics.heightRatio >= 0.35) score += 700;
+  if (metrics.widthRatio >= 0.6) score += 350;
+  if (getElementScrollRange(element) > 1) score += 250;
+  if (['nav', 'aside', 'header', 'footer'].includes(tagName)) score -= 1600;
+  if (['navigation', 'complementary', 'banner', 'contentinfo', 'dialog'].includes(role)) score -= 1600;
+  if (isLikelyPeripheralEdgeScrollContainer(element)) score -= 2200;
+
+  return score;
+}
+
+function getWheelFallbackTarget() {
+  const seen = new Set();
+  const candidates = [];
+
+  getWheelFallbackPointCandidates().forEach((element) => {
+    let current = element;
+    while (current && current !== document.documentElement.parentElement) {
+      if (!seen.has(current)) {
+        seen.add(current);
+        candidates.push(current);
+      }
+      if (current === document.body || current === document.documentElement) break;
+      current = current.parentElement;
+    }
+  });
+
+  if (typeof document.querySelectorAll === 'function') {
+    Array.from(document.querySelectorAll(WHEEL_FALLBACK_TARGET_SELECTOR)).slice(0, 120).forEach((element) => {
+      if (!seen.has(element)) {
+        seen.add(element);
+        candidates.push(element);
+      }
+    });
+  }
+
+  return candidates
+    .filter((element) => {
+      const metrics = getElementViewportMetrics(element);
+      return metrics.areaRatio > 0.02 && metrics.widthRatio > 0.2 && metrics.heightRatio > 0.12;
+    })
+    .sort((a, b) => scoreWheelFallbackTarget(b) - scoreWheelFallbackTarget(a))[0] ||
+    document.elementFromPoint?.(
+      Math.round((window.innerWidth || document.documentElement.clientWidth || 0) * 0.5),
+      Math.round((window.innerHeight || document.documentElement.clientHeight || 0) * 0.55)
+    ) ||
+    document.body ||
+    document.documentElement;
 }
 
 function isSemanticallyPrimaryScrollContainer(element) {
@@ -633,7 +802,7 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy(), options
     document.scrollingElement,
     document.documentElement,
     document.body,
-    ...document.querySelectorAll('div, section, main, article, aside, nav, header, footer, pre, code, [role="main"], [role="document"], [role="navigation"], [role="complementary"], [role="dialog"]')
+    ...document.querySelectorAll(SCROLL_CONTAINER_CANDIDATE_SELECTOR)
   ].filter(Boolean);
   const seen = new Set();
   const scrollableElements = [];
@@ -673,13 +842,33 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy(), options
   return bestCandidate;
 }
 
-function resolveScrollContainer() {
+function setCurrentScrollContainer(nextContainer, strategy) {
+  const oldContainer = currentScrollContainer;
+  const nextStrategy = domainUtils.normalizeContainerStrategy(strategy);
+  if (nextContainer === oldContainer && nextStrategy === currentScrollContainerStrategy) {
+    return false;
+  }
+
+  if (autoScrollRuntime.state !== 'stopped' && autoScrollRuntime.container === oldContainer) {
+    stopAutoScroll();
+  }
+  currentScrollContainer = nextContainer;
+  currentScrollContainerStrategy = nextStrategy;
+
+  if (advancedSettings.progressBar.enabled) {
+    bindProgressToContainer(currentScrollContainer || getPageScrollContainer());
+  }
+
+  return true;
+}
+
+function resolveScrollContainer(options = {}) {
   const strategy = getEffectiveContainerStrategy();
-  if (strategy !== currentScrollContainerStrategy || !isScrollContainerUsable(currentScrollContainer)) {
-    currentScrollContainer = findScrollContainer(strategy, {
+  if (options.refresh === true || strategy !== currentScrollContainerStrategy || !isScrollContainerUsable(currentScrollContainer)) {
+    const nextContainer = findScrollContainer(strategy, {
       preferredContainer: currentScrollContainer
     });
-    currentScrollContainerStrategy = strategy;
+    setCurrentScrollContainer(nextContainer, strategy);
   }
 
   return currentScrollContainer || getPageScrollContainer();
@@ -1615,10 +1804,66 @@ function smoothScrollTo(container, targetTop, options = {}) {
       } else {
         requestOutlineHighlightUpdate();
       }
+      if (
+        typeof options.onNoMovement === 'function' &&
+        Math.abs(end - start) > 1 &&
+        Math.abs(getScrollTop(container) - start) <= 1
+      ) {
+        options.onNoMovement();
+      }
     }
   }
 
   animationState.frame = requestAnimationFrame(scroll);
+}
+
+function createWheelEvent(deltaY) {
+  const options = {
+    bubbles: true,
+    cancelable: true,
+    deltaMode: 0,
+    deltaX: 0,
+    deltaY
+  };
+  if (typeof WheelEvent === 'function') {
+    return new WheelEvent('wheel', options);
+  }
+  if (typeof document.createEvent === 'function') {
+    const event = document.createEvent('WheelEvent');
+    if (typeof event.initEvent === 'function') {
+      event.initEvent('wheel', true, true);
+    }
+    Object.defineProperty(event, 'deltaY', { value: deltaY });
+    Object.defineProperty(event, 'deltaX', { value: 0 });
+    Object.defineProperty(event, 'deltaMode', { value: 0 });
+    return event;
+  }
+  return null;
+}
+
+function startWheelFallbackScroll(direction) {
+  const target = getWheelFallbackTarget();
+  if (!target || typeof target.dispatchEvent !== 'function') return false;
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 800;
+  const deltaY = Math.sign(direction || 1) * Math.max(600, viewportHeight * 0.9);
+  let steps = 0;
+
+  function step() {
+    const event = createWheelEvent(deltaY);
+    if (!event) return;
+    target.dispatchEvent(event);
+    steps++;
+    if (steps < WHEEL_FALLBACK_MAX_STEPS) {
+      setTimeout(step, WHEEL_FALLBACK_INTERVAL_MS);
+    } else {
+      requestProgressUpdate();
+      requestOutlineHighlightUpdate();
+    }
+  }
+
+  step();
+  return true;
 }
 
 function cancelScrollAnimation(container) {
@@ -1672,14 +1917,28 @@ function navigateOutlineMenuToItem(item, snapshot, menu) {
 
 // 平滑滚动到顶部
 function scrollToTop() {
-  const container = resolveScrollContainer();
-  smoothScrollTo(container, 0);
+  const container = resolveScrollContainer({ refresh: true });
+  if (getElementScrollRange(container) <= 1) {
+    startWheelFallbackScroll(-1);
+    return;
+  }
+  smoothScrollTo(container, 0, {
+    onNoMovement: () => startWheelFallbackScroll(-1)
+  });
 }
 
 // 平滑滚动到底部
 function scrollToBottom() {
-  const container = resolveScrollContainer();
-  smoothScrollTo(container, getElementScrollRange(container), { targetMode: 'bottom' });
+  const container = resolveScrollContainer({ refresh: true });
+  const range = getElementScrollRange(container);
+  if (range <= 1) {
+    startWheelFallbackScroll(1);
+    return;
+  }
+  smoothScrollTo(container, range, {
+    targetMode: 'bottom',
+    onNoMovement: () => startWheelFallbackScroll(1)
+  });
 }
 
 function getScrollContainerViewportHeight(container) {
@@ -4757,11 +5016,7 @@ function detectAndUpdateScrollContainer() {
 
   // 新算法已排除嵌套子滚动组件，只要容器不同就需要更新
   if (newContainer !== oldContainer || strategy !== oldStrategy) {
-    if (autoScrollRuntime.state !== 'stopped' && autoScrollRuntime.container === oldContainer) {
-      stopAutoScroll();
-    }
-    currentScrollContainer = newContainer;
-    currentScrollContainerStrategy = strategy;
+    setCurrentScrollContainer(newContainer, strategy);
 
     // 如果按钮已存在，更新滚动事件绑定
     const { root, topButton, bottomButton } = getButtonElements();

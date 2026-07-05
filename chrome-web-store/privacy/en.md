@@ -1,6 +1,6 @@
 # Privacy Policy for Smart Scroll Navigator
 
-**Last Updated**: June 14, 2026
+**Last Updated**: July 5, 2026
 
 ## Data Collection
 
@@ -49,11 +49,17 @@ Analytics data is used only to evaluate feature usage, setting distributions, de
 
 The Options page includes an optional feedback form. Data is sent only after you submit it. A submission includes the feedback type, message, extension version, and selected interface language. Contact details and up to three JPEG, PNG, or WebP images are sent only when you provide them. The form does not collect the current page URL or browser language. Feedback is not written to extension storage.
 
-The developer operates the endpoint with Cloudflare Workers and Cloudflare D1 and uses Resend to forward the content and images to the developer's email. The service uses a salted hash of the network address for hourly rate limiting and does not store plain IP addresses. It retains only content-free logs such as request ID, feedback type, image count, delivery result, and timestamps for up to 30 days. Feedback text, contact details, and images are not stored in D1. Cloudflare and Resend may process data needed to deliver and protect their services under their respective policies.
+After uninstall, the browser may open a voluntary uninstall survey page operated by the developer. Opening the page does not submit an uninstall reason. Data is sent only if you submit the survey, and may include selected reasons, optional details, optional contact information, the extension version, and selected interface language. The survey does not collect visited URLs, page content, bookmarks, site states, settings details, or analytics consent.
+
+The developer operates the endpoint with Cloudflare Workers and Cloudflare D1 and uses Resend to forward the content and images to the developer's email. The service uses a salted hash of the network address for hourly rate limiting and does not store plain IP addresses. It retains only content-free logs such as request ID, feedback type, image count, selected uninstall reason enums, whether optional fields were included, delivery result, and timestamps for up to 30 days. Feedback text, uninstall survey details, contact details, and images are not stored in D1. Cloudflare and Resend may process data needed to deliver and protect their services under their respective policies.
 
 The feedback host permission is optional, requested only when you submit feedback, and revoked after that submission finishes:
 
 `https://page-scroll-master-feedback.kscje-apps.workers.dev/v1/feedback`
+
+The uninstall survey page uses:
+
+`https://page-scroll-master-feedback.kscje-apps.workers.dev/uninstall`
 
 ## Chrome Web Store Limited Use
 

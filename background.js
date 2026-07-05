@@ -12,6 +12,82 @@ const ANALYTICS_UPLOAD_PERIOD_MINUTES = 360;
 const ANALYTICS_RETRY_DELAYS_MINUTES = [1, 5, 30];
 const ANALYTICS_REQUEST_TIMEOUT_MS = 10000;
 const ONBOARDING_VISIBLE_KEY = 'showOnboarding';
+const UNINSTALL_SURVEY_BASE_URL = 'https://page-scroll-master-feedback.kscje-apps.workers.dev/uninstall';
+const SURVEY_LANGUAGE_CODES = new Set([
+  'zh-CN',
+  'zh-TW',
+  'en-US',
+  'es-ES',
+  'ja-JP',
+  'de-DE',
+  'fr-FR',
+  'pt-BR',
+  'ko-KR',
+  'it-IT',
+  'ru-RU',
+  'tr-TR',
+  'id-ID'
+]);
+
+function normalizeSurveyLanguage(language) {
+  return SURVEY_LANGUAGE_CODES.has(language) ? language : 'en-US';
+}
+
+function readSyncStorage(keys) {
+  return new Promise((resolve) => {
+    if (!chrome.storage || !chrome.storage.sync || typeof chrome.storage.sync.get !== 'function') {
+      resolve({});
+      return;
+    }
+    chrome.storage.sync.get(keys, (result) => {
+      if (chrome.runtime.lastError) {
+        resolve({});
+        return;
+      }
+      resolve(result || {});
+    });
+  });
+}
+
+async function readPreferredLanguageForSurvey() {
+  const stored = await readSyncStorage('language');
+  if (!stored.language || stored.language === 'auto') {
+    return 'en-US';
+  }
+  return normalizeSurveyLanguage(stored.language);
+}
+
+function setUninstallUrl(url) {
+  return new Promise((resolve) => {
+    if (!chrome.runtime || typeof chrome.runtime.setUninstallURL !== 'function') {
+      resolve();
+      return;
+    }
+    chrome.runtime.setUninstallURL(url, () => {
+      // Registration failures should not block extension startup or onboarding.
+      if (chrome.runtime.lastError) {
+        resolve();
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function registerUninstallSurveyUrl() {
+  if (!chrome.runtime || typeof chrome.runtime.setUninstallURL !== 'function') return;
+  try {
+    const manifest = typeof chrome.runtime.getManifest === 'function'
+      ? chrome.runtime.getManifest()
+      : {};
+    const version = manifest.version || '0.0.0';
+    const language = await readPreferredLanguageForSurvey();
+    const url = `${UNINSTALL_SURVEY_BASE_URL}?version=${encodeURIComponent(version)}&lang=${encodeURIComponent(language)}`;
+    await setUninstallUrl(url);
+  } catch {
+    // Ignore registration errors so uninstall survey setup cannot affect core scrolling.
+  }
+}
 
 function readLocalStorage(keys) {
   return new Promise((resolve) => {
@@ -371,7 +447,13 @@ if (analytics) {
   });
 }
 
+registerUninstallSurveyUrl();
+
 chrome.runtime.onInstalled.addListener((details) => {
+  if (details && (details.reason === 'install' || details.reason === 'update')) {
+    registerUninstallSurveyUrl();
+  }
+
   if (!details || details.reason !== 'install') {
     return;
   }

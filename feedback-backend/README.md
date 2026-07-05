@@ -1,9 +1,17 @@
 # Page Scroll Master Feedback Worker
 
-Cloudflare Worker for `POST /v1/feedback`. It validates multipart feedback,
-limits each hashed network address to five submissions per hour, forwards the
-message and optional images through Resend, and retains content-free delivery
-metadata for 30 days.
+Cloudflare Worker for extension feedback and uninstall survey feedback.
+
+- `POST /v1/feedback` validates multipart in-extension feedback, limits each
+  hashed network address to five submissions per hour, forwards the message and
+  optional images through Resend, and retains content-free delivery metadata for
+  30 days.
+- `GET /uninstall` serves the lightweight uninstall survey page used by
+  `chrome.runtime.setUninstallURL()`.
+- `POST /v1/uninstall-feedback` validates JSON uninstall feedback, forwards the
+  selected reasons, optional message, optional contact, extension version, and
+  interface language through Resend, and retains only content-free delivery and
+  rate-limit metadata.
 
 ## Required configuration
 
@@ -16,13 +24,18 @@ metadata for 30 days.
    - `FEEDBACK_TO_EMAIL`
 4. Deploy the Worker as `page-scroll-master-feedback`.
 
-The client expects:
+The clients expect:
 
 `https://page-scroll-master-feedback.kscje-apps.workers.dev/v1/feedback`
 
+`https://page-scroll-master-feedback.kscje-apps.workers.dev/uninstall`
+
+`https://page-scroll-master-feedback.kscje-apps.workers.dev/v1/uninstall-feedback`
+
 The Worker does not collect page URLs or browser language, and it does not store
-feedback text, contact details, images, or plain IP addresses. Resend receives
-the submitted content solely to deliver the feedback email.
+feedback text, uninstall survey message text, contact details, images, or plain
+IP addresses. Resend receives the submitted content solely to deliver the
+feedback email.
 
 ## Current deployment
 
@@ -35,6 +48,11 @@ the submitted content solely to deliver the feedback email.
 - A real submission with contact details and two image attachments was delivered
   successfully on 2026-06-15; D1 recorded only the image count and delivery
   metadata.
+- The uninstall survey Worker routes and D1 metadata table were deployed to
+  production on 2026-07-05 as Worker version
+  `bc516b66-a2cd-425c-9a10-fe9527f48b56`. Remote D1 schema application
+  completed successfully; direct `workers.dev` smoke testing from the local
+  network timed out.
 - The current sender uses Resend's `onboarding@resend.dev` test domain. Until a
   custom domain is verified, Resend only permits delivery to the account
   owner's registered email address.

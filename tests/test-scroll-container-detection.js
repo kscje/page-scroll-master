@@ -17,6 +17,7 @@ class FakeElement {
     this.isConnected = options.isConnected !== false;
     this.overflowY = options.overflowY || 'visible';
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+    this.dispatchedEvents = [];
   }
 
   appendChild(child) {
@@ -31,6 +32,11 @@ class FakeElement {
 
   getBoundingClientRect() {
     return this.rect;
+  }
+
+  dispatchEvent(event) {
+    this.dispatchedEvents.push(event);
+    return true;
   }
 }
 
@@ -54,6 +60,9 @@ function createContext(elements, options = {}) {
     readyState: 'loading',
     querySelectorAll() {
       return elements;
+    },
+    elementFromPoint() {
+      return options.elementFromPoint || null;
     },
     getElementById() {
       return null;
@@ -89,6 +98,12 @@ function createContext(elements, options = {}) {
     },
     navigator: { platform: 'MacIntel', userAgent: 'Chrome' },
     performance: { now: () => 0 },
+    WheelEvent: class {
+      constructor(type, eventOptions = {}) {
+        this.type = type;
+        Object.assign(this, eventOptions);
+      }
+    },
     requestAnimationFrame() {},
     MutationObserver: class {
       observe() {}
@@ -259,6 +274,77 @@ function testMainContainerWinsOverDialogPanel() {
   assert(sandbox.findScrollContainer() === main, 'main content should beat a scrollable dialog panel');
 }
 
+function testProgrammaticHiddenViewportCanBePrimaryContainer() {
+  const appViewport = new FakeElement('div', {
+    scrollHeight: 3600,
+    clientHeight: 860,
+    overflowY: 'hidden',
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const sandbox = createContext([appViewport]);
+
+  assert(
+    sandbox.findScrollContainer() === appViewport,
+    'large programmatic hidden viewport should be selected for virtualized app pages'
+  );
+}
+
+function testMainContainerWinsOverHiddenProgrammaticDialog() {
+  const main = new FakeElement('main', {
+    scrollHeight: 2800,
+    clientHeight: 820,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 60, right: 1200, bottom: 900, width: 1200, height: 840 }
+  });
+  const hiddenDialog = new FakeElement('div', {
+    scrollHeight: 5200,
+    clientHeight: 360,
+    overflowY: 'hidden',
+    attributes: { role: 'dialog' },
+    rect: { left: 360, top: 180, right: 840, bottom: 540, width: 480, height: 360 }
+  });
+  const sandbox = createContext([main, hiddenDialog]);
+
+  assert(sandbox.findScrollContainer() === main, 'main content should beat a hidden programmatic dialog viewport');
+}
+
+function testHiddenProgrammaticEdgePanelDoesNotBecomePrimaryContainer() {
+  const edgePanel = new FakeElement('div', {
+    scrollHeight: 9200,
+    clientHeight: 840,
+    overflowY: 'hidden',
+    rect: { left: 0, top: 0, right: 300, bottom: 900, width: 300, height: 900 }
+  });
+  const sandbox = createContext([edgePanel]);
+
+  assert(
+    sandbox.findScrollContainer() === sandbox.document.documentElement,
+    'hidden programmatic edge panel should not become the primary scroll container'
+  );
+}
+
+function testHiddenNonProgrammableViewportIsIgnored() {
+  const clippedLayer = new FakeElement('div', {
+    scrollHeight: 3600,
+    clientHeight: 860,
+    overflowY: 'hidden',
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  Object.defineProperty(clippedLayer, 'scrollTop', {
+    get() {
+      return 0;
+    },
+    set() {}
+  });
+  const sandbox = createContext([clippedLayer]);
+
+  assert(
+    sandbox.findScrollContainer() === sandbox.document.documentElement,
+    'hidden viewport without a writable scrollTop should be ignored'
+  );
+}
+
 function testPageStrategyForcesRootScrollContainer() {
   const main = new FakeElement('main', {
     scrollHeight: 2400,
@@ -292,6 +378,96 @@ function testEventDrivenDetectionUpdatesLateContent() {
   assert(sandbox.resolveScrollContainer() === main, 'late content should be selected after event-driven detection');
 }
 
+function testRootWithoutScrollRangeDoesNotBlockLateScrollableContent() {
+  const elements = [];
+  const sandbox = createContext(elements);
+
+  assert(sandbox.resolveScrollContainer() === sandbox.document.documentElement, 'root fallback should be used before the app viewport appears');
+
+  const appViewport = new FakeElement('div', {
+    scrollHeight: 3200,
+    clientHeight: 860,
+    overflowY: 'auto',
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  elements.push(appViewport);
+
+  assert(
+    sandbox.resolveScrollContainer() === appViewport,
+    'zero-range root fallback should not block late app scroll viewport detection'
+  );
+}
+
+function testAddedPrimaryScrollCandidateTriggersReevaluation() {
+  const previousMain = new FakeElement('div', {
+    scrollHeight: 2600,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 320, top: 0, right: 1200, bottom: 900, width: 880, height: 900 }
+  });
+  const nextMain = new FakeElement('main', {
+    scrollHeight: 3200,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 300, top: 0, right: 1200, bottom: 900, width: 900, height: 900 }
+  });
+  const sandbox = createContext([previousMain]);
+  sandbox.previousMain = previousMain;
+  sandbox.nextMain = nextMain;
+  vm.runInContext('currentScrollContainer = previousMain;', sandbox);
+
+  const shouldReevaluate = sandbox.shouldReevaluateScrollContainer([
+    { type: 'childList', addedNodes: [nextMain], removedNodes: [] }
+  ]);
+
+  assert(shouldReevaluate === true, 'adding a likely primary scroll container should refresh the cached container');
+}
+
+function testScrollActionRefreshesStaleConnectedContainer() {
+  const previousMain = new FakeElement('div', {
+    scrollHeight: 2600,
+    clientHeight: 840,
+    overflowY: 'auto',
+    rect: { left: 320, top: 0, right: 320, bottom: 0, width: 0, height: 0 }
+  });
+  const nextMain = new FakeElement('main', {
+    scrollHeight: 3600,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 300, top: 0, right: 1200, bottom: 900, width: 900, height: 900 }
+  });
+  const sandbox = createContext([previousMain, nextMain]);
+  sandbox.previousMain = previousMain;
+  sandbox.nextMain = nextMain;
+  vm.runInContext('currentScrollContainer = previousMain;', sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(
+    sandbox.resolveScrollContainer() === nextMain,
+    'scroll action should refresh a stale connected SPA container before scrolling'
+  );
+}
+
+function testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists() {
+  const appViewport = new FakeElement('div', {
+    scrollHeight: 860,
+    clientHeight: 860,
+    overflowY: 'hidden',
+    attributes: { role: 'grid' },
+    rect: { left: 80, top: 120, right: 1180, bottom: 900, width: 1100, height: 780 }
+  });
+  const sandbox = createContext([appViewport], { elementFromPoint: appViewport });
+
+  sandbox.scrollToBottom();
+
+  assert(appViewport.dispatchedEvents.length === 1, 'bottom action should dispatch one immediate wheel fallback event');
+  assert(appViewport.dispatchedEvents[0].type === 'wheel', 'fallback event should be a wheel event');
+  assert(appViewport.dispatchedEvents[0].deltaY > 0, 'bottom fallback should scroll downward');
+}
+
 testDelayedMainContainerWinsOverRootFallback();
 testMainContainerWinsOverSmallNestedCodeBlock();
 testMainContainerWinsOverScrollableSidebar();
@@ -299,7 +475,15 @@ testWideMainContainerWinsOverLongUnlabeledEdgePanel();
 testTransientUnlabeledEdgePanelDoesNotBecomePrimaryContainer();
 testRouteChangeRetainsPreviousMainUntilNewMainAppears();
 testMainContainerWinsOverDialogPanel();
+testProgrammaticHiddenViewportCanBePrimaryContainer();
+testMainContainerWinsOverHiddenProgrammaticDialog();
+testHiddenProgrammaticEdgePanelDoesNotBecomePrimaryContainer();
+testHiddenNonProgrammableViewportIsIgnored();
 testPageStrategyForcesRootScrollContainer();
 testEventDrivenDetectionUpdatesLateContent();
+testRootWithoutScrollRangeDoesNotBlockLateScrollableContent();
+testAddedPrimaryScrollCandidateTriggersReevaluation();
+testScrollActionRefreshesStaleConnectedContainer();
+testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists();
 
 console.log('scroll container detection tests passed');

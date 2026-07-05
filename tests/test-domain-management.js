@@ -106,8 +106,37 @@ const migration = sandbox.PageScrollMasterDomain.migrateStorage({
 });
 assert(Object.keys(migration.states).length === 1, 'legacy subdomains merge into one main-domain record');
 assert(migration.states['example.co.uk'].extensionEnabled === false, 'an explicit legacy disabled state wins during merge');
-assert(migration.defaults.features.progressBar === true, 'legacy progress behavior is preserved in migration defaults');
-assert(migration.defaults.features.scrollBookmarks === true, 'legacy bookmark behavior is preserved in migration defaults');
+assert(migration.defaults.features.progressBar === false, 'legacy progress setting does not become the new domain default');
+assert(migration.defaults.features.scrollBookmarks === false, 'legacy bookmark setting does not become the new domain default');
+
+const v1Migration = sandbox.PageScrollMasterDomain.migrateStorage({
+  domainFeatureMigrationVersion: 1,
+  domainFeatureDefaults: {
+    extensionEnabled: true,
+    features: {
+      autoScroll: true,
+      progressBar: true,
+      screenNavigation: true,
+      scrollBookmarks: true,
+      outlineNavigation: true
+    }
+  },
+  domainFeatureStates: {
+    'explicit.example': {
+      extensionEnabled: true,
+      features: {
+        progressBar: true
+      }
+    }
+  }
+});
+assert(v1Migration.migrationVersion === 2, 'v1 domain defaults migrate to the current version');
+assert(v1Migration.defaults.features.progressBar === false, 'v1 progress default is corrected to off');
+assert(v1Migration.defaults.features.autoScroll === false, 'v1 auto scroll default is corrected to off');
+assert(v1Migration.defaults.features.screenNavigation === false, 'v1 screen navigation default is corrected to off');
+assert(v1Migration.defaults.features.scrollBookmarks === false, 'v1 bookmark default is corrected to off');
+assert(v1Migration.defaults.features.outlineNavigation === false, 'v1 outline default is corrected to off');
+assert(v1Migration.states['explicit.example'].features.progressBar === true, 'explicit per-domain feature state is preserved');
 
 const normalizedState = sandbox.PageScrollMasterDomain.normalizeState({
   extensionEnabled: true,

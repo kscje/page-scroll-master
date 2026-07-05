@@ -7,7 +7,7 @@
     migrationVersion: 'domainFeatureMigrationVersion',
     legacyStates: 'enableStates'
   };
-  var MIGRATION_VERSION = 1;
+  var MIGRATION_VERSION = 2;
   var FEATURE_KEYS = ['autoScroll', 'progressBar', 'screenNavigation', 'scrollBookmarks', 'outlineNavigation'];
   var CONTAINER_STRATEGIES = ['auto', 'page'];
   var DEFAULT_CONTAINER_STRATEGY = 'auto';
@@ -110,29 +110,9 @@
   }
 
   function getLegacyFeatureDefaults(advancedSettings) {
-    var settings = isPlainObject(advancedSettings) ? advancedSettings : {};
-    var readingTools = isPlainObject(settings.readingTools) ? settings.readingTools : {};
-    var readingFeatures = isPlainObject(readingTools.features) ? readingTools.features : {};
-    var scrollBookmarks = isPlainObject(settings.scrollBookmarks) ? settings.scrollBookmarks : {};
-    var outlineNavigation = isPlainObject(settings.outlineNavigation) ? settings.outlineNavigation : {};
-    var progressBar = isPlainObject(settings.progressBar) ? settings.progressBar : {};
-    var screenNavigation = isPlainObject(settings.screenNavigation) ? settings.screenNavigation : {};
-    var autoScroll = isPlainObject(settings.autoScroll) ? settings.autoScroll : {};
-    var legacyBookmarkEnabled = readingTools.enabled === true && readingFeatures.scrollBookmarks !== false;
-
     return normalizeDefaults({
       extensionEnabled: true,
-      features: {
-        autoScroll: autoScroll.enabled === true,
-        progressBar: progressBar.enabled === true,
-        screenNavigation: screenNavigation.enabled === true,
-        scrollBookmarks: typeof scrollBookmarks.enabled === 'boolean'
-          ? scrollBookmarks.enabled
-          : legacyBookmarkEnabled,
-        outlineNavigation: typeof outlineNavigation.enabled === 'boolean'
-          ? outlineNavigation.enabled
-          : readingFeatures.outlineNavigation === true
-      }
+      features: DEFAULT_FEATURES
     });
   }
 
@@ -148,10 +128,18 @@
 
   function migrateStorage(localData, advancedSettings) {
     var source = isPlainObject(localData) ? localData : {};
-    var alreadyMigrated = Number(source[STORAGE_KEYS.migrationVersion]) >= MIGRATION_VERSION;
-    var defaults = alreadyMigrated
+    var savedMigrationVersion = Number(source[STORAGE_KEYS.migrationVersion]) || 0;
+    var alreadyMigrated = savedMigrationVersion >= MIGRATION_VERSION;
+    var previousDefaults = savedMigrationVersion >= 1
       ? normalizeDefaults(source[STORAGE_KEYS.defaults])
       : getLegacyFeatureDefaults(advancedSettings);
+    var defaults = alreadyMigrated
+      ? previousDefaults
+      : normalizeDefaults({
+        extensionEnabled: previousDefaults.extensionEnabled,
+        containerStrategy: previousDefaults.containerStrategy,
+        features: DEFAULT_FEATURES
+      });
     var states = normalizeStates(source[STORAGE_KEYS.states], defaults);
 
     if (!alreadyMigrated) {

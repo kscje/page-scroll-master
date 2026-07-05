@@ -21,3 +21,19 @@ CREATE TABLE IF NOT EXISTS feedback_logs (
 
 CREATE INDEX IF NOT EXISTS feedback_logs_expires_at_idx
   ON feedback_logs (expires_at);
+
+CREATE TABLE IF NOT EXISTS uninstall_feedback_logs (
+  request_id TEXT PRIMARY KEY,
+  reasons TEXT NOT NULL,
+  reason_count INTEGER NOT NULL CHECK (reason_count BETWEEN 0 AND 10),
+  has_message INTEGER NOT NULL CHECK (has_message IN (0, 1)),
+  has_contact INTEGER NOT NULL CHECK (has_contact IN (0, 1)),
+  extension_version TEXT NOT NULL,
+  language TEXT NOT NULL,
+  delivery_status TEXT NOT NULL CHECK (delivery_status IN ('sent', 'failed')),
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS uninstall_feedback_logs_expires_at_idx
+  ON uninstall_feedback_logs (expires_at);

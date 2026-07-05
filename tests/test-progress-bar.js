@@ -239,6 +239,33 @@ function createContext(syncData = {}, initialLocalData = {}) {
     enableStates: {},
     ...JSON.parse(JSON.stringify(initialLocalData))
   };
+  const enabledFeatureState = {};
+  const advancedSettings = syncData.advancedSettings || {};
+  ['autoScroll', 'progressBar', 'screenNavigation', 'scrollBookmarks', 'outlineNavigation'].forEach((key) => {
+    enabledFeatureState[key] = advancedSettings[key]?.enabled === true;
+  });
+  if (
+    Object.values(enabledFeatureState).some(Boolean) &&
+    !localData.domainFeatureStates
+  ) {
+    localData.domainFeatureMigrationVersion = 2;
+    localData.domainFeatureDefaults = {
+      extensionEnabled: true,
+      features: {
+        autoScroll: false,
+        progressBar: false,
+        screenNavigation: false,
+        scrollBookmarks: false,
+        outlineNavigation: false
+      }
+    };
+    localData.domainFeatureStates = {
+      'example.test': {
+        extensionEnabled: true,
+        features: enabledFeatureState
+      }
+    };
+  }
   const documentElement = new FakeElement('html', {
     scrollHeight: 2000,
     clientHeight: 800,

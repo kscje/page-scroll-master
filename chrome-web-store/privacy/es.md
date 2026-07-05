@@ -1,6 +1,6 @@
 # Política de privacidad de Navegador Scroll Inteligente
 
-**Última actualización**: 14 de junio de 2026
+**Última actualización**: 5 de julio de 2026
 
 ## Recopilación de datos
 
@@ -49,7 +49,9 @@ Los datos se utilizan únicamente para evaluar el uso de funciones, la distribuc
 
 El formulario opcional solo envía datos cuando usted confirma el envío. Se incluyen el tipo, el mensaje, la versión y el idioma de la interfaz. El contacto y hasta tres imágenes JPEG, PNG o WebP se envían solo si usted los proporciona. El formulario no recopila la URL actual ni el idioma del navegador. La extensión no guarda el contenido.
 
-El endpoint funciona con Cloudflare Workers y D1 y usa Resend para reenviar el correo. Para limitar la frecuencia se utiliza un hash con sal de la dirección de red; no se guarda la IP en texto claro. Solo se conservan registros sin contenido durante un máximo de 30 días. El mensaje, contacto e imágenes no se almacenan en D1. El permiso opcional del host se solicita al enviar y se revoca al terminar.
+Después de la desinstalación, el navegador puede abrir una página de encuesta voluntaria operada por el desarrollador. Abrir la página no envía un motivo de desinstalación. Los datos solo se envían si usted confirma la encuesta, y pueden incluir motivos seleccionados, detalles opcionales, contacto opcional, versión de la extensión e idioma de la interfaz. La encuesta no recopila URLs visitadas, contenido de páginas, marcadores, estados de sitios, detalles de configuración ni consentimiento de estadísticas.
+
+El endpoint funciona con Cloudflare Workers y D1 y usa Resend para reenviar el correo. Para limitar la frecuencia se utiliza un hash con sal de la dirección de red; no se guarda la IP en texto claro. Solo se conservan registros sin contenido durante un máximo de 30 días, como ID de solicitud, tipo de comentario, cantidad de imágenes, enumeraciones de motivos de desinstalación, presencia de campos opcionales, resultado de entrega y marcas de tiempo. El mensaje, los detalles de la encuesta de desinstalación, el contacto y las imágenes no se almacenan en D1. El permiso opcional del host se solicita al enviar y se revoca al terminar.
 
 ## Uso limitado de Chrome Web Store
 

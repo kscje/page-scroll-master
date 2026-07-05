@@ -1,6 +1,6 @@
 # Politique de confidentialité de Smart Scroll Navigator
 
-**Dernière mise à jour** : 14 juin 2026
+**Dernière mise à jour** : 5 juillet 2026
 
 ## Collecte de données
 
@@ -49,7 +49,9 @@ Les statistiques servent uniquement à évaluer l'utilisation des fonctions, la 
 
 Le formulaire facultatif n'envoie des données qu'après votre validation. Le type, le message, la version de l'extension et la langue de l'interface sont transmis. Le contact et jusqu'à trois images JPEG, PNG ou WebP ne sont envoyés que si vous les fournissez. Le formulaire ne collecte ni l'URL actuelle ni la langue du navigateur. L'extension ne conserve pas le contenu.
 
-Le service utilise Cloudflare Workers et D1, puis Resend pour l'envoi par e-mail. Une empreinte salée de l'adresse réseau sert uniquement à la limitation horaire; l'adresse IP en clair n'est pas conservée. Seuls des journaux sans contenu sont gardés jusqu'à 30 jours. Message, contact et images ne sont pas stockés dans D1. L'autorisation d'hôte facultative est demandée lors de l'envoi puis révoquée.
+Après la désinstallation, le navigateur peut ouvrir une page d'enquête volontaire exploitée par le développeur. L'ouverture de la page n'envoie aucun motif de désinstallation. Les données ne sont envoyées que si vous validez l'enquête et peuvent inclure les motifs choisis, des détails facultatifs, un contact facultatif, la version de l'extension et la langue de l'interface. L'enquête ne collecte pas les URL visitées, le contenu des pages, les favoris, l'état des sites, les détails des réglages ni le consentement aux statistiques.
+
+Le service utilise Cloudflare Workers et D1, puis Resend pour l'envoi par e-mail. Une empreinte salée de l'adresse réseau sert uniquement à la limitation horaire; l'adresse IP en clair n'est pas conservée. Seuls des journaux sans contenu sont gardés jusqu'à 30 jours, comme l'ID de requête, le type de retour, le nombre d'images, les motifs de désinstallation sous forme d'énumérations, la présence de champs facultatifs, le résultat de livraison et les horodatages. Message, détails de l'enquête de désinstallation, contact et images ne sont pas stockés dans D1. L'autorisation d'hôte facultative est demandée lors de l'envoi puis révoquée.
 
 ## Utilisation limitée de Chrome Web Store
 

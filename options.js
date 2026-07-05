@@ -2855,6 +2855,24 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.2',
+    categories: {
+      improved: [
+        'performanceOptimization'
+      ]
+    }
+  },
+  {
+    version: '2.5.1',
+    categories: {
+      fixed: [
+        'advancedFeatureDefaultsMigration',
+        'v25DomainDefaultsCorrection',
+        'programmaticScrollContainerCompatibility'
+      ]
+    }
+  },
+  {
     version: '2.5.0',
     categories: {
       improved: [
@@ -2978,6 +2996,10 @@ const releaseNotesTranslations = {
       staleScrollCompletion: '修复连续触发跳转后旧动画完成回调仍可能影响后续状态的问题。',
       dynamicBottomTarget: '修复动态内容增加后回到底部目标高度失效的问题。',
       spaEdgePanelScrollContainer: '修复部分 SPA 或聊天类页面切换内容后，按钮可能误滚动侧边栏或短暂失效的问题。',
+      performanceOptimization: '优化性能。',
+      advancedFeatureDefaultsMigration: '修复从旧版本升级后，页面进度条等高级功能可能在新域名中默认开启的问题。',
+      v25DomainDefaultsCorrection: '修复已迁移到 v2.5 的用户仍可能继承错误高级功能默认开启状态的问题。',
+      programmaticScrollContainerCompatibility: '改进隐藏但可编程滚动的虚拟化页面兼容性，减少底部跳转无响应或误选滚动容器的问题。',
       defaultParameterSettings: '调整插件的默认参数设定。',
       domainManagementList: '优化域名管理列表。',
       autoScrollPlayback: '新增自动滚屏播放，可按稳定速度连续向下滚动。',
@@ -3022,6 +3044,10 @@ const releaseNotesTranslations = {
       staleScrollCompletion: '修正連續觸發跳轉後舊動畫完成回調仍可能影響後續狀態的問題。',
       dynamicBottomTarget: '修正動態內容增加後回到底部目標高度失效的問題。',
       spaEdgePanelScrollContainer: '修正部分 SPA 或聊天類頁面切換內容後，按鈕可能誤捲動側邊欄或短暫失效的問題。',
+      performanceOptimization: '最佳化效能。',
+      advancedFeatureDefaultsMigration: '修正從舊版本升級後，頁面進度條等進階功能可能在新網域中預設開啟的問題。',
+      v25DomainDefaultsCorrection: '修正已遷移到 v2.5 的使用者仍可能繼承錯誤進階功能預設開啟狀態的問題。',
+      programmaticScrollContainerCompatibility: '改善隱藏但可程式捲動的虛擬化頁面相容性，減少底部跳轉無回應或誤選捲動容器的問題。',
       defaultParameterSettings: '調整外掛的預設參數設定。',
       domainManagementList: '最佳化網域管理清單。',
       autoScrollPlayback: '新增自動捲動播放，可依穩定速度連續向下捲動。',
@@ -3066,6 +3092,10 @@ const releaseNotesTranslations = {
       staleScrollCompletion: 'Fixed stale completion callbacks from interrupted scroll animations affecting later state.',
       dynamicBottomTarget: 'Fixed bottom jumps using stale targets after dynamic content increases page height.',
       spaEdgePanelScrollContainer: 'Fixed some SPA and chat-style pages scrolling an edge panel or briefly doing nothing after switching content.',
+      performanceOptimization: 'Improved performance.',
+      advancedFeatureDefaultsMigration: 'Fixed upgraded installs where page progress and other advanced features could default on for new domains.',
+      v25DomainDefaultsCorrection: 'Fixed already-migrated v2.5 installs that could keep incorrect advanced-feature defaults.',
+      programmaticScrollContainerCompatibility: 'Improved compatibility with virtualized pages that use hidden programmatic scroll containers.',
       defaultParameterSettings: 'Adjusted the extension default parameter settings.',
       domainManagementList: 'Improved the domain management list.',
       autoScrollPlayback: 'Added auto-scroll playback that moves down the page at a steady speed.',
