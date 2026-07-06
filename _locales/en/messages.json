@@ -23,10 +23,22 @@
     "message": "Scroll to Bottom",
     "description": "Floating button tooltip"
   },
-  "previousScreen": { "message": "Previous Screen", "description": "Previous screen button tooltip" },
-  "nextScreen": { "message": "Next Screen", "description": "Next screen button tooltip" },
-  "autoScrollPlay": { "message": "Start Auto Scroll", "description": "Auto scroll play button tooltip" },
-  "autoScrollPause": { "message": "Pause Auto Scroll", "description": "Auto scroll pause button tooltip" },
+  "previousScreen": {
+    "message": "Previous Screen",
+    "description": "Previous screen button tooltip"
+  },
+  "nextScreen": {
+    "message": "Next Screen",
+    "description": "Next screen button tooltip"
+  },
+  "autoScrollPlay": {
+    "message": "Start Auto Scroll",
+    "description": "Auto scroll play button tooltip"
+  },
+  "autoScrollPause": {
+    "message": "Pause Auto Scroll",
+    "description": "Auto scroll pause button tooltip"
+  },
   "popupSettings": {
     "message": "Settings",
     "description": "Popup settings button label"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "Distance from edge must be between 0px and 200px",
     "description": "Edge distance input error message"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Scroll position bookmarks"
+  },
+  "outlineToolTitle": {
+    "message": "Section navigation"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Save current position"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Save current position ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Load saved position"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Load saved position ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Page outline"
+  },
+  "outlineNoHeadings": {
+    "message": "No jumpable headings detected"
+  },
+  "outlinePreviousSection": {
+    "message": "Previous section"
+  },
+  "outlineNextSection": {
+    "message": "Next section"
+  },
+  "outlinePinMenu": {
+    "message": "Pin outline"
+  },
+  "outlineUnpinMenu": {
+    "message": "Unpin outline"
+  },
+  "outlineCloseMenu": {
+    "message": "Close outline"
+  },
+  "outlineLoadMore": {
+    "message": "Load more ($1 left)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "Cannot save a position on this page"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "This page does not have a readable position to save yet"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Updated position to $1% (was $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Saved current position $1%"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "No saved position is available on this page"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "The saved position cannot be loaded right now"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "Continue from about $1%?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Continue"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Dismiss"
   }
 }

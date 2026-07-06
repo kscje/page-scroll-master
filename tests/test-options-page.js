@@ -88,6 +88,9 @@ function createElement(id, options = {}) {
         });
       });
     },
+    focus() {
+      this.focused = true;
+    },
     getAttribute(name) {
       return this.attributes[name];
     },
@@ -147,6 +150,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       ]
     }),
     buttonSpacing: createElement('buttonSpacing', { value: '8' }),
+    spacingError: createElement('spacingError'),
     edgeDistance: createElement('edgeDistance', { value: '8' }),
     edgeDistanceError: createElement('edgeDistanceError'),
     topButtonColor: createElement('topButtonColor', { value: '#4A9EDD' }),
@@ -199,6 +203,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     progressCustomColorHex: createElement('progressCustomColorHex', { value: '#4a9edd' }),
     progressThickness: createElement('progressThickness', { value: '4' }),
     progressVerticalHeight: createElement('progressVerticalHeight', { value: '80' }),
+    progressVerticalHeightError: createElement('progressVerticalHeightError'),
     progressClickToJump: createElement('progressClickToJump', { checked: true }),
     progressShowPercentage: createElement('progressShowPercentage', { checked: true }),
     progressShowRemainingTime: createElement('progressShowRemainingTime'),
@@ -1031,7 +1036,7 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.5.2', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1192,6 +1197,42 @@ assert(
     !Object.prototype.hasOwnProperty.call(message.payload, 'topButtonColor')
   ),
   'save submits a bucketed settings snapshot without exact colors'
+);
+
+console.log('\nTest 3a: Save storage failures do not report success');
+const failedSavePage = createOptionsPage();
+failedSavePage.elements.scrollSpeed.value = '333';
+failedSavePage.context.chrome.storage.sync.set = (data, callback) => {
+  failedSavePage.context.chrome.runtime.lastError = { message: 'quota exceeded' };
+  if (callback) callback();
+  failedSavePage.context.chrome.runtime.lastError = null;
+};
+failedSavePage.elements.saveButton.dispatch('click');
+assert(failedSavePage.syncData.scrollSpeed === undefined, 'failed save does not persist sync settings');
+assert(
+  !failedSavePage.sentMessages.some((entry) => entry.message.action === 'updateSpeed'),
+  'failed save does not notify active tab with unsaved settings'
+);
+assert(
+  !failedSavePage.analyticsMessages.some((message) => message.action === 'analytics:recordSettingsSnapshot'),
+  'failed save does not record a settings snapshot'
+);
+
+console.log('\nTest 3b: Save validation explains invalid vertical progress height');
+const invalidSavePage = createOptionsPage();
+invalidSavePage.elements.progressVerticalHeight.value = '401';
+invalidSavePage.elements.saveButton.dispatch('click');
+assert(
+  invalidSavePage.elements.progressVerticalHeightError.style.display === 'block',
+  'invalid vertical progress height shows validation feedback on save'
+);
+assert(
+  invalidSavePage.elements.progressVerticalHeight.focused === true,
+  'invalid vertical progress height receives focus on save'
+);
+assert(
+  invalidSavePage.syncData.advancedSettings === undefined,
+  'invalid vertical progress height prevents writing sync settings'
 );
 
 console.log('\nTest 4: Restore defaults only resets sync settings');

@@ -23,10 +23,22 @@
     "message": "捲動到底部",
     "description": "浮動按鈕提示"
   },
-  "previousScreen": { "message": "上一屏", "description": "上一屏按鈕提示" },
-  "nextScreen": { "message": "下一屏", "description": "下一屏按鈕提示" },
-  "autoScrollPlay": { "message": "開始自動捲動", "description": "自動捲動播放按鈕提示" },
-  "autoScrollPause": { "message": "暫停自動捲動", "description": "自動捲動暫停按鈕提示" },
+  "previousScreen": {
+    "message": "上一屏",
+    "description": "上一屏按鈕提示"
+  },
+  "nextScreen": {
+    "message": "下一屏",
+    "description": "下一屏按鈕提示"
+  },
+  "autoScrollPlay": {
+    "message": "開始自動捲動",
+    "description": "自動捲動播放按鈕提示"
+  },
+  "autoScrollPause": {
+    "message": "暫停自動捲動",
+    "description": "自動捲動暫停按鈕提示"
+  },
   "popupSettings": {
     "message": "設定",
     "description": "彈窗設定按鈕標籤"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "邊緣距離必須介於0px至200px之間",
     "description": "邊緣距離輸入錯誤提示"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "捲動位置書籤"
+  },
+  "outlineToolTitle": {
+    "message": "智慧段落跳轉"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "儲存目前位置"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "儲存目前位置（$1%）"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "載入已儲存位置"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "載入已儲存位置（$1%）"
+  },
+  "outlineMenuHeading": {
+    "message": "頁面目錄"
+  },
+  "outlineNoHeadings": {
+    "message": "未偵測到可跳轉標題"
+  },
+  "outlinePreviousSection": {
+    "message": "上一段"
+  },
+  "outlineNextSection": {
+    "message": "下一段"
+  },
+  "outlinePinMenu": {
+    "message": "釘選目錄"
+  },
+  "outlineUnpinMenu": {
+    "message": "取消釘選目錄"
+  },
+  "outlineCloseMenu": {
+    "message": "關閉目錄"
+  },
+  "outlineLoadMore": {
+    "message": "載入更多（剩餘 $1 項）"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "目前頁面無法儲存位置"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "目前頁面尚無可儲存的閱讀位置"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "已更新位置到 $1%（原 $2%）"
+  },
+  "scrollBookmarkSaved": {
+    "message": "已儲存目前位置 $1%"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "目前頁面沒有可載入的已儲存位置"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "目前頁面暫時無法載入已儲存位置"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "要從約 $1% 處繼續嗎？"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "繼續"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "忽略"
   }
 }

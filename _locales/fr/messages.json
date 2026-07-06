@@ -23,10 +23,22 @@
     "message": "Aller en bas",
     "description": "Floating button tooltip"
   },
-  "previousScreen": { "message": "Écran précédent", "description": "Previous screen button tooltip" },
-  "nextScreen": { "message": "Écran suivant", "description": "Next screen button tooltip" },
-  "autoScrollPlay": { "message": "Démarrer le défilement automatique", "description": "Auto scroll play button tooltip" },
-  "autoScrollPause": { "message": "Mettre en pause le défilement automatique", "description": "Auto scroll pause button tooltip" },
+  "previousScreen": {
+    "message": "Écran précédent",
+    "description": "Previous screen button tooltip"
+  },
+  "nextScreen": {
+    "message": "Écran suivant",
+    "description": "Next screen button tooltip"
+  },
+  "autoScrollPlay": {
+    "message": "Démarrer le défilement automatique",
+    "description": "Auto scroll play button tooltip"
+  },
+  "autoScrollPause": {
+    "message": "Mettre en pause le défilement automatique",
+    "description": "Auto scroll pause button tooltip"
+  },
   "popupSettings": {
     "message": "Paramètres",
     "description": "Popup settings button label"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "La distance du bord doit être comprise entre 0px et 200px",
     "description": "Edge distance input error message"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Signets de position de défilement"
+  },
+  "outlineToolTitle": {
+    "message": "Navigation par sections"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Enregistrer la position actuelle"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Enregistrer la position actuelle ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Charger la position enregistrée"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Charger la position enregistrée ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Plan de la page"
+  },
+  "outlineNoHeadings": {
+    "message": "Aucun titre accessible détecté"
+  },
+  "outlinePreviousSection": {
+    "message": "Section précédente"
+  },
+  "outlineNextSection": {
+    "message": "Section suivante"
+  },
+  "outlinePinMenu": {
+    "message": "Épingler le plan"
+  },
+  "outlineUnpinMenu": {
+    "message": "Détacher le plan"
+  },
+  "outlineCloseMenu": {
+    "message": "Fermer le plan"
+  },
+  "outlineLoadMore": {
+    "message": "Charger plus ($1 restants)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "Impossible d’enregistrer une position sur cette page"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "Cette page n’a pas encore de position de lecture à enregistrer"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Position mise à jour à $1% (avant $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Position actuelle $1% enregistrée"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "Aucune position enregistrée disponible sur cette page"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "La position enregistrée ne peut pas être chargée pour le moment"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "Continuer vers environ $1% ?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Continuer"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Ignorer"
   }
 }

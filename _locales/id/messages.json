@@ -40,5 +40,74 @@
   },
   "settingsEdgeDistanceError": {
     "message": "Jarak dari tepi harus antara 0px dan 200px"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Bookmark posisi gulir"
+  },
+  "outlineToolTitle": {
+    "message": "Navigasi bagian"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Simpan posisi saat ini"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Simpan posisi saat ini ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Muat posisi tersimpan"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Muat posisi tersimpan ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Outline halaman"
+  },
+  "outlineNoHeadings": {
+    "message": "Tidak ada judul yang bisa dilompati"
+  },
+  "outlinePreviousSection": {
+    "message": "Bagian sebelumnya"
+  },
+  "outlineNextSection": {
+    "message": "Bagian berikutnya"
+  },
+  "outlinePinMenu": {
+    "message": "Sematkan outline"
+  },
+  "outlineUnpinMenu": {
+    "message": "Lepas sematan outline"
+  },
+  "outlineCloseMenu": {
+    "message": "Tutup outline"
+  },
+  "outlineLoadMore": {
+    "message": "Muat lainnya ($1 tersisa)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "Tidak dapat menyimpan posisi di halaman ini"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "Halaman ini belum memiliki posisi baca untuk disimpan"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Posisi diperbarui ke $1% (sebelumnya $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Posisi saat ini $1% tersimpan"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "Tidak ada posisi tersimpan yang tersedia di halaman ini"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "Posisi tersimpan belum dapat dimuat sekarang"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "Lanjutkan dari sekitar $1%?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Lanjutkan"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Abaikan"
   }
 }

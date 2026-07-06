@@ -43,6 +43,9 @@ const INCLUDED_FILES = [
 ];
 
 const INCLUDED_DIRS = [];
+const SKIP_MINIFY_FILES = new Set([
+  'vendor/tldts.umd.min.js',
+]);
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -509,6 +512,10 @@ function main() {
     const destPath = path.join(BUILD_DIR, file);
 
     if (ext === '.js') {
+      if (SKIP_MINIFY_FILES.has(file) || path.basename(file).endsWith('.min.js')) {
+        console.log(`  Skipping minification: ${file}`);
+        continue;
+      }
       minifyJS(destPath);
     } else if (ext === '.html') {
       minifyHTML(destPath);

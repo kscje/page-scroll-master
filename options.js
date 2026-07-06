@@ -24,6 +24,29 @@ const ADVANCED_MODULES = [
   'outlineNavigation'
 ];
 
+function getChromeRuntimeLastError() {
+  return chrome && chrome.runtime ? chrome.runtime.lastError : null;
+}
+
+function getChromeRuntimeLastErrorMessage(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+  return error.message || String(error);
+}
+
+function logChromeStorageError(operation) {
+  const lastError = getChromeRuntimeLastError();
+  if (!lastError) return false;
+  const message = getChromeRuntimeLastErrorMessage(lastError);
+  console.warn(`[Page Scroll Master] ${operation} failed${message ? `: ${message}` : ''}`);
+  return true;
+}
+
+function getSafeStorageResult(result, operation) {
+  if (logChromeStorageError(operation)) return {};
+  return isPlainObject(result) ? result : {};
+}
+
 // 多语言翻译数据
 const translations = {
   'zh-CN': {
@@ -74,7 +97,9 @@ const translations = {
     'settings.feedback': '如有任何建议或反馈，请联系插件制作者：',
     'settings.saveButton': '保存',
     'settings.saveSuccess': '保存成功!',
+    'settings.saveError': '保存失败，请重试',
     'settings.sizeError': '按钮尺寸必须在10px至120px之间',
+    'settings.progressVerticalHeightError': '纵向高度必须在40px至400px之间',
     'settings.colorNote': '默认颜色为 #4A9EDD，可点击上方选择器自定义',
     'settings.key.Alt': 'Alt',
     'settings.key.Ctrl': 'Ctrl',
@@ -131,7 +156,9 @@ const translations = {
     'settings.feedback': 'For any suggestions or feedback, please contact the plugin developer:',
     'settings.saveButton': 'Save',
     'settings.saveSuccess': 'Saved successfully!',
+    'settings.saveError': 'Save failed. Please try again.',
     'settings.sizeError': 'Button size must be between 10px and 120px',
+    'settings.progressVerticalHeightError': 'Vertical height must be between 40px and 400px',
     'settings.colorNote': 'Default color is #4A9EDD, click the selector above to customize',
     'settings.key.Alt': 'Alt',
     'settings.key.Ctrl': 'Ctrl',
@@ -155,6 +182,7 @@ Object.assign(translations['zh-CN'], {
   'settings.progressBarMode.verticalButton': '纵向进度按钮',
   'settings.progressBarMode.horizontalBar': '横向页面边缘进度条',
   'settings.progressVerticalHeight': '纵向高度(px)',
+  'settings.progressVerticalHeightError': '纵向高度必须在40px至400px之间',
   'settings.progressHorizontalPosition': '横向位置',
   'settings.progressHorizontalPosition.top': '顶部',
   'settings.progressHorizontalPosition.bottom': '底部',
@@ -252,6 +280,7 @@ Object.assign(translations['en-US'], {
   'settings.progressBarMode.verticalButton': 'Vertical progress button',
   'settings.progressBarMode.horizontalBar': 'Horizontal page edge bar',
   'settings.progressVerticalHeight': 'Vertical height(px)',
+  'settings.progressVerticalHeightError': 'Vertical height must be between 40px and 400px',
   'settings.progressHorizontalPosition': 'Horizontal position',
   'settings.progressHorizontalPosition.top': 'Top',
   'settings.progressHorizontalPosition.bottom': 'Bottom',
@@ -521,6 +550,7 @@ translations['zh-TW'] = Object.assign({}, translations['zh-CN'], {
   'settings.progressBarMode.verticalButton': '垂直進度按鈕',
   'settings.progressBarMode.horizontalBar': '水平頁面邊緣進度條',
   'settings.progressVerticalHeight': '垂直高度(px)',
+  'settings.progressVerticalHeightError': '垂直高度必須介於40px至400px之間',
   'settings.progressHorizontalPosition': '水平位置',
   'settings.progressHorizontalPosition.top': '頂部',
   'settings.progressHorizontalPosition.bottom': '底部',
@@ -644,6 +674,7 @@ translations['de-DE'] = Object.assign({}, translations['en-US'], {
   'settings.progressBarMode.verticalButton': 'Vertikale Fortschrittsschaltfläche',
   'settings.progressBarMode.horizontalBar': 'Horizontale Leiste am Seitenrand',
   'settings.progressVerticalHeight': 'Vertikale Höhe(px)',
+  'settings.progressVerticalHeightError': 'Die vertikale Höhe muss zwischen 40px und 400px liegen',
   'settings.progressHorizontalPosition': 'Horizontale Position',
   'settings.progressHorizontalPosition.top': 'Oben',
   'settings.progressHorizontalPosition.bottom': 'Unten',
@@ -767,6 +798,7 @@ translations['fr-FR'] = Object.assign({}, translations['en-US'], {
   'settings.progressBarMode.verticalButton': 'Bouton de progression vertical',
   'settings.progressBarMode.horizontalBar': 'Barre horizontale au bord de la page',
   'settings.progressVerticalHeight': 'Hauteur verticale(px)',
+  'settings.progressVerticalHeightError': 'La hauteur verticale doit être comprise entre 40px et 400px',
   'settings.progressHorizontalPosition': 'Position horizontale',
   'settings.progressHorizontalPosition.top': 'Haut',
   'settings.progressHorizontalPosition.bottom': 'Bas',
@@ -890,6 +922,7 @@ translations['pt-BR'] = Object.assign({}, translations['en-US'], {
   'settings.progressBarMode.verticalButton': 'Botão vertical de progresso',
   'settings.progressBarMode.horizontalBar': 'Barra horizontal na borda da página',
   'settings.progressVerticalHeight': 'Altura vertical(px)',
+  'settings.progressVerticalHeightError': 'A altura vertical deve ficar entre 40px e 400px',
   'settings.progressHorizontalPosition': 'Posição horizontal',
   'settings.progressHorizontalPosition.top': 'Topo',
   'settings.progressHorizontalPosition.bottom': 'Parte inferior',
@@ -1013,6 +1046,7 @@ translations['ko-KR'] = Object.assign({}, translations['en-US'], {
   'settings.progressBarMode.verticalButton': '세로 진행률 버튼',
   'settings.progressBarMode.horizontalBar': '가로 페이지 가장자리 표시줄',
   'settings.progressVerticalHeight': '세로 높이(px)',
+  'settings.progressVerticalHeightError': '세로 높이는 40px에서 400px 사이여야 합니다',
   'settings.progressHorizontalPosition': '가로 위치',
   'settings.progressHorizontalPosition.top': '위',
   'settings.progressHorizontalPosition.bottom': '아래',
@@ -1136,6 +1170,7 @@ translations['it-IT'] = Object.assign({}, translations['en-US'], {
   'settings.progressBarMode.verticalButton': 'Pulsante progresso verticale',
   'settings.progressBarMode.horizontalBar': 'Barra orizzontale sul bordo pagina',
   'settings.progressVerticalHeight': 'Altezza verticale(px)',
+  'settings.progressVerticalHeightError': 'L’altezza verticale deve essere tra 40px e 400px',
   'settings.progressHorizontalPosition': 'Posizione orizzontale',
   'settings.progressHorizontalPosition.top': 'Alto',
   'settings.progressHorizontalPosition.bottom': 'Basso',
@@ -2070,6 +2105,7 @@ const v23LanguageTranslations = {
       'settings.progressBarMode.verticalButton': 'Вертикальная кнопка прогресса',
       'settings.progressBarMode.horizontalBar': 'Горизонтальная полоса у края страницы',
       'settings.progressVerticalHeight': 'Вертикальная высота(px)',
+      'settings.progressVerticalHeightError': 'Вертикальная высота должна быть от 40px до 400px',
       'settings.progressHorizontalPosition': 'Горизонтальное положение',
       'settings.progressHorizontalPosition.top': 'Сверху',
       'settings.progressHorizontalPosition.bottom': 'Снизу',
@@ -2328,6 +2364,7 @@ const v23LanguageTranslations = {
       'settings.progressBarMode.verticalButton': 'Dikey ilerleme düğmesi',
       'settings.progressBarMode.horizontalBar': 'Yatay sayfa kenarı çubuğu',
       'settings.progressVerticalHeight': 'Dikey yükseklik(px)',
+      'settings.progressVerticalHeightError': 'Dikey yükseklik 40px ile 400px arasında olmalıdır',
       'settings.progressHorizontalPosition': 'Yatay konum',
       'settings.progressHorizontalPosition.top': 'Üst',
       'settings.progressHorizontalPosition.bottom': 'Alt',
@@ -2586,6 +2623,7 @@ const v23LanguageTranslations = {
       'settings.progressBarMode.verticalButton': 'Tombol progres vertikal',
       'settings.progressBarMode.horizontalBar': 'Bilah tepi halaman horizontal',
       'settings.progressVerticalHeight': 'Tinggi vertikal(px)',
+      'settings.progressVerticalHeightError': 'Tinggi vertikal harus antara 40px dan 400px',
       'settings.progressHorizontalPosition': 'Posisi horizontal',
       'settings.progressHorizontalPosition.top': 'Atas',
       'settings.progressHorizontalPosition.bottom': 'Bawah',
@@ -2855,7 +2893,7 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
-    version: '2.5.2',
+    version: '2.5.3',
     categories: {
       improved: [
         'performanceOptimization'
@@ -3909,6 +3947,7 @@ function openStoreRatingPage() {
 function getCurrentLanguage() {
   return new Promise((resolve) => {
     chrome.storage.sync.get('language', (result) => {
+      result = getSafeStorageResult(result, 'storage.sync.get language');
       if (result.language && result.language !== 'auto') {
         resolve(result.language);
       } else {
@@ -3918,6 +3957,36 @@ function getCurrentLanguage() {
       }
     });
   });
+}
+
+function getTranslationText(lang, key, fallback) {
+  return translations[lang]?.[key] || translations['en-US']?.[key] || fallback;
+}
+
+function setValidationError(errorId, messageKey, fallback, inputId) {
+  const error = document.getElementById(errorId);
+  const input = document.getElementById(inputId);
+  if (error) {
+    error.textContent = fallback;
+    error.style.display = 'block';
+  }
+  if (input && typeof input.focus === 'function') {
+    input.focus();
+  }
+  getCurrentLanguage().then(lang => {
+    if (error) {
+      error.textContent = getTranslationText(lang, messageKey, fallback);
+      error.style.display = 'block';
+    }
+  });
+  return false;
+}
+
+function clearValidationError(errorId) {
+  const error = document.getElementById(errorId);
+  if (error) {
+    error.style.display = 'none';
+  }
 }
 
 // 应用翻译
@@ -3987,20 +4056,21 @@ function getScreenNavigationIconSvg(direction) {
   return `<svg class="psm-screen-navigation-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/>${arrowPath}</svg>`;
 }
 
-// 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
-function updatePreviewButtons() {
-  const topButton = document.getElementById('previewTopButton');
-  const previousScreenButton = document.getElementById('previewPreviousScreenButton');
-  const bottomButton = document.getElementById('previewBottomButton');
-  const nextScreenButton = document.getElementById('previewNextScreenButton');
-  const progressButton = document.getElementById('previewProgressButton');
-  const autoScrollButton = document.getElementById('previewAutoScrollButton');
-  const bookmarkButton = document.getElementById('previewBookmarkButton');
-  const outlineButton = document.getElementById('previewOutlineButton');
-  const horizontalProgress = document.getElementById('previewHorizontalProgress');
-  if (!topButton || !bottomButton) return;
+function getPreviewElements() {
+  return {
+    topButton: document.getElementById('previewTopButton'),
+    previousScreenButton: document.getElementById('previewPreviousScreenButton'),
+    bottomButton: document.getElementById('previewBottomButton'),
+    nextScreenButton: document.getElementById('previewNextScreenButton'),
+    progressButton: document.getElementById('previewProgressButton'),
+    autoScrollButton: document.getElementById('previewAutoScrollButton'),
+    bookmarkButton: document.getElementById('previewBookmarkButton'),
+    outlineButton: document.getElementById('previewOutlineButton'),
+    horizontalProgress: document.getElementById('previewHorizontalProgress')
+  };
+}
 
-  // 获取当前设置
+function getPreviewSettings(elements) {
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
   const buttonShape = document.getElementById('buttonShape').value;
   const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
@@ -4028,21 +4098,21 @@ function updatePreviewButtons() {
   );
   const featureButtons = [
     {
-      button: autoScrollButton,
+      button: elements.autoScrollButton,
       enabled: true,
       position: document.getElementById('autoScrollButtonPosition')?.value || 'pageBottom',
       color: validateHexColor(document.getElementById('autoScrollButtonColor')?.value, '#4A9EDD'),
       icon: getAutoScrollIconSvg()
     },
     {
-      button: bookmarkButton,
+      button: elements.bookmarkButton,
       enabled: true,
       position: document.getElementById('scrollBookmarkButtonPosition')?.value || 'pageBottom',
       color: getPreviewFeatureButtonColor('scrollBookmark', topButtonColor, bottomButtonColor),
       icon: getBookmarkIconSvg()
     },
     {
-      button: outlineButton,
+      button: elements.outlineButton,
       enabled: true,
       position: document.getElementById('outlineButtonPosition')?.value || 'pageBottom',
       color: getPreviewFeatureButtonColor('outline', topButtonColor, bottomButtonColor),
@@ -4050,66 +4120,50 @@ function updatePreviewButtons() {
     }
   ];
 
-  // 验证并调整按钮尺寸（允许10-120px范围）
-  let displaySize = buttonSize;
-  if (isNaN(displaySize)) {
-    displaySize = 40; // 默认值
-  } else if (displaySize < 10) {
-    displaySize = 10;
-  } else if (displaySize > 120) {
-    displaySize = 120;
-  }
+  return {
+    buttonSize,
+    buttonShape,
+    buttonSpacing,
+    edgeDistance,
+    topButtonColor,
+    bottomButtonColor,
+    opacity,
+    horizontalPosition,
+    verticalAlignment,
+    iconSet,
+    iconColor,
+    progressEnabled: true,
+    progressMode,
+    showProgressPercentage,
+    progressHorizontalPosition,
+    progressThickness,
+    progressColor,
+    previousScreenButtonColor,
+    nextScreenButtonColor,
+    featureButtons
+  };
+}
 
-  // 验证并调整按钮间距
-  let displaySpacing = buttonSpacing;
-  if (isNaN(displaySpacing)) {
-    displaySpacing = 8;
-  } else if (displaySpacing < 0) {
-    displaySpacing = 0;
-  } else if (displaySpacing > 800) {
-    displaySpacing = 800;
-  }
-
+function getPreviewLayout(settings) {
+  const displaySize = clampNumber(settings.buttonSize, 10, 120, 40);
+  const displaySpacing = clampNumber(settings.buttonSpacing, 0, 800, 8);
+  const displayEdgeDistance = clampNumber(settings.edgeDistance, 0, 200, 8);
   const displayProgressHeight = clampNumber(
     document.getElementById('progressVerticalHeight')?.value,
     40,
     400,
     DEFAULT_ADVANCED_SETTINGS.progressBar.verticalHeight
   );
-  const isVerticalProgressPreview = progressEnabled && progressMode === 'verticalButton';
-  const isHorizontalProgressPreview = progressEnabled && progressMode === 'horizontalBar';
+  const isVerticalProgressPreview = settings.progressEnabled && settings.progressMode === 'verticalButton';
+  const isHorizontalProgressPreview = settings.progressEnabled && settings.progressMode === 'horizontalBar';
 
-  // 验证并调整边缘距离
-  let displayEdgeDistance = edgeDistance;
-  if (isNaN(displayEdgeDistance)) {
-    displayEdgeDistance = 20;
-  } else if (displayEdgeDistance < 0) {
-    displayEdgeDistance = 0;
-  } else if (displayEdgeDistance > 200) {
-    displayEdgeDistance = 200;
-  }
-
-  // 计算按钮位置 - 使用fixed定位直接显示在设置页面上
-  let leftPos, rightPos;
-
-  // 水平位置
-  if (horizontalPosition === 'left') {
-    leftPos = displayEdgeDistance + 'px';
-    rightPos = 'auto';
-  } else {
-    // right (默认)
-    leftPos = 'auto';
-    rightPos = displayEdgeDistance + 'px';
-  }
-
-  // 强制设置按钮尺寸
+  const leftPos = settings.horizontalPosition === 'left' ? displayEdgeDistance + 'px' : 'auto';
+  const rightPos = settings.horizontalPosition === 'left' ? 'auto' : displayEdgeDistance + 'px';
   const size = displaySize + 'px';
-
-  // 计算按钮组的总高度
   const totalGroupHeight = isVerticalProgressPreview
     ? (displaySize * 4) + displayProgressHeight + (displaySpacing * 4)
     : (displaySize * 4) + (displaySpacing * 3);
-  const middleFeatureCount = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageMiddle').length;
+  const middleFeatureCount = settings.featureButtons.filter((feature) => feature.enabled && feature.position === 'pageMiddle').length;
   const totalPreviewGroupHeight = middleFeatureCount
     ? totalGroupHeight + (middleFeatureCount * (displaySize + displaySpacing))
     : totalGroupHeight;
@@ -4122,213 +4176,214 @@ function updatePreviewButtons() {
   const bottomButtonOffset = nextScreenOffset + unit;
   const middleFeatureOffset = bottomButtonOffset + unit;
 
-  function getMainButtonPosition(offset, height) {
-    if (verticalAlignment === 'center') {
-      return {
-        top: `calc(50% - ${totalPreviewGroupHeight / 2}px + ${offset}px)`,
-        bottom: 'auto'
-      };
-    }
-    if (verticalAlignment === 'top') {
-      return {
-        top: `${displayEdgeDistance + offset}px`,
-        bottom: 'auto'
-      };
-    }
+  return {
+    displaySize,
+    displaySpacing,
+    displayEdgeDistance,
+    displayProgressHeight,
+    isVerticalProgressPreview,
+    isHorizontalProgressPreview,
+    leftPos,
+    rightPos,
+    size,
+    totalPreviewGroupHeight,
+    unit,
+    previousScreenOffset,
+    progressOffset,
+    nextScreenOffset,
+    bottomButtonOffset,
+    middleFeatureOffset
+  };
+}
+
+function getMainPreviewButtonPosition(settings, layout, offset, height) {
+  if (settings.verticalAlignment === 'center') {
     return {
-      top: 'auto',
-      bottom: `${displayEdgeDistance + totalPreviewGroupHeight - offset - height}px`
+      top: `calc(50% - ${layout.totalPreviewGroupHeight / 2}px + ${offset}px)`,
+      bottom: 'auto'
     };
   }
-
-  const topButtonPosition = getMainButtonPosition(0, displaySize);
-  const previousScreenPosition = getMainButtonPosition(previousScreenOffset, displaySize);
-  const progressButtonPosition = getMainButtonPosition(progressOffset, displayProgressHeight);
-  const nextScreenPosition = getMainButtonPosition(nextScreenOffset, displaySize);
-  const bottomButtonPosition = getMainButtonPosition(bottomButtonOffset, displaySize);
-
-  function getMiddleFeaturePosition(index) {
-    let top = 'auto';
-    let bottom = 'auto';
-    if (verticalAlignment === 'center') {
-      const groupTopOffset = `calc(50% - ${totalPreviewGroupHeight / 2}px)`;
-      top = `calc(${groupTopOffset} + ${middleFeatureOffset + (index * unit)}px)`;
-    } else if (verticalAlignment === 'top') {
-      top = `calc(${displayEdgeDistance}px + ${middleFeatureOffset + (index * unit)}px)`;
-    } else {
-      bottom = `${displayEdgeDistance + totalPreviewGroupHeight -
-        (middleFeatureOffset + (index * unit)) - displaySize}px`;
-    }
-    return { top, bottom };
+  if (settings.verticalAlignment === 'top') {
+    return {
+      top: `${layout.displayEdgeDistance + offset}px`,
+      bottom: 'auto'
+    };
   }
+  return {
+    top: 'auto',
+    bottom: `${layout.displayEdgeDistance + layout.totalPreviewGroupHeight - offset - height}px`
+  };
+}
 
-  function getStandaloneFeaturePosition(position, index, count) {
-    let top = 'auto';
-    let bottom = 'auto';
-    if (position === 'pageTop') {
-      const baseOffset = verticalAlignment === 'top'
-        ? displayEdgeDistance + totalPreviewGroupHeight + displaySpacing
-        : displayEdgeDistance;
-      const offset = baseOffset + (index * (displaySize + displaySpacing));
-      top = offset + 'px';
-    } else {
-      const baseOffset = verticalAlignment === 'bottom'
-        ? displayEdgeDistance + totalPreviewGroupHeight + displaySpacing
-        : displayEdgeDistance;
-      const offset = baseOffset + ((count - index - 1) * (displaySize + displaySpacing));
-      bottom = offset + 'px';
-    }
-    return { top, bottom };
+function getMiddleFeaturePreviewPosition(settings, layout, index) {
+  let top = 'auto';
+  let bottom = 'auto';
+  if (settings.verticalAlignment === 'center') {
+    const groupTopOffset = `calc(50% - ${layout.totalPreviewGroupHeight / 2}px)`;
+    top = `calc(${groupTopOffset} + ${layout.middleFeatureOffset + (index * layout.unit)}px)`;
+  } else if (settings.verticalAlignment === 'top') {
+    top = `calc(${layout.displayEdgeDistance}px + ${layout.middleFeatureOffset + (index * layout.unit)}px)`;
+  } else {
+    bottom = `${layout.displayEdgeDistance + layout.totalPreviewGroupHeight -
+      (layout.middleFeatureOffset + (index * layout.unit)) - layout.displaySize}px`;
   }
+  return { top, bottom };
+}
 
-  // 使用 requestAnimationFrame 确保流畅更新，避免弹跳
+function getStandaloneFeaturePreviewPosition(settings, layout, position, index, count) {
+  let top = 'auto';
+  let bottom = 'auto';
+  if (position === 'pageTop') {
+    const baseOffset = settings.verticalAlignment === 'top'
+      ? layout.displayEdgeDistance + layout.totalPreviewGroupHeight + layout.displaySpacing
+      : layout.displayEdgeDistance;
+    const offset = baseOffset + (index * (layout.displaySize + layout.displaySpacing));
+    top = offset + 'px';
+  } else {
+    const baseOffset = settings.verticalAlignment === 'bottom'
+      ? layout.displayEdgeDistance + layout.totalPreviewGroupHeight + layout.displaySpacing
+      : layout.displayEdgeDistance;
+    const offset = baseOffset + ((count - index - 1) * (layout.displaySize + layout.displaySpacing));
+    bottom = offset + 'px';
+  }
+  return { top, bottom };
+}
+
+function applyPreviewButtonBase(button, layout, settings, backgroundColor, position, iconColor) {
+  button.style.width = layout.size;
+  button.style.height = layout.size;
+  button.style.borderRadius = settings.buttonShape === 'square' ? '4px' : '50%';
+  button.style.backgroundColor = backgroundColor;
+  button.style.opacity = settings.opacity;
+  button.style.left = layout.leftPos;
+  button.style.right = layout.rightPos;
+  button.style.top = position.top;
+  button.style.bottom = position.bottom;
+  button.style.transform = 'none';
+  button.style.willChange = 'top, bottom, width, height';
+  button.style.color = iconColor;
+}
+
+function applyPreviewIconSize(button, iconSize) {
+  const icon = button ? button.querySelector('svg') : null;
+  if (!icon) return;
+  icon.style.width = iconSize;
+  icon.style.height = iconSize;
+  icon.style.display = 'block';
+}
+
+function applyPreviewDom(elements, settings, layout) {
+  const topButtonPosition = getMainPreviewButtonPosition(settings, layout, 0, layout.displaySize);
+  const previousScreenPosition = getMainPreviewButtonPosition(settings, layout, layout.previousScreenOffset, layout.displaySize);
+  const progressButtonPosition = getMainPreviewButtonPosition(settings, layout, layout.progressOffset, layout.displayProgressHeight);
+  const nextScreenPosition = getMainPreviewButtonPosition(settings, layout, layout.nextScreenOffset, layout.displaySize);
+  const bottomButtonPosition = getMainPreviewButtonPosition(settings, layout, layout.bottomButtonOffset, layout.displaySize);
+  const iconSize = Math.max(40, Math.min(70, layout.displaySize * 0.6)) + '%';
+
   requestAnimationFrame(() => {
-    // 设置顶部按钮样式 - 使用fixed定位
-    topButton.innerHTML = getIconSvg('top', iconSet);
-    topButton.style.width = size;
-    topButton.style.height = size;
-    topButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
-    topButton.style.backgroundColor = topButtonColor;
-    topButton.style.opacity = opacity;
-    topButton.style.left = leftPos;
-    topButton.style.right = rightPos;
-    topButton.style.top = topButtonPosition.top;
-    topButton.style.bottom = topButtonPosition.bottom;
-    // 移除transform，使用精确计算的位置避免弹跳
-    topButton.style.transform = 'none';
-    topButton.style.willChange = 'top, bottom, width, height';
-    topButton.style.color = iconColor;
+    elements.topButton.innerHTML = getIconSvg('top', settings.iconSet);
+    applyPreviewButtonBase(elements.topButton, layout, settings, settings.topButtonColor, topButtonPosition, settings.iconColor);
 
-    // 设置底部按钮样式 - 使用fixed定位
-    bottomButton.innerHTML = getIconSvg('bottom', iconSet);
-    bottomButton.style.width = size;
-    bottomButton.style.height = size;
-    bottomButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
-    bottomButton.style.backgroundColor = bottomButtonColor;
-    bottomButton.style.opacity = opacity;
-    bottomButton.style.left = leftPos;
-    bottomButton.style.right = rightPos;
-    bottomButton.style.top = bottomButtonPosition.top;
-    bottomButton.style.bottom = bottomButtonPosition.bottom;
-    // 移除transform，使用精确计算的位置避免弹跳
-    bottomButton.style.transform = 'none';
-    bottomButton.style.willChange = 'top, bottom, width, height';
-    bottomButton.style.color = iconColor;
-
-    // 计算图标大小（与实际页面一致）
-    const iconSize = Math.max(40, Math.min(70, displaySize * 0.6)) + '%';
+    elements.bottomButton.innerHTML = getIconSvg('bottom', settings.iconSet);
+    applyPreviewButtonBase(elements.bottomButton, layout, settings, settings.bottomButtonColor, bottomButtonPosition, settings.iconColor);
 
     [
       {
-        button: previousScreenButton,
+        button: elements.previousScreenButton,
         direction: 'previous',
-        color: previousScreenButtonColor,
+        color: settings.previousScreenButtonColor,
         position: previousScreenPosition
       },
       {
-        button: nextScreenButton,
+        button: elements.nextScreenButton,
         direction: 'next',
-        color: nextScreenButtonColor,
+        color: settings.nextScreenButtonColor,
         position: nextScreenPosition
       }
     ].forEach((screenButton) => {
       if (!screenButton.button) return;
       screenButton.button.innerHTML = getScreenNavigationIconSvg(screenButton.direction);
       screenButton.button.style.display = 'flex';
-      screenButton.button.style.width = size;
-      screenButton.button.style.height = size;
-      screenButton.button.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
+      screenButton.button.style.width = layout.size;
+      screenButton.button.style.height = layout.size;
+      screenButton.button.style.borderRadius = settings.buttonShape === 'square' ? '4px' : '50%';
       screenButton.button.style.backgroundColor = screenButton.color;
-      screenButton.button.style.opacity = opacity;
-      screenButton.button.style.left = leftPos;
-      screenButton.button.style.right = rightPos;
+      screenButton.button.style.opacity = settings.opacity;
+      screenButton.button.style.left = layout.leftPos;
+      screenButton.button.style.right = layout.rightPos;
       screenButton.button.style.top = screenButton.position.top;
       screenButton.button.style.bottom = screenButton.position.bottom;
       screenButton.button.style.transform = 'none';
       screenButton.button.style.color = '#FFFFFF';
-      const screenIcon = screenButton.button.querySelector('svg');
-      if (screenIcon) {
-        screenIcon.style.width = iconSize;
-        screenIcon.style.height = iconSize;
-        screenIcon.style.display = 'block';
-      }
+      applyPreviewIconSize(screenButton.button, iconSize);
     });
 
-    // 更新SVG图标样式 - 确保与实际页面完全一致
-    const topIcon = topButton.querySelector('svg');
-    const bottomIcon = bottomButton.querySelector('svg');
+    applyPreviewIconSize(elements.topButton, iconSize);
+    applyPreviewIconSize(elements.bottomButton, iconSize);
 
-    if (topIcon) {
-      topIcon.style.width = iconSize;
-      topIcon.style.height = iconSize;
-      topIcon.style.display = 'block';
-    }
+    if (elements.progressButton) {
+      elements.progressButton.classList.toggle('hidden', !layout.isVerticalProgressPreview);
+      elements.progressButton.style.display = layout.isVerticalProgressPreview ? 'flex' : 'none';
+      elements.progressButton.style.width = layout.size;
+      elements.progressButton.style.height = layout.displayProgressHeight + 'px';
+      elements.progressButton.style.borderRadius = settings.buttonShape === 'square' ? '4px' : '999px';
+      elements.progressButton.style.backgroundColor = settings.progressColor;
+      elements.progressButton.style.opacity = settings.opacity;
+      elements.progressButton.style.left = layout.leftPos;
+      elements.progressButton.style.right = layout.rightPos;
+      elements.progressButton.style.top = progressButtonPosition.top;
+      elements.progressButton.style.bottom = progressButtonPosition.bottom;
+      elements.progressButton.style.transform = 'none';
+      elements.progressButton.style.willChange = 'top, bottom, width, height';
+      elements.progressButton.style.color = settings.iconColor;
 
-    if (bottomIcon) {
-      bottomIcon.style.width = iconSize;
-      bottomIcon.style.height = iconSize;
-      bottomIcon.style.display = 'block';
-    }
-
-    if (progressButton) {
-      progressButton.classList.toggle('hidden', !isVerticalProgressPreview);
-      progressButton.style.display = isVerticalProgressPreview ? 'flex' : 'none';
-      progressButton.style.width = size;
-      progressButton.style.height = displayProgressHeight + 'px';
-      progressButton.style.borderRadius = buttonShape === 'square' ? '4px' : '999px';
-      progressButton.style.backgroundColor = progressColor;
-      progressButton.style.opacity = opacity;
-      progressButton.style.left = leftPos;
-      progressButton.style.right = rightPos;
-      progressButton.style.top = progressButtonPosition.top;
-      progressButton.style.bottom = progressButtonPosition.bottom;
-      progressButton.style.transform = 'none';
-      progressButton.style.willChange = 'top, bottom, width, height';
-      progressButton.style.color = iconColor;
-
-      const fill = progressButton.querySelector('.preview-progress-fill');
-      const label = progressButton.querySelector('.preview-progress-label');
+      const fill = elements.progressButton.querySelector('.preview-progress-fill');
+      const label = elements.progressButton.querySelector('.preview-progress-label');
       if (fill) {
         fill.style.height = (PREVIEW_PROGRESS_RATIO * 100) + '%';
-        fill.style.backgroundColor = getProgressFillColor(progressColor);
+        fill.style.backgroundColor = getProgressFillColor(settings.progressColor);
       }
       if (label) {
-        label.textContent = showProgressPercentage ? `${Math.round(PREVIEW_PROGRESS_RATIO * 100)}%` : '';
-        label.style.display = showProgressPercentage ? 'block' : 'none';
-        label.style.color = iconColor;
+        label.textContent = settings.showProgressPercentage ? `${Math.round(PREVIEW_PROGRESS_RATIO * 100)}%` : '';
+        label.style.display = settings.showProgressPercentage ? 'block' : 'none';
+        label.style.color = settings.iconColor;
       }
     }
 
-    const standaloneTopFeatures = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageTop');
-    const standaloneBottomFeatures = featureButtons.filter((feature) => feature.enabled && feature.position === 'pageBottom');
+    const standaloneTopFeatures = settings.featureButtons.filter((feature) => feature.enabled && feature.position === 'pageTop');
+    const standaloneBottomFeatures = settings.featureButtons.filter((feature) => feature.enabled && feature.position === 'pageBottom');
     let middleIndex = 0;
 
-    featureButtons.forEach((feature) => {
+    settings.featureButtons.forEach((feature) => {
       const featureButton = feature.button;
       if (!featureButton) return;
       featureButton.classList.toggle('hidden', !feature.enabled);
       featureButton.innerHTML = feature.icon;
       featureButton.style.display = feature.enabled ? 'flex' : 'none';
-      featureButton.style.width = size;
-      featureButton.style.height = size;
-      featureButton.style.borderRadius = buttonShape === 'square' ? '4px' : '50%';
+      featureButton.style.width = layout.size;
+      featureButton.style.height = layout.size;
+      featureButton.style.borderRadius = settings.buttonShape === 'square' ? '4px' : '50%';
       featureButton.style.backgroundColor = feature.color;
-      featureButton.style.opacity = opacity;
-      featureButton.style.left = leftPos;
-      featureButton.style.right = rightPos;
+      featureButton.style.opacity = settings.opacity;
+      featureButton.style.left = layout.leftPos;
+      featureButton.style.right = layout.rightPos;
 
       let position;
       if (feature.position === 'pageMiddle') {
-        position = getMiddleFeaturePosition(middleIndex);
+        position = getMiddleFeaturePreviewPosition(settings, layout, middleIndex);
         middleIndex += 1;
       } else if (feature.position === 'pageTop') {
-        position = getStandaloneFeaturePosition(
+        position = getStandaloneFeaturePreviewPosition(
+          settings,
+          layout,
           feature.position,
           standaloneTopFeatures.indexOf(feature),
           standaloneTopFeatures.length
         );
       } else {
-        position = getStandaloneFeaturePosition(
+        position = getStandaloneFeaturePreviewPosition(
+          settings,
+          layout,
           feature.position,
           standaloneBottomFeatures.indexOf(feature),
           standaloneBottomFeatures.length
@@ -4339,40 +4394,36 @@ function updatePreviewButtons() {
       featureButton.style.bottom = position.bottom;
       featureButton.style.transform = 'none';
       featureButton.style.willChange = 'top, bottom, width, height';
-      featureButton.style.color = iconColor;
-      const featureIcon = featureButton.querySelector('svg');
-      if (featureIcon) {
-        const featureIconSize = feature.button === autoScrollButton ? AUTO_SCROLL_ICON_SIZE : iconSize;
-        featureIcon.style.width = featureIconSize;
-        featureIcon.style.height = featureIconSize;
-        featureIcon.style.display = 'block';
-      }
+      featureButton.style.color = settings.iconColor;
+      const featureIconSize = feature.button === elements.autoScrollButton ? AUTO_SCROLL_ICON_SIZE : iconSize;
+      applyPreviewIconSize(featureButton, featureIconSize);
     });
 
-    if (horizontalProgress) {
-      horizontalProgress.classList.toggle('hidden', !isHorizontalProgressPreview);
-      horizontalProgress.classList.toggle('is-bottom', progressHorizontalPosition === 'bottom');
-      horizontalProgress.style.display = isHorizontalProgressPreview ? 'block' : 'none';
-      horizontalProgress.style.top = progressHorizontalPosition === 'bottom' ? 'auto' : '0';
-      horizontalProgress.style.bottom = progressHorizontalPosition === 'bottom' ? '0' : 'auto';
-      horizontalProgress.style.height = progressThickness + 'px';
-      horizontalProgress.style.backgroundColor = progressColor;
+    if (elements.horizontalProgress) {
+      elements.horizontalProgress.classList.toggle('hidden', !layout.isHorizontalProgressPreview);
+      elements.horizontalProgress.classList.toggle('is-bottom', settings.progressHorizontalPosition === 'bottom');
+      elements.horizontalProgress.style.display = layout.isHorizontalProgressPreview ? 'block' : 'none';
+      elements.horizontalProgress.style.top = settings.progressHorizontalPosition === 'bottom' ? 'auto' : '0';
+      elements.horizontalProgress.style.bottom = settings.progressHorizontalPosition === 'bottom' ? '0' : 'auto';
+      elements.horizontalProgress.style.height = settings.progressThickness + 'px';
+      elements.horizontalProgress.style.backgroundColor = settings.progressColor;
 
-      const fill = horizontalProgress.querySelector('.preview-horizontal-progress-fill');
-      const label = horizontalProgress.querySelector('.preview-horizontal-progress-label');
+      const fill = elements.horizontalProgress.querySelector('.preview-horizontal-progress-fill');
+      const label = elements.horizontalProgress.querySelector('.preview-horizontal-progress-label');
       if (fill) {
         fill.style.width = (PREVIEW_PROGRESS_RATIO * 100) + '%';
-        fill.style.backgroundColor = getProgressFillColor(progressColor);
+        fill.style.backgroundColor = getProgressFillColor(settings.progressColor);
       }
       if (label) {
         label.textContent = `${Math.round(PREVIEW_PROGRESS_RATIO * 100)}%`;
-        label.style.display = showProgressPercentage ? 'block' : 'none';
-        label.style.color = iconColor;
+        label.style.display = settings.showProgressPercentage ? 'block' : 'none';
+        label.style.color = settings.iconColor;
       }
     }
   });
+}
 
-  // 更新悬停效果颜色
+function updatePreviewHoverStyles(settings) {
   const styleElement = document.getElementById('preview-button-styles');
   if (styleElement) {
     styleElement.remove();
@@ -4382,36 +4433,36 @@ function updatePreviewButtons() {
   newStyle.id = 'preview-button-styles';
   newStyle.textContent = `
     #previewTopButton:hover {
-      background-color: ${adjustColorBrightness(topButtonColor, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.topButtonColor, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewTopButton:active {
       transform: scale(0.95) !important;
     }
     #previewBottomButton:hover {
-      background-color: ${adjustColorBrightness(bottomButtonColor, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.bottomButtonColor, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewBottomButton:active {
       transform: scale(0.95) !important;
     }
     #previewPreviousScreenButton:hover {
-      background-color: ${adjustColorBrightness(previousScreenButtonColor, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.previousScreenButtonColor, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewNextScreenButton:hover {
-      background-color: ${adjustColorBrightness(nextScreenButtonColor, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.nextScreenButtonColor, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewBookmarkButton:hover {
-      background-color: ${adjustColorBrightness(featureButtons[0].color, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.featureButtons[0].color, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewBookmarkButton:active {
       transform: scale(0.95) !important;
     }
     #previewOutlineButton:hover {
-      background-color: ${adjustColorBrightness(featureButtons[1].color, -10)} !important;
+      background-color: ${adjustColorBrightness(settings.featureButtons[1].color, -10)} !important;
       transform: scale(1.1) !important;
     }
     #previewOutlineButton:active {
@@ -4419,6 +4470,17 @@ function updatePreviewButtons() {
     }
   `;
   document.head.appendChild(newStyle);
+}
+
+// 更新预览按钮样式和位置 - 预览按钮直接显示在设置页面上
+function updatePreviewButtons() {
+  const elements = getPreviewElements();
+  if (!elements.topButton || !elements.bottomButton) return;
+
+  const settings = getPreviewSettings(elements);
+  const layout = getPreviewLayout(settings);
+  applyPreviewDom(elements, settings, layout);
+  updatePreviewHoverStyles(settings);
 }
 
 // 预览按钮点击事件处理
@@ -4724,6 +4786,7 @@ function parseHostnameInput(value) {
 function saveDomainFeatureStates(nextStates, callback) {
   domainFeatureStates = domainUtils.normalizeStates(nextStates, domainFeatureDefaults);
   chrome.storage.local.set({ [DOMAIN_STORAGE_KEYS.states]: domainFeatureStates }, () => {
+    if (logChromeStorageError('storage.local.set domain feature states')) return;
     renderDomainFeatureStatesList();
     if (callback) callback();
   });
@@ -4731,6 +4794,7 @@ function saveDomainFeatureStates(nextStates, callback) {
 
 function saveDomainFeatureState(domainKey, updater, callback) {
   chrome.storage.local.get([DOMAIN_STORAGE_KEYS.states], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get domain feature states');
     const latestStates = domainUtils.normalizeStates(
       result[DOMAIN_STORAGE_KEYS.states],
       domainFeatureDefaults
@@ -4983,12 +5047,14 @@ function renderDomainFeatureStatesList() {
 
 function loadDomainFeatureStates() {
   chrome.storage.sync.get(['advancedSettings'], (syncResult) => {
+    syncResult = getSafeStorageResult(syncResult, 'storage.sync.get domain feature migration');
     chrome.storage.local.get([
       DOMAIN_STORAGE_KEYS.states,
       DOMAIN_STORAGE_KEYS.defaults,
       DOMAIN_STORAGE_KEYS.migrationVersion,
       DOMAIN_STORAGE_KEYS.legacyStates
     ], (localResult) => {
+      localResult = getSafeStorageResult(localResult, 'storage.local.get domain feature migration');
       const migration = domainUtils.migrateStorage(localResult, syncResult.advancedSettings);
       domainFeatureStates = migration.states;
       domainFeatureDefaults = migration.defaults;
@@ -4997,7 +5063,10 @@ function loadDomainFeatureStates() {
         finish();
         return;
       }
-      chrome.storage.local.set(domainUtils.toStorageData(migration), finish);
+      chrome.storage.local.set(domainUtils.toStorageData(migration), () => {
+        logChromeStorageError('storage.local.set domain feature migration');
+        finish();
+      });
     });
   });
 }
@@ -5025,6 +5094,7 @@ function openSavedBookmark(key, bookmark) {
       requestedAt: Date.now()
     }
   }, () => {
+    if (logChromeStorageError('storage.local.set pending bookmark restore')) return;
     recordAnalyticsAction('bookmarkRestoreClicks');
     chrome.tabs.create({ url });
   });
@@ -5096,6 +5166,7 @@ function renderSavedBookmarksList() {
 
 function loadSavedBookmarks() {
   chrome.storage.local.get(['bookmarks'], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get saved bookmarks');
     savedBookmarks = normalizeBookmarks(result.bookmarks);
     renderSavedBookmarksList();
   });
@@ -5105,6 +5176,7 @@ function removeSavedBookmark(key) {
   const nextBookmarks = { ...savedBookmarks };
   delete nextBookmarks[key];
   chrome.storage.local.set({ bookmarks: nextBookmarks }, () => {
+    if (logChromeStorageError('storage.local.set saved bookmarks')) return;
     savedBookmarks = nextBookmarks;
     renderSavedBookmarksList();
   });
@@ -5142,7 +5214,9 @@ function persistAdvancedModuleState(moduleKey, open) {
   advancedModuleCollapseState[moduleKey] = open === true;
   chrome.storage.local.set({
     [ADVANCED_MODULE_COLLAPSE_KEY]: advancedModuleCollapseState
-  }, () => {});
+  }, () => {
+    logChromeStorageError('storage.local.set advanced module state');
+  });
 }
 
 function applyAdvancedModuleCollapseState() {
@@ -5188,6 +5262,7 @@ function openTargetAdvancedModuleFromLocation() {
 
 function loadAdvancedModuleCollapseState() {
   chrome.storage.local.get([ADVANCED_MODULE_COLLAPSE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get advanced module state');
     advancedModuleCollapseState = normalizeAdvancedModuleCollapseState(
       result[ADVANCED_MODULE_COLLAPSE_KEY]
     );
@@ -5227,18 +5302,21 @@ function setOnboardingVisible(visible) {
 
 function loadOnboardingState() {
   chrome.storage.local.get([ONBOARDING_VISIBLE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get onboarding state');
     setOnboardingVisible(result[ONBOARDING_VISIBLE_KEY] === true);
   });
 }
 
 function dismissOnboarding() {
   chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: false }, () => {
+    logChromeStorageError('storage.local.set onboarding dismissed');
     setOnboardingVisible(false);
   });
 }
 
 function reopenOnboarding() {
   chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: true }, () => {
+    logChromeStorageError('storage.local.set onboarding visible');
     setOnboardingVisible(true);
     activateTab('basic');
     document.getElementById('onboardingGuide')?.scrollIntoView({
@@ -5677,6 +5755,7 @@ function updateRangeFills() {
 // 加载保存的设置
 function loadSettings() {
   chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
+    result = getSafeStorageResult(result, 'storage.sync.get settings');
     if (result.scrollSpeed) {
       document.getElementById('scrollSpeed').value = result.scrollSpeed;
       document.getElementById('speedValue').textContent = result.scrollSpeed + 'ms';
@@ -5759,6 +5838,11 @@ function confirmResetDefaults() {
 
 function persistResetDefaults(nextSettings) {
   chrome.storage.sync.set(nextSettings, () => {
+    if (logChromeStorageError('storage.sync.set reset defaults')) {
+      showSaveButtonFeedback('settings.saveError', 'Save failed. Please try again.', '#D93025');
+      return;
+    }
+
     const scrollSpeed = Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed')
       ? nextSettings.scrollSpeed
       : parseInt(document.getElementById('scrollSpeed').value);
@@ -5800,6 +5884,7 @@ function persistResetDefaults(nextSettings) {
 function resetBasicDefaults() {
   if (!confirmResetDefaults()) return;
   chrome.storage.sync.get(['advancedSettings'], (result) => {
+    result = getSafeStorageResult(result, 'storage.sync.get reset basic defaults');
     const advancedSettings = domainUtils.stripLegacyEnabled(mergeAdvancedSettings(result.advancedSettings));
     const defaultAdvancedSettings = getDefaultAdvancedSettingsForSync();
     advancedSettings.iconCustomization = clonePlainObject(defaultAdvancedSettings.iconCustomization);
@@ -5814,6 +5899,7 @@ function resetBasicDefaults() {
 function resetAdvancedModuleDefaults(moduleKey) {
   if (!ADVANCED_MODULES.includes(moduleKey) || !confirmResetDefaults()) return;
   chrome.storage.sync.get(['advancedSettings'], (result) => {
+    result = getSafeStorageResult(result, 'storage.sync.get reset advanced defaults');
     const advancedSettings = domainUtils.stripLegacyEnabled(mergeAdvancedSettings(result.advancedSettings));
     const defaultAdvancedSettings = getDefaultAdvancedSettingsForSync();
     advancedSettings[moduleKey] = clonePlainObject(defaultAdvancedSettings[moduleKey]);
@@ -5854,6 +5940,26 @@ function setupResetDefaults() {
   });
 }
 
+function showSaveButtonFeedback(messageKey, fallback, color) {
+  const saveButton = document.getElementById('saveButton');
+  if (!saveButton) return;
+  const originalText = saveButton.textContent;
+  const originalColor = saveButton.style.backgroundColor || '';
+
+  getCurrentLanguage().then(lang => {
+    const feedbackText = translations[lang] && translations[lang][messageKey] ||
+      translations['en-US'][messageKey] ||
+      fallback;
+    saveButton.textContent = feedbackText;
+    saveButton.style.backgroundColor = color;
+
+    setTimeout(() => {
+      saveButton.textContent = originalText;
+      saveButton.style.backgroundColor = originalColor;
+    }, 1500);
+  });
+}
+
 
 // 保存设置
 function saveSettings() {
@@ -5864,32 +5970,55 @@ function saveSettings() {
 
   // 验证按钮尺寸 - 由于实时输入限制，这里可以简化验证
   if (isNaN(buttonSize) || buttonSize < 10 || buttonSize > 120) {
-    return;
+    return setValidationError(
+      'sizeError',
+      'settings.sizeError',
+      'Button size must be between 10px and 120px',
+      'buttonSize'
+    );
   }
 
   // 验证按钮间距
   if (isNaN(buttonSpacing) || buttonSpacing < 0 || buttonSpacing > 800) {
-    return;
+    return setValidationError(
+      'spacingError',
+      'settings.spacingError',
+      'Button spacing must be between 0px and 800px',
+      'buttonSpacing'
+    );
   }
 
   // 验证边缘距离
   if (isNaN(edgeDistance) || edgeDistance < 0 || edgeDistance > 200) {
-    return;
-  }
-
-  // 颜色验证函数
-  function validateHexColor(color) {
-    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    return hexRegex.test(color) ? color : '#4A9EDD';
+    return setValidationError(
+      'edgeDistanceError',
+      'settings.edgeDistanceError',
+      'Distance from edge must be between 0px and 200px',
+      'edgeDistance'
+    );
   }
 
   const verticalHeight = parseInt(document.getElementById('progressVerticalHeight').value);
   if (isNaN(verticalHeight) || verticalHeight < 40 || verticalHeight > 400) {
-    return;
+    return setValidationError(
+      'progressVerticalHeightError',
+      'settings.progressVerticalHeightError',
+      'Vertical height must be between 40px and 400px',
+      'progressVerticalHeight'
+    );
   }
   if (!validateOutlineMaxItemsInput()) {
-    return;
+    const outlineInput = document.getElementById('outlineMaxItems');
+    if (outlineInput && typeof outlineInput.focus === 'function') {
+      outlineInput.focus();
+    }
+    return false;
   }
+
+  clearValidationError('sizeError');
+  clearValidationError('spacingError');
+  clearValidationError('edgeDistanceError');
+  clearValidationError('progressVerticalHeightError');
 
   const buttonSettings = {
     showButton: true, // 始终显示按钮
@@ -5900,8 +6029,8 @@ function saveSettings() {
     buttonShape: document.getElementById('buttonShape').value,
     buttonSpacing: buttonSpacing,
     edgeDistance: edgeDistance,
-    topButtonColor: validateHexColor(document.getElementById('topButtonColor').value),
-    bottomButtonColor: validateHexColor(document.getElementById('bottomButtonColor').value),
+    topButtonColor: validateHexColor(document.getElementById('topButtonColor').value, '#4A9EDD'),
+    bottomButtonColor: validateHexColor(document.getElementById('bottomButtonColor').value, '#4A9EDD'),
     opacity: parseInt(document.getElementById('opacity').value),
     enableHoverHide: document.getElementById('enableHoverHide').checked,
     hoverHideKey: document.getElementById('hoverHideKey').value
@@ -5910,25 +6039,16 @@ function saveSettings() {
   const advancedSettings = domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls());
 
   chrome.storage.sync.set({scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, advancedSettings: advancedSettings, language: language}, () => {
+    if (logChromeStorageError('storage.sync.set settings')) {
+      showSaveButtonFeedback('settings.saveError', 'Save failed. Please try again.', '#D93025');
+      return;
+    }
+
     recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, () => {
       refreshAnalyticsState();
     });
 
-    // 显示保存成功提示
-    const saveButton = document.getElementById('saveButton');
-    const originalText = saveButton.textContent;
-
-    getCurrentLanguage().then(lang => {
-      const successText = translations[lang] && translations[lang]['settings.saveSuccess'] || 'Saved successfully!';
-      saveButton.textContent = successText;
-      saveButton.style.backgroundColor = '#4CAF50';
-
-      setTimeout(() => {
-        saveButton.textContent = originalText;
-        saveButton.style.backgroundColor = '';
-      }, 1500);
-    });
-
+    showSaveButtonFeedback('settings.saveSuccess', 'Saved successfully!', '#4CAF50');
     notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
   });
 }
@@ -5996,7 +6116,23 @@ function init() {
   document.getElementById('progressBarMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressHorizontalPosition').addEventListener('change', updatePreviewButtons);
   document.getElementById('progressThickness').addEventListener('change', updatePreviewButtons);
-  document.getElementById('progressVerticalHeight').addEventListener('input', updatePreviewButtons);
+  document.getElementById('progressVerticalHeight').addEventListener('input', (event) => {
+    updatePreviewButtons();
+    const value = event.target.value;
+    const numberValue = Number(value);
+    if (value === '') {
+      clearValidationError('progressVerticalHeightError');
+    } else if (!Number.isFinite(numberValue) || numberValue < 40 || numberValue > 400) {
+      setValidationError(
+        'progressVerticalHeightError',
+        'settings.progressVerticalHeightError',
+        'Vertical height must be between 40px and 400px',
+        'progressVerticalHeight'
+      );
+    } else {
+      clearValidationError('progressVerticalHeightError');
+    }
+  });
   document.getElementById('progressColorMode').addEventListener('change', updateAdvancedPreviewControls);
   document.getElementById('progressShowPercentage').addEventListener('change', updatePreviewButtons);
   document.getElementById('scrollBookmarkButtonPosition').addEventListener('change', updatePreviewButtons);

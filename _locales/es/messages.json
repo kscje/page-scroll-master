@@ -23,10 +23,22 @@
     "message": "Ir al final",
     "description": "Floating button tooltip"
   },
-  "previousScreen": { "message": "Pantalla anterior", "description": "Previous screen button tooltip" },
-  "nextScreen": { "message": "Pantalla siguiente", "description": "Next screen button tooltip" },
-  "autoScrollPlay": { "message": "Iniciar desplazamiento automático", "description": "Auto scroll play button tooltip" },
-  "autoScrollPause": { "message": "Pausar desplazamiento automático", "description": "Auto scroll pause button tooltip" },
+  "previousScreen": {
+    "message": "Pantalla anterior",
+    "description": "Previous screen button tooltip"
+  },
+  "nextScreen": {
+    "message": "Pantalla siguiente",
+    "description": "Next screen button tooltip"
+  },
+  "autoScrollPlay": {
+    "message": "Iniciar desplazamiento automático",
+    "description": "Auto scroll play button tooltip"
+  },
+  "autoScrollPause": {
+    "message": "Pausar desplazamiento automático",
+    "description": "Auto scroll pause button tooltip"
+  },
   "popupSettings": {
     "message": "Configuracion",
     "description": "Popup settings button label"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "La distancia al borde debe estar entre 0px y 200px",
     "description": "Edge distance input error message"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Marcadores de posición de desplazamiento"
+  },
+  "outlineToolTitle": {
+    "message": "Navegación por secciones"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Guardar posición actual"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Guardar posición actual ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Cargar posición guardada"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Cargar posición guardada ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Índice de la página"
+  },
+  "outlineNoHeadings": {
+    "message": "No se detectaron títulos para saltar"
+  },
+  "outlinePreviousSection": {
+    "message": "Sección anterior"
+  },
+  "outlineNextSection": {
+    "message": "Sección siguiente"
+  },
+  "outlinePinMenu": {
+    "message": "Fijar índice"
+  },
+  "outlineUnpinMenu": {
+    "message": "Desfijar índice"
+  },
+  "outlineCloseMenu": {
+    "message": "Cerrar índice"
+  },
+  "outlineLoadMore": {
+    "message": "Cargar más (quedan $1)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "No se puede guardar una posición en esta página"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "Esta página aún no tiene una posición de lectura para guardar"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Posición actualizada a $1% (antes $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Posición actual guardada $1%"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "No hay posición guardada disponible en esta página"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "La posición guardada no se puede cargar ahora"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "¿Continuar desde aproximadamente $1%?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Continuar"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Ignorar"
   }
 }

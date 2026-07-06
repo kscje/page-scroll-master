@@ -9,7 +9,8 @@ class FakeElement {
     this.tagName = tagName.toUpperCase();
     this.scrollHeight = options.scrollHeight || 0;
     this.clientHeight = options.clientHeight || 0;
-    this.scrollTop = options.scrollTop || 0;
+    this._scrollTop = options.scrollTop || 0;
+    this.scrollTopWriteCount = 0;
     this.parentElement = options.parentElement || null;
     this.children = [];
     this.style = {};
@@ -18,6 +19,16 @@ class FakeElement {
     this.overflowY = options.overflowY || 'visible';
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
     this.dispatchedEvents = [];
+    Object.defineProperty(this, 'scrollTop', {
+      get() {
+        return this._scrollTop;
+      },
+      set(value) {
+        this.scrollTopWriteCount += 1;
+        this._scrollTop = value;
+      },
+      configurable: true
+    });
   }
 
   appendChild(child) {
@@ -309,6 +320,30 @@ function testMainContainerWinsOverHiddenProgrammaticDialog() {
   assert(sandbox.findScrollContainer() === main, 'main content should beat a hidden programmatic dialog viewport');
 }
 
+function testLowerScoredHiddenCandidatesAreNotProbedWhenMainWins() {
+  const main = new FakeElement('main', {
+    scrollHeight: 2800,
+    clientHeight: 820,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 60, right: 1200, bottom: 900, width: 1200, height: 840 }
+  });
+  const hiddenDialogs = Array.from({ length: 24 }, () => new FakeElement('div', {
+    scrollHeight: 5200,
+    clientHeight: 360,
+    overflowY: 'hidden',
+    attributes: { role: 'dialog' },
+    rect: { left: 360, top: 180, right: 840, bottom: 540, width: 480, height: 360 }
+  }));
+  const sandbox = createContext([main, ...hiddenDialogs]);
+
+  assert(sandbox.findScrollContainer() === main, 'main content still wins over hidden dialog candidates');
+  assert(
+    hiddenDialogs.every((element) => element.scrollTopWriteCount === 0),
+    'lower-scored hidden candidates are not probed with scrollTop writes'
+  );
+}
+
 function testHiddenProgrammaticEdgePanelDoesNotBecomePrimaryContainer() {
   const edgePanel = new FakeElement('div', {
     scrollHeight: 9200,
@@ -477,6 +512,7 @@ testRouteChangeRetainsPreviousMainUntilNewMainAppears();
 testMainContainerWinsOverDialogPanel();
 testProgrammaticHiddenViewportCanBePrimaryContainer();
 testMainContainerWinsOverHiddenProgrammaticDialog();
+testLowerScoredHiddenCandidatesAreNotProbedWhenMainWins();
 testHiddenProgrammaticEdgePanelDoesNotBecomePrimaryContainer();
 testHiddenNonProgrammableViewportIsIgnored();
 testPageStrategyForcesRootScrollContainer();

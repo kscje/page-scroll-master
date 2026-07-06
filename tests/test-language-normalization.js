@@ -244,18 +244,27 @@ expectedOptionLanguages.forEach((lang) => {
   );
 });
 
-assert(optionsContext.__releaseNotes[0].version === '2.5.2', 'release notes are ordered newest first');
+assert(optionsContext.__releaseNotes[0].version === '2.5.3', 'release notes are ordered newest first');
 assert(
   optionsContext.__releaseNotes[optionsContext.__releaseNotes.length - 1].version === '1.8.0',
   'release notes start at v1.8'
 );
 
-const expectedLocaleDirs = ['de', 'fr', 'pt_BR', 'zh_TW', 'ko', 'it', 'ru', 'tr', 'id'];
-const englishLocale = JSON.parse(fs.readFileSync(path.join(ROOT, '_locales', 'en', 'messages.json'), 'utf8'));
+const localeRoot = path.join(ROOT, '_locales');
+const expectedLocaleDirCount = expectedOptionLanguages.length;
+const localeDirs = fs.readdirSync(localeRoot)
+  .filter((dir) => fs.existsSync(path.join(localeRoot, dir, 'messages.json')))
+  .sort();
+assert(
+  localeDirs.length === expectedLocaleDirCount,
+  `_locales contains ${expectedLocaleDirCount} message dirs`
+);
+assert(localeDirs.includes('en'), 'English locale file exists');
+const englishLocale = JSON.parse(fs.readFileSync(path.join(localeRoot, 'en', 'messages.json'), 'utf8'));
 const englishKeys = Object.keys(englishLocale).sort();
 
-expectedLocaleDirs.forEach((localeDir) => {
-  const localePath = path.join(ROOT, '_locales', localeDir, 'messages.json');
+localeDirs.filter((dir) => dir !== 'en').forEach((localeDir) => {
+  const localePath = path.join(localeRoot, localeDir, 'messages.json');
   assert(fs.existsSync(localePath), `${localeDir} locale file exists`);
   const locale = JSON.parse(fs.readFileSync(localePath, 'utf8'));
   const localeKeys = Object.keys(locale).sort();

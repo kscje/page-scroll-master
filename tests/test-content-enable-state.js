@@ -40,7 +40,7 @@ function createContext() {
     },
     chrome: {
       i18n: { getMessage: key => key },
-      runtime: { onMessage: { addListener() {} } },
+      runtime: { lastError: null, onMessage: { addListener() {} } },
       storage: {
         sync: {
           get(keys, callback) {
@@ -81,11 +81,15 @@ function createContext() {
 
   return {
     sandbox,
-    runSyncGet(result = {}) {
+    runSyncGet(result = {}, lastError = null) {
+      sandbox.chrome.runtime.lastError = lastError;
       syncGetCallback(result);
+      sandbox.chrome.runtime.lastError = null;
     },
-    runLocalGet(result) {
+    runLocalGet(result, lastError = null) {
+      sandbox.chrome.runtime.lastError = lastError;
       localGetCallback(result);
+      sandbox.chrome.runtime.lastError = null;
     },
     dispatchWindowLoad() {
       windowListeners.load();
@@ -438,6 +442,13 @@ defaultContext.runLocalGet({
 const defaultState = defaultContext.getState();
 assert(defaultState.isExtensionEnabled === true, 'an unrecorded domain remains enabled by default');
 assert(defaultContext.initializeCalls === 1, 'an unrecorded domain initializes the extension');
+
+const storageErrorContext = createContext();
+storageErrorContext.runSyncGet(undefined, { message: 'sync storage unavailable' });
+storageErrorContext.runLocalGet(undefined, { message: 'local storage unavailable' });
+const storageErrorState = storageErrorContext.getState();
+assert(storageErrorState.isExtensionEnabled === true, 'storage get failures fall back to the default enabled state');
+assert(storageErrorContext.initializeCalls === 1, 'storage get failures do not block extension initialization');
 
 const lifecycle = createLifecycleContext();
 const baselineDocumentListeners = lifecycle.documentEvents.total();

@@ -40,5 +40,74 @@
   },
   "settingsEdgeDistanceError": {
     "message": "Отступ от края должен быть от 0px до 200px"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Закладки позиции прокрутки"
+  },
+  "outlineToolTitle": {
+    "message": "Навигация по разделам"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Сохранить текущую позицию"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Сохранить текущую позицию ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Загрузить сохраненную позицию"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Загрузить сохраненную позицию ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Оглавление страницы"
+  },
+  "outlineNoHeadings": {
+    "message": "Подходящие заголовки не найдены"
+  },
+  "outlinePreviousSection": {
+    "message": "Предыдущий раздел"
+  },
+  "outlineNextSection": {
+    "message": "Следующий раздел"
+  },
+  "outlinePinMenu": {
+    "message": "Закрепить оглавление"
+  },
+  "outlineUnpinMenu": {
+    "message": "Открепить оглавление"
+  },
+  "outlineCloseMenu": {
+    "message": "Закрыть оглавление"
+  },
+  "outlineLoadMore": {
+    "message": "Загрузить еще (осталось $1)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "На этой странице нельзя сохранить позицию"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "На этой странице пока нет позиции чтения для сохранения"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Позиция обновлена до $1% (было $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Текущая позиция $1% сохранена"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "На этой странице нет сохраненной позиции"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "Сохраненную позицию сейчас нельзя загрузить"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "Продолжить примерно с $1%?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Продолжить"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Игнорировать"
   }
 }

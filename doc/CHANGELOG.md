@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.5.2] - 2026-07-05
+## [2.5.3] - 2026-07-06
 
 ### Changed
 - ✅ 优化性能
@@ -254,7 +254,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
-[2.5.2]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.2
+[2.5.3]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.3
 [2.5.1]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.1
 [2.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.0
 [2.4.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.4.0

@@ -23,10 +23,22 @@
     "message": "末尾へスクロール",
     "description": "Floating button tooltip"
   },
-  "previousScreen": { "message": "前の画面", "description": "Previous screen button tooltip" },
-  "nextScreen": { "message": "次の画面", "description": "Next screen button tooltip" },
-  "autoScrollPlay": { "message": "自動スクロールを開始", "description": "Auto scroll play button tooltip" },
-  "autoScrollPause": { "message": "自動スクロールを一時停止", "description": "Auto scroll pause button tooltip" },
+  "previousScreen": {
+    "message": "前の画面",
+    "description": "Previous screen button tooltip"
+  },
+  "nextScreen": {
+    "message": "次の画面",
+    "description": "Next screen button tooltip"
+  },
+  "autoScrollPlay": {
+    "message": "自動スクロールを開始",
+    "description": "Auto scroll play button tooltip"
+  },
+  "autoScrollPause": {
+    "message": "自動スクロールを一時停止",
+    "description": "Auto scroll pause button tooltip"
+  },
   "popupSettings": {
     "message": "設定",
     "description": "Popup settings button label"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "端からの距離は0pxから200pxの範囲で指定してください",
     "description": "Edge distance input error message"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "スクロール位置ブックマーク"
+  },
+  "outlineToolTitle": {
+    "message": "セクション移動"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "現在位置を保存"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "現在位置を保存（$1%）"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "保存位置を読み込む"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "保存位置を読み込む（$1%）"
+  },
+  "outlineMenuHeading": {
+    "message": "ページ目次"
+  },
+  "outlineNoHeadings": {
+    "message": "移動できる見出しが見つかりません"
+  },
+  "outlinePreviousSection": {
+    "message": "前のセクション"
+  },
+  "outlineNextSection": {
+    "message": "次のセクション"
+  },
+  "outlinePinMenu": {
+    "message": "目次を固定"
+  },
+  "outlineUnpinMenu": {
+    "message": "目次の固定を解除"
+  },
+  "outlineCloseMenu": {
+    "message": "目次を閉じる"
+  },
+  "outlineLoadMore": {
+    "message": "さらに読み込む（残り $1 件）"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "このページでは位置を保存できません"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "このページにはまだ保存できる読書位置がありません"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "位置を $1% に更新しました（以前 $2%）"
+  },
+  "scrollBookmarkSaved": {
+    "message": "現在位置 $1% を保存しました"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "このページに読み込める保存位置はありません"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "保存位置を今は読み込めません"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "約 $1% の位置から続けますか？"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "続ける"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "無視"
   }
 }

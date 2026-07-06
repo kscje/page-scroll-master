@@ -23,10 +23,22 @@
     "message": "하단으로 스크롤",
     "description": "Floating button tooltip"
   },
-  "previousScreen": { "message": "이전 화면", "description": "Previous screen button tooltip" },
-  "nextScreen": { "message": "다음 화면", "description": "Next screen button tooltip" },
-  "autoScrollPlay": { "message": "자동 스크롤 시작", "description": "Auto scroll play button tooltip" },
-  "autoScrollPause": { "message": "자동 스크롤 일시 정지", "description": "Auto scroll pause button tooltip" },
+  "previousScreen": {
+    "message": "이전 화면",
+    "description": "Previous screen button tooltip"
+  },
+  "nextScreen": {
+    "message": "다음 화면",
+    "description": "Next screen button tooltip"
+  },
+  "autoScrollPlay": {
+    "message": "자동 스크롤 시작",
+    "description": "Auto scroll play button tooltip"
+  },
+  "autoScrollPause": {
+    "message": "자동 스크롤 일시 정지",
+    "description": "Auto scroll pause button tooltip"
+  },
   "popupSettings": {
     "message": "설정",
     "description": "Popup settings button label"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "가장자리 거리는 0px에서 200px 사이여야 합니다",
     "description": "Edge distance input error message"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "스크롤 위치 북마크"
+  },
+  "outlineToolTitle": {
+    "message": "섹션 이동"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "현재 위치 저장"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "현재 위치 저장($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "저장된 위치 불러오기"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "저장된 위치 불러오기($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "페이지 목차"
+  },
+  "outlineNoHeadings": {
+    "message": "이동할 수 있는 제목을 찾지 못했습니다"
+  },
+  "outlinePreviousSection": {
+    "message": "이전 섹션"
+  },
+  "outlineNextSection": {
+    "message": "다음 섹션"
+  },
+  "outlinePinMenu": {
+    "message": "목차 고정"
+  },
+  "outlineUnpinMenu": {
+    "message": "목차 고정 해제"
+  },
+  "outlineCloseMenu": {
+    "message": "목차 닫기"
+  },
+  "outlineLoadMore": {
+    "message": "더 불러오기($1개 남음)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "이 페이지에서는 위치를 저장할 수 없습니다"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "이 페이지에는 아직 저장할 읽기 위치가 없습니다"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "위치를 $1%로 업데이트했습니다(이전 $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "현재 위치 $1% 저장됨"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "이 페이지에 불러올 저장 위치가 없습니다"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "지금은 저장 위치를 불러올 수 없습니다"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "약 $1% 지점부터 계속할까요?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "계속"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "무시"
   }
 }

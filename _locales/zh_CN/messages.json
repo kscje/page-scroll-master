@@ -23,10 +23,22 @@
     "message": "滚动到底部",
     "description": "浮动按钮提示"
   },
-  "previousScreen": { "message": "上一屏", "description": "上一屏按钮提示" },
-  "nextScreen": { "message": "下一屏", "description": "下一屏按钮提示" },
-  "autoScrollPlay": { "message": "开始自动滚屏", "description": "自动滚屏播放按钮提示" },
-  "autoScrollPause": { "message": "暂停自动滚屏", "description": "自动滚屏暂停按钮提示" },
+  "previousScreen": {
+    "message": "上一屏",
+    "description": "上一屏按钮提示"
+  },
+  "nextScreen": {
+    "message": "下一屏",
+    "description": "下一屏按钮提示"
+  },
+  "autoScrollPlay": {
+    "message": "开始自动滚屏",
+    "description": "自动滚屏播放按钮提示"
+  },
+  "autoScrollPause": {
+    "message": "暂停自动滚屏",
+    "description": "自动滚屏暂停按钮提示"
+  },
   "popupSettings": {
     "message": "设置",
     "description": "弹窗设置按钮标签"
@@ -42,5 +54,74 @@
   "settingsEdgeDistanceError": {
     "message": "边缘距离必须在0px至200px之间",
     "description": "边缘距离输入错误提示"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "滚动位置书签"
+  },
+  "outlineToolTitle": {
+    "message": "智能段落跳转"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "保存当前位置"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "保存当前位置（$1%）"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "加载已保存位置"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "加载已保存位置（$1%）"
+  },
+  "outlineMenuHeading": {
+    "message": "页面目录"
+  },
+  "outlineNoHeadings": {
+    "message": "未检测到可跳转标题"
+  },
+  "outlinePreviousSection": {
+    "message": "上一段"
+  },
+  "outlineNextSection": {
+    "message": "下一段"
+  },
+  "outlinePinMenu": {
+    "message": "钉住目录"
+  },
+  "outlineUnpinMenu": {
+    "message": "取消钉住目录"
+  },
+  "outlineCloseMenu": {
+    "message": "关闭目录"
+  },
+  "outlineLoadMore": {
+    "message": "加载更多（剩余 $1 项）"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "当前页面无法保存位置"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "当前页面还没有可保存的阅读位置"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "已更新位置到 $1%（原 $2%）"
+  },
+  "scrollBookmarkSaved": {
+    "message": "已保存当前位置 $1%"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "当前页面没有可加载的已保存位置"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "当前页面暂时无法加载已保存位置"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "从大约 $1% 处继续？"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "继续"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "忽略"
   }
 }

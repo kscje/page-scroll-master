@@ -40,5 +40,74 @@
   },
   "settingsEdgeDistanceError": {
     "message": "Kenardan uzaklık 0px ile 200px arasında olmalıdır"
+  },
+  "scrollBookmarkToolTitle": {
+    "message": "Kaydırma konumu yer imleri"
+  },
+  "outlineToolTitle": {
+    "message": "Bölüm gezintisi"
+  },
+  "scrollBookmarkSaveCurrent": {
+    "message": "Geçerli konumu kaydet"
+  },
+  "scrollBookmarkSaveCurrentWithPercent": {
+    "message": "Geçerli konumu kaydet ($1%)"
+  },
+  "scrollBookmarkRestoreSaved": {
+    "message": "Kayıtlı konumu yükle"
+  },
+  "scrollBookmarkRestoreSavedWithPercent": {
+    "message": "Kayıtlı konumu yükle ($1%)"
+  },
+  "outlineMenuHeading": {
+    "message": "Sayfa taslağı"
+  },
+  "outlineNoHeadings": {
+    "message": "Atlanabilir başlık algılanmadı"
+  },
+  "outlinePreviousSection": {
+    "message": "Önceki bölüm"
+  },
+  "outlineNextSection": {
+    "message": "Sonraki bölüm"
+  },
+  "outlinePinMenu": {
+    "message": "Taslağı sabitle"
+  },
+  "outlineUnpinMenu": {
+    "message": "Taslak sabitlemesini kaldır"
+  },
+  "outlineCloseMenu": {
+    "message": "Taslağı kapat"
+  },
+  "outlineLoadMore": {
+    "message": "Daha fazla yükle ($1 kaldı)"
+  },
+  "scrollBookmarkCannotSavePage": {
+    "message": "Bu sayfada konum kaydedilemiyor"
+  },
+  "scrollBookmarkNoReadablePosition": {
+    "message": "Bu sayfada henüz kaydedilecek okuma konumu yok"
+  },
+  "scrollBookmarkUpdated": {
+    "message": "Konum $1% olarak güncellendi (önce $2%)"
+  },
+  "scrollBookmarkSaved": {
+    "message": "Geçerli konum $1% kaydedildi"
+  },
+  "scrollBookmarkNoSavedPosition": {
+    "message": "Bu sayfada kullanılabilir kayıtlı konum yok"
+  },
+  "scrollBookmarkCannotRestore": {
+    "message": "Kayıtlı konum şu anda yüklenemiyor"
+  },
+  "scrollBookmarkRestorePrompt": {
+    "message": "Yaklaşık $1% konumundan devam edilsin mi?"
+  },
+  "scrollBookmarkRestoreContinue": {
+    "message": "Devam et"
+  },
+  "scrollBookmarkRestoreDismiss": {
+    "message": "Yoksay"
   }
 }

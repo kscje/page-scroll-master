@@ -16,7 +16,6 @@ const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 80;
 const MAX_PROGRESS_VERTICAL_HEIGHT = 400;
 const READING_SPEED_CJK_CHARS_PER_MINUTE = 500;
 const READING_SPEED_LATIN_WORDS_PER_MINUTE = 225;
-const READING_ESTIMATE_CACHE_MS = 5000;
 const HOST_ID = 'page-scroll-master-host';
 const CONTAINER_ID = 'page-scroll-master-button';
 const DYNAMIC_STYLE_ID = 'page-scroll-master-dynamic-styles';
@@ -48,6 +47,49 @@ const LABEL_NEXT_SCREEN = chrome.i18n.getMessage('nextScreen') || 'Next Screen';
 const LABEL_AUTO_SCROLL_PLAY = chrome.i18n.getMessage('autoScrollPlay') || 'Start auto scroll';
 const LABEL_AUTO_SCROLL_PAUSE = chrome.i18n.getMessage('autoScrollPause') || 'Pause auto scroll';
 const AUTO_SCROLL_ICON_SIZE = '48%';
+
+function getContentMessage(key, fallback, substitutions) {
+  const values = Array.isArray(substitutions)
+    ? substitutions
+    : (substitutions === undefined ? [] : [substitutions]);
+  try {
+    if (chrome && chrome.i18n && typeof chrome.i18n.getMessage === 'function') {
+      const message = values.length
+        ? chrome.i18n.getMessage(key, values)
+        : chrome.i18n.getMessage(key);
+      if (message) return message;
+    }
+  } catch (err) {
+    // Keep content-script UI usable if i18n is unavailable in a transient context.
+  }
+  return values.reduce(
+    (text, value, index) => text.replace(new RegExp(`\\$${index + 1}`, 'g'), String(value)),
+    fallback
+  );
+}
+
+function getChromeRuntimeLastError() {
+  return chrome && chrome.runtime ? chrome.runtime.lastError : null;
+}
+
+function getChromeRuntimeLastErrorMessage(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+  return error.message || String(error);
+}
+
+function logChromeStorageError(operation) {
+  const lastError = getChromeRuntimeLastError();
+  if (!lastError) return false;
+  const message = getChromeRuntimeLastErrorMessage(lastError);
+  console.warn(`[Page Scroll Master] ${operation} failed${message ? `: ${message}` : ''}`);
+  return true;
+}
+
+function getSafeStorageResult(result, operation) {
+  if (logChromeStorageError(operation)) return {};
+  return isPlainObject(result) ? result : {};
+}
 
 function recordAnalyticsAction(actionKey) {
   if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
@@ -181,7 +223,8 @@ let readingEstimateCache = {
   target: null,
   calculatedAt: 0,
   textLength: 0,
-  seconds: 0
+  seconds: 0,
+  dirty: true
 };
 let bookmarkRestoreCheckedForKey = '';
 let restorePromptShownForKey = '';
@@ -217,6 +260,7 @@ const SCROLL_CONTAINER_CANDIDATE_SELECTOR = [
   '[class*="Viewport"]',
   '[style*="overflow"]'
 ].join(', ');
+const SCROLL_CONTAINER_PROGRAMMATIC_PROBE_LIMIT = 8;
 const WHEEL_FALLBACK_TARGET_SELECTOR = [
   'main',
   'article',
@@ -591,20 +635,30 @@ function shouldReevaluateScrollContainer(mutations) {
   });
 }
 
-function canScrollVertically(element) {
-  if (!element || getElementScrollRange(element) <= 1) return false;
-  if (isRootScrollElement(element)) return true;
-
-  const overflowY = window.getComputedStyle(element).overflowY;
-  if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) return true;
-  if (!PROGRAMMATIC_SCROLL_OVERFLOW_VALUES.has(overflowY)) return false;
-
+function canProgrammaticallyScrollVertically(element) {
   const originalScrollTop = element.scrollTop || 0;
   const probeScrollTop = originalScrollTop <= 0 ? 1 : originalScrollTop - 1;
   element.scrollTop = probeScrollTop;
   const canSetScrollTop = element.scrollTop !== originalScrollTop;
   element.scrollTop = originalScrollTop;
   return canSetScrollTop;
+}
+
+function getReadOnlyScrollCandidateType(element) {
+  if (!element || getElementScrollRange(element) <= 1) return false;
+  if (isRootScrollElement(element)) return 'native';
+
+  const overflowY = window.getComputedStyle(element).overflowY;
+  if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) return 'native';
+  if (PROGRAMMATIC_SCROLL_OVERFLOW_VALUES.has(overflowY)) return 'programmatic';
+  return false;
+}
+
+function canScrollVertically(element) {
+  const candidateType = getReadOnlyScrollCandidateType(element);
+  if (!candidateType) return false;
+  if (candidateType === 'native') return true;
+  return canProgrammaticallyScrollVertically(element);
 }
 
 function getElementViewportMetrics(element) {
@@ -806,12 +860,50 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy(), options
   ].filter(Boolean);
   const seen = new Set();
   const scrollableElements = [];
+  const programmaticCandidates = [];
 
   for (const el of candidates) {
     if (seen.has(el)) continue;
     seen.add(el);
-    if (!canScrollVertically(el)) continue;
+    const candidateType = getReadOnlyScrollCandidateType(el);
+    if (!candidateType) continue;
+    if (candidateType === 'programmatic') {
+      programmaticCandidates.push(el);
+      continue;
+    }
     scrollableElements.push(el);
+  }
+
+  let bestKnownScore = -Infinity;
+  if (scrollableElements.length > 0) {
+    bestKnownScore = Math.max(...scrollableElements.map(scoreScrollContainer));
+  }
+
+  let programmaticProbeCount = 0;
+  programmaticCandidates
+    .map((element) => ({
+      element,
+      score: scoreScrollContainer(element)
+    }))
+    .sort((a, b) => b.score - a.score)
+    .some((candidate) => {
+      if (scrollableElements.length > 0 && candidate.score <= bestKnownScore) {
+        return false;
+      }
+      if (programmaticProbeCount >= SCROLL_CONTAINER_PROGRAMMATIC_PROBE_LIMIT) {
+        return true;
+      }
+      programmaticProbeCount += 1;
+      if (!canProgrammaticallyScrollVertically(candidate.element)) {
+        return false;
+      }
+      scrollableElements.push(candidate.element);
+      bestKnownScore = Math.max(bestKnownScore, candidate.score);
+      return false;
+    });
+
+  if (scrollableElements.length > 1) {
+    scrollableElements.sort((a, b) => scoreScrollContainer(b) - scoreScrollContainer(a));
   }
 
   if (scrollableElements.length === 0) {
@@ -1666,6 +1758,7 @@ function getScrollTargetBottom() {
 // 从存储中加载用户设置
 function loadSettings() {
   chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'advancedSettings'], (result) => {
+    result = getSafeStorageResult(result, 'storage.sync.get settings');
     if (result.scrollSpeed) {
       scrollSpeed = result.scrollSpeed;
     }
@@ -1721,6 +1814,7 @@ function applyDomainFeatureState(nextState) {
 
 function loadDomainFeatureState(legacyAdvancedSettings) {
   chrome.storage.local.get(getDomainStorageKeys(), function (result) {
+    result = getSafeStorageResult(result, 'storage.local.get domain feature state');
     const migration = domainUtils.migrateStorage(result, legacyAdvancedSettings);
     domainFeatureStates = migration.states;
     domainFeatureDefaults = migration.defaults;
@@ -1734,7 +1828,10 @@ function loadDomainFeatureState(legacyAdvancedSettings) {
       finish();
       return;
     }
-    chrome.storage.local.set(domainUtils.toStorageData(migration), finish);
+    chrome.storage.local.set(domainUtils.toStorageData(migration), () => {
+      logChromeStorageError('storage.local.set domain feature migration');
+      finish();
+    });
   });
 }
 
@@ -2138,15 +2235,16 @@ function getOutlineToolColor() {
   return getFeatureToolColor(advancedSettings.outlineNavigation);
 }
 
-function getBookmarkMenuActionLabel(label, scrollPct) {
+function getBookmarkMenuActionLabel(messageKey, fallback, scrollPct) {
   if (scrollPct === null || scrollPct === undefined || scrollPct === '') {
-    return label;
+    return getContentMessage(messageKey, fallback);
   }
   const value = Number(scrollPct);
   if (!Number.isFinite(value)) {
-    return label;
+    return getContentMessage(messageKey, fallback);
   }
-  return `${label}（${Math.round(clamp(value, 0, 1) * 100)}%）`;
+  const percent = Math.round(clamp(value, 0, 1) * 100);
+  return getContentMessage(`${messageKey}WithPercent`, `${fallback} ($1%)`, [percent]);
 }
 
 function createFeatureToolButton({ className, title, iconSvg, handler }) {
@@ -2163,7 +2261,7 @@ function createFeatureToolButton({ className, title, iconSvg, handler }) {
 function createBookmarkToolButton() {
   return createFeatureToolButton({
     className: 'psm-bookmark-tool-button',
-    title: '滚动位置书签',
+    title: getContentMessage('scrollBookmarkToolTitle', 'Scroll position bookmarks'),
     iconSvg: getBookmarkIconSvg(),
     handler: handleBookmarkToolClick
   });
@@ -2172,7 +2270,7 @@ function createBookmarkToolButton() {
 function createOutlineToolButton() {
   return createFeatureToolButton({
     className: 'psm-outline-tool-button',
-    title: '智能段落跳转',
+    title: getContentMessage('outlineToolTitle', 'Section navigation'),
     iconSvg: getOutlineIconSvg(),
     handler: handleOutlineToolClick
   });
@@ -2194,7 +2292,11 @@ function getScrollBookmarkMenuContribution(options = {}) {
     fixedActions: [
       {
         action: 'save-bookmark',
-        label: getBookmarkMenuActionLabel('保存当前位置', options.currentScrollPct),
+        label: getBookmarkMenuActionLabel(
+          'scrollBookmarkSaveCurrent',
+          'Save current position',
+          options.currentScrollPct
+        ),
         handler: () => {
           hideReadingToolMenu();
           saveScrollBookmark();
@@ -2202,7 +2304,11 @@ function getScrollBookmarkMenuContribution(options = {}) {
       },
       {
         action: 'restore-bookmark',
-        label: getBookmarkMenuActionLabel('加载已保存位置', options.savedScrollPct),
+        label: getBookmarkMenuActionLabel(
+          'scrollBookmarkRestoreSaved',
+          'Load saved position',
+          options.savedScrollPct
+        ),
         handler: () => {
           hideReadingToolMenu();
           restoreCurrentScrollBookmark();
@@ -2231,14 +2337,14 @@ function getOutlineMenuContribution(options = {}) {
   const outlineItems = [
     {
       kind: 'outline-heading',
-      label: '页面目录'
+      label: getContentMessage('outlineMenuHeading', 'Page outline')
     }
   ];
 
   if (snapshotItems.length === 0) {
     outlineItems.push({
       kind: 'outline-status',
-      label: '未检测到可跳转标题'
+      label: getContentMessage('outlineNoHeadings', 'No jumpable headings detected')
     });
   } else {
     snapshotItems.forEach((item) => {
@@ -2270,7 +2376,7 @@ function getOutlineMenuContribution(options = {}) {
     fixedActions: [
       {
         action: 'outline-previous',
-        label: '上一段',
+        label: getContentMessage('outlinePreviousSection', 'Previous section'),
         disabled: !adjacentTargets.previous,
         handler: (menu) => {
           const target = getOutlineAdjacentTargets(snapshot).previous;
@@ -2281,7 +2387,7 @@ function getOutlineMenuContribution(options = {}) {
       },
       {
         action: 'outline-next',
-        label: '下一段',
+        label: getContentMessage('outlineNextSection', 'Next section'),
         disabled: !adjacentTargets.next,
         handler: (menu) => {
           const target = getOutlineAdjacentTargets(snapshot).next;
@@ -2383,7 +2489,9 @@ function createReadingToolMenuItem(item) {
           <path d="M8 3h8l-1.5 6 3 3v2h-5v7h-1v-7h-5v-2l3-3L8 3z"></path>
         </svg>
       `;
-      pinButton.title = item.pinned ? '取消钉住目录' : '钉住目录';
+      pinButton.title = item.pinned
+        ? getContentMessage('outlineUnpinMenu', 'Unpin outline')
+        : getContentMessage('outlinePinMenu', 'Pin outline');
       pinButton.setAttribute('aria-label', pinButton.title);
       pinButton.setAttribute('aria-pressed', item.pinned ? 'true' : 'false');
       pinButton.setAttribute('data-action', 'outline-toggle-pin');
@@ -2392,8 +2500,8 @@ function createReadingToolMenuItem(item) {
       closeButton.type = 'button';
       closeButton.className = 'psm-reading-menu-close';
       closeButton.textContent = '×';
-      closeButton.title = '关闭目录';
-      closeButton.setAttribute('aria-label', '关闭目录');
+      closeButton.title = getContentMessage('outlineCloseMenu', 'Close outline');
+      closeButton.setAttribute('aria-label', closeButton.title);
       closeButton.setAttribute('data-action', 'outline-close');
       actions.appendChild(closeButton);
       row.appendChild(actions);
@@ -2447,7 +2555,7 @@ function getVisibleOutlineMenuItems(model) {
     items.push({
       kind: 'outline-load-more',
       action: 'outline-load-more',
-      label: `加载更多（剩余 ${remainingCount} 项）`
+      label: getContentMessage('outlineLoadMore', 'Load more ($1 left)', [remainingCount])
     });
   }
   return items;
@@ -2747,6 +2855,7 @@ function handleBookmarkToolClick(event) {
   const currentScrollPct = getScrollProgress(resolveScrollContainer());
   const key = getCurrentBookmarkKey();
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get bookmark menu');
     const bookmark = key ? normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY])[key] : null;
     const savedScrollPct = bookmark && typeof bookmark.scrollPct === 'number'
       ? bookmark.scrollPct
@@ -2835,7 +2944,7 @@ function getScrollProgress(container) {
 function getReadingText(container) {
   const source = isRootScrollElement(container) ? document.body : container;
   if (!source) return '';
-  return (source.innerText || source.textContent || '').replace(/\s+/g, ' ').trim();
+  return (source.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
 function estimateReadingSecondsFromText(text) {
@@ -2853,11 +2962,10 @@ function estimateReadingSecondsFromText(text) {
 function getEstimatedReadingSeconds(container) {
   if (!advancedSettings.progressBar.showRemainingTime) return 0;
   const target = isRootScrollElement(container) ? document.body : container;
-  const now = Date.now();
   if (
     readingEstimateCache.target === target &&
     readingEstimateCache.seconds > 0 &&
-    now - readingEstimateCache.calculatedAt < READING_ESTIMATE_CACHE_MS
+    !readingEstimateCache.dirty
   ) {
     return readingEstimateCache.seconds;
   }
@@ -2866,11 +2974,18 @@ function getEstimatedReadingSeconds(container) {
   const seconds = estimateReadingSecondsFromText(text);
   readingEstimateCache = {
     target,
-    calculatedAt: now,
+    calculatedAt: Date.now(),
     textLength: text.length,
-    seconds
+    seconds,
+    dirty: false
   };
   return seconds;
+}
+
+function invalidateReadingEstimateCache(target) {
+  if (!target || readingEstimateCache.target === target) {
+    readingEstimateCache.dirty = true;
+  }
 }
 
 function formatRemainingReadingTime(seconds) {
@@ -3409,7 +3524,7 @@ function saveScrollBookmark() {
     parsedUrl = new URL(window.location.href);
     normalizedUrl = normalizeBookmarkUrl(window.location.href);
   } catch (err) {
-    showReadingToast('当前页面无法保存位置');
+    showReadingToast(getContentMessage('scrollBookmarkCannotSavePage', 'Cannot save a position on this page'));
     return;
   }
 
@@ -3417,12 +3532,16 @@ function saveScrollBookmark() {
   const range = getElementScrollRange(container);
   const scrollPct = getScrollProgress(container);
   if (range <= 1 || scrollPct <= 0) {
-    showReadingToast('当前页面还没有可保存的阅读位置');
+    showReadingToast(getContentMessage(
+      'scrollBookmarkNoReadablePosition',
+      'This page does not have a readable position to save yet'
+    ));
     return;
   }
 
   const key = `${advancedSettings.scrollBookmarks.matchMode}:${normalizedUrl}`;
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get bookmarks before save');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
     const previous = bookmarks[key];
     const roundedPct = Math.round(scrollPct * 100);
@@ -3442,11 +3561,19 @@ function saveScrollBookmark() {
 
     const limitedBookmarks = enforceBookmarkLimits(bookmarks, key);
     chrome.storage.local.set({ [BOOKMARKS_STORAGE_KEY]: limitedBookmarks }, () => {
+      if (logChromeStorageError('storage.local.set bookmarks')) {
+        showReadingToast(getContentMessage('scrollBookmarkCannotSavePage', 'Cannot save a position on this page'));
+        return;
+      }
       recordAnalyticsAction('bookmarkSaveClicks');
       if (previous) {
-        showReadingToast(`已更新位置到 ${roundedPct}%（原 ${Math.round((previous.scrollPct || 0) * 100)}%）`);
+        showReadingToast(getContentMessage(
+          'scrollBookmarkUpdated',
+          'Updated position to $1% (was $2%)',
+          [roundedPct, Math.round((previous.scrollPct || 0) * 100)]
+        ));
       } else {
-        showReadingToast(`已保存当前位置 ${roundedPct}%`);
+        showReadingToast(getContentMessage('scrollBookmarkSaved', 'Saved current position $1%', [roundedPct]));
       }
     });
   });
@@ -3463,19 +3590,27 @@ function showReadingToast(message, actions) {
     root.appendChild(toast);
   }
 
-  const buttons = (actions || []).map((action, index) => `<button type="button" data-action-index="${index}">${action.label}</button>`).join('');
-  toast.innerHTML = `<span></span>${buttons}`;
-  const text = toast.querySelector('span');
-  if (text) text.textContent = message;
-  toast.querySelectorAll('button').forEach((button) => {
+  while (toast.firstChild) {
+    toast.removeChild(toast.firstChild);
+  }
+
+  const text = document.createElement('span');
+  text.textContent = message;
+  toast.appendChild(text);
+
+  (actions || []).forEach((action, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('data-action-index', String(index));
+    button.textContent = action.label || '';
     button.addEventListener('click', (event) => {
       event.stopPropagation();
-      const index = Number(button.getAttribute('data-action-index'));
       if (actions[index] && typeof actions[index].handler === 'function') {
         actions[index].handler();
       }
       toast.classList.remove('psm-open');
     });
+    toast.appendChild(button);
   });
   toast.classList.add('psm-open');
 
@@ -3494,23 +3629,24 @@ function restoreCurrentScrollBookmark(options = {}) {
   const key = getCurrentBookmarkKey();
   if (!key) {
     if (options.showMissingMessage !== false) {
-      showReadingToast('当前页面没有可加载的已保存位置');
+      showReadingToast(getContentMessage('scrollBookmarkNoSavedPosition', 'No saved position is available on this page'));
     }
     return;
   }
 
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get bookmark restore');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
     const bookmark = bookmarks[key];
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
       if (options.showMissingMessage !== false) {
-        showReadingToast('当前页面没有可加载的已保存位置');
+        showReadingToast(getContentMessage('scrollBookmarkNoSavedPosition', 'No saved position is available on this page'));
       }
       return;
     }
 
     if (!restoreScrollBookmark(bookmark)) {
-      showReadingToast('当前页面暂时无法加载已保存位置');
+      showReadingToast(getContentMessage('scrollBookmarkCannotRestore', 'The saved position cannot be loaded right now'));
       return;
     }
     recordAnalyticsAction('bookmarkRestoreClicks');
@@ -3527,6 +3663,7 @@ function restoreScrollBookmark(bookmark) {
 
 function clearPendingScrollBookmarkRestore(callback) {
   chrome.storage.local.remove(PENDING_BOOKMARK_RESTORE_STORAGE_KEY, () => {
+    logChromeStorageError('storage.local.remove pending bookmark restore');
     pendingBookmarkRestoreKeyInProgress = '';
     if (typeof callback === 'function') callback();
   });
@@ -3546,6 +3683,7 @@ function checkPendingScrollBookmarkRestore(callback) {
   chrome.storage.local.get(
     [PENDING_BOOKMARK_RESTORE_STORAGE_KEY, BOOKMARKS_STORAGE_KEY],
     (result) => {
+      result = getSafeStorageResult(result, 'storage.local.get pending bookmark restore');
       const request = result[PENDING_BOOKMARK_RESTORE_STORAGE_KEY];
       const requestedAt = request && Number(request.requestedAt);
       if (!request || request.key !== key) {
@@ -3593,6 +3731,7 @@ function checkRestorePrompt() {
   if (!key || restorePromptShownForKey === key) return;
 
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get bookmark restore prompt');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
     const bookmark = bookmarks[key];
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
@@ -3601,15 +3740,15 @@ function checkRestorePrompt() {
     if (restorePromptShownForKey === key) return;
     restorePromptShownForKey = key;
     const percent = Math.round(clamp(bookmark.scrollPct, 0, 1) * 100);
-    showReadingToast(`从大约 ${percent}% 处继续？`, [
+    showReadingToast(getContentMessage('scrollBookmarkRestorePrompt', 'Continue from about $1%?', [percent]), [
       {
-        label: '继续',
+        label: getContentMessage('scrollBookmarkRestoreContinue', 'Continue'),
         handler: () => {
           restoreCurrentScrollBookmark({ showMissingMessage: false });
         }
       },
       {
-        label: '忽略',
+        label: getContentMessage('scrollBookmarkRestoreDismiss', 'Dismiss'),
         handler: () => {}
       }
     ]);
@@ -3626,6 +3765,7 @@ function checkAutomaticBookmarkRestore() {
   if (!key || restorePromptShownForKey === key) return;
 
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
+    result = getSafeStorageResult(result, 'storage.local.get automatic bookmark restore');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
     const bookmark = bookmarks[key];
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
@@ -3891,10 +4031,8 @@ function removeButton() {
   fullscreenManager.buttonContainer = null;
 }
 
-// 添加按钮样式
-function addButtonStyles(root) {
-  const style = document.createElement('style');
-  style.textContent = `
+function getBaseButtonStyles() {
+  return `
     :host {
       all: initial;
     }
@@ -3957,7 +4095,11 @@ function addButtonStyles(root) {
       overflow: visible;
       vertical-align: middle;
     }
+  `;
+}
 
+function getProgressStyles() {
+  return `
     .psm-progress-button {
       position: relative;
       overflow: hidden;
@@ -4066,7 +4208,11 @@ function addButtonStyles(root) {
       margin-top: 0;
       margin-bottom: 3px;
     }
+  `;
+}
 
+function getReadingToolStyles() {
+  return `
     .psm-feature-tool-container {
       position: fixed;
       z-index: 9999;
@@ -4268,7 +4414,11 @@ function addButtonStyles(root) {
       cursor: pointer;
       white-space: nowrap;
     }
-    
+  `;
+}
+
+function getButtonInteractionStyles() {
+  return `
     .psm-scroll-button:hover {
       transform: scale(1.1);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -4318,6 +4468,21 @@ function addButtonStyles(root) {
       pointer-events: none !important;
     }
   `;
+}
+
+function getButtonStyles() {
+  return [
+    getBaseButtonStyles(),
+    getProgressStyles(),
+    getReadingToolStyles(),
+    getButtonInteractionStyles()
+  ].join('\n');
+}
+
+// 添加按钮样式
+function addButtonStyles(root) {
+  const style = document.createElement('style');
+  style.textContent = getButtonStyles();
   root.appendChild(style);
 }
 
@@ -4747,17 +4912,6 @@ function updateButtonVisibility() {
   }
 }
 
-// 颜色验证函数 - 确保颜色值有效
-function validateColor(color) {
-  // 检查是否为有效的十六进制颜色
-  const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-  if (hexRegex.test(color)) {
-    return color;
-  }
-  // 返回默认颜色
-  return DEFAULT_BUTTON_COLOR;
-}
-
 // 更新按钮样式
 function updateButtonStyle() {
   const {
@@ -4814,8 +4968,8 @@ function updateButtonStyle() {
   applyIconSizing();
   
   // 更新按钮颜色 - 使用用户设置的颜色（带验证）
-  const topColor = validateColor(buttonSettings.topButtonColor);
-  const bottomColor = validateColor(buttonSettings.bottomButtonColor);
+  const topColor = validateHexColor(buttonSettings.topButtonColor, DEFAULT_BUTTON_COLOR);
+  const bottomColor = validateHexColor(buttonSettings.bottomButtonColor, DEFAULT_BUTTON_COLOR);
   topButton.style.backgroundColor = topColor;
   bottomButton.style.backgroundColor = bottomColor;
   if (previousScreenButton) {
@@ -4968,6 +5122,7 @@ function setupSpaDetection() {
       
       if (!hasSignificantChanges) return;
       const shouldRefreshContainer = shouldReevaluateScrollContainer(mutations);
+      invalidateReadingEstimateCache();
       
       // 防抖处理，避免频繁检测
       if (spaDetectionState.debounceTimer) {

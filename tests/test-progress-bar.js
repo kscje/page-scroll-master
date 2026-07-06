@@ -5,6 +5,43 @@ const { getSharedRuntimeSource } = require('./runtime-loader');
 const ROOT = path.join(__dirname, '..');
 const CONTENT_SOURCE_PATH = process.env.CONTENT_SOURCE || path.join(ROOT, 'content.js');
 
+const CONTENT_MESSAGES = {
+  scrollBookmarkToolTitle: '滚动位置书签',
+  outlineToolTitle: '智能段落跳转',
+  scrollBookmarkSaveCurrent: '保存当前位置',
+  scrollBookmarkSaveCurrentWithPercent: '保存当前位置（$1%）',
+  scrollBookmarkRestoreSaved: '加载已保存位置',
+  scrollBookmarkRestoreSavedWithPercent: '加载已保存位置（$1%）',
+  outlineMenuHeading: '页面目录',
+  outlineNoHeadings: '未检测到可跳转标题',
+  outlinePreviousSection: '上一段',
+  outlineNextSection: '下一段',
+  outlinePinMenu: '钉住目录',
+  outlineUnpinMenu: '取消钉住目录',
+  outlineCloseMenu: '关闭目录',
+  outlineLoadMore: '加载更多（剩余 $1 项）',
+  scrollBookmarkCannotSavePage: '当前页面无法保存位置',
+  scrollBookmarkNoReadablePosition: '当前页面还没有可保存的阅读位置',
+  scrollBookmarkUpdated: '已更新位置到 $1%（原 $2%）',
+  scrollBookmarkSaved: '已保存当前位置 $1%',
+  scrollBookmarkNoSavedPosition: '当前页面没有可加载的已保存位置',
+  scrollBookmarkCannotRestore: '当前页面暂时无法加载已保存位置',
+  scrollBookmarkRestorePrompt: '从大约 $1% 处继续？',
+  scrollBookmarkRestoreContinue: '继续',
+  scrollBookmarkRestoreDismiss: '忽略'
+};
+
+function getContentMessageForTest(key, substitutions) {
+  const values = Array.isArray(substitutions)
+    ? substitutions
+    : (substitutions === undefined ? [] : [substitutions]);
+  const message = CONTENT_MESSAGES[key] || key;
+  return values.reduce(
+    (text, value, index) => text.replace(new RegExp(`\\$${index + 1}`, 'g'), String(value)),
+    message
+  );
+}
+
 class FakeElement {
   constructor(tagName, options = {}) {
     this.tagName = tagName.toUpperCase();
@@ -52,6 +89,10 @@ class FakeElement {
       },
       contains: (name) => this.className.split(/\s+/).includes(name)
     };
+  }
+
+  get firstChild() {
+    return this.children[0] || null;
   }
 
   set innerHTML(value) {
@@ -107,6 +148,13 @@ class FakeElement {
     child.parentNode = this;
     child.parentElement = this;
     this.children.push(child);
+    return child;
+  }
+
+  removeChild(child) {
+    this.children = this.children.filter((existing) => existing !== child);
+    child.parentNode = null;
+    child.parentElement = null;
     return child;
   }
 
@@ -355,7 +403,7 @@ function createContext(syncData = {}, initialLocalData = {}) {
       }
     },
     chrome: {
-      i18n: { getMessage: (key) => key },
+      i18n: { getMessage: getContentMessageForTest },
       storage: {
         sync: {
           get(keys, callback) {
@@ -805,6 +853,31 @@ function testReadingToolMenuSaveAndRestorePrompt() {
   const missingRestoreButton = fixedSection.children.find((child) => child.getAttribute('data-action') === 'restore-bookmark');
   menu.listeners.click[0]({ stopPropagation() {}, target: missingRestoreButton });
   assert(toast.querySelector('span').textContent === '当前页面没有可加载的已保存位置', 'manual restore explains when the current page has no bookmark');
+}
+
+function testReadingToastActionLabelsUseTextContent() {
+  const sandbox = createContext();
+  const root = sandbox.getScrollRoot();
+  let clicked = false;
+
+  sandbox.showReadingToast('Saved', [
+    {
+      label: '<img src=x onerror=alert(1)>',
+      handler: () => {
+        clicked = true;
+      }
+    }
+  ]);
+
+  const toast = root.getElementById('page-scroll-master-bookmark-toast');
+  const button = toast.querySelector('button');
+  assert(button.textContent === '<img src=x onerror=alert(1)>', 'toast action labels render as text');
+  assert(!toast.innerHTML.includes('<img'), 'toast action labels are not injected through innerHTML');
+
+  button.listeners.click[0]({
+    stopPropagation() {}
+  });
+  assert(clicked === true, 'toast action button still invokes its handler');
 }
 
 function testScrollBookmarkRestoreModes() {
@@ -1785,11 +1858,29 @@ function testRemainingReadingTimeLabels() {
       progressBar: { enabled: true, mode: 'verticalButton', showRemainingTime: true }
     }
   });
-  sandbox.document.body.textContent = '测试'.repeat(1000);
+  let bodyText = '测试'.repeat(1000);
+  let bodyTextReads = 0;
+  Object.defineProperty(sandbox.document.body, 'textContent', {
+    get() {
+      bodyTextReads += 1;
+      return bodyText;
+    },
+    set(value) {
+      bodyText = value;
+    },
+    configurable: true
+  });
   let root = sandbox.getScrollRoot();
   let progressButton = root.querySelector('.psm-progress-button');
   sandbox.updateVerticalProgressButton(0.5);
   assert(progressButton.querySelector('.psm-progress-label').textContent === '50%\n2m', 'vertical progress label shows percentage and remaining reading time');
+  assert(bodyTextReads === 1, 'remaining reading time reads page text on the first estimate');
+  sandbox.updateVerticalProgressButton(0.25);
+  assert(bodyTextReads === 1, 'remaining reading time reuses the cached text estimate during scroll updates');
+  sandbox.invalidateReadingEstimateCache();
+  bodyText = '测试'.repeat(1200);
+  sandbox.updateVerticalProgressButton(0.5);
+  assert(bodyTextReads === 2, 'remaining reading time reads page text again after cache invalidation');
 
   sandbox = createContext({
     advancedSettings: {
@@ -1813,6 +1904,7 @@ testProgressClickRatios();
 testEnabledProgressDomModes();
 testReadingToolsDomAndBookmarks();
 testReadingToolMenuSaveAndRestorePrompt();
+testReadingToastActionLabelsUseTextContent();
 testScrollBookmarkRestoreModes();
 testOptionsPageOpenRestoresSavedBookmark();
 testDynamicReadingToolMenuStructure();
