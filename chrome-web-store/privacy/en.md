@@ -1,12 +1,12 @@
 # Privacy Policy for Smart Scroll Navigator
 
-**Last Updated**: July 5, 2026
+**Last Updated**: August 8, 2026
 
 ## Data Collection
 
 During normal scrolling use, Smart Scroll Navigator does **not** collect or transmit your browsing history, visited URLs or domains, page titles, page content, search terms, form input, scroll positions, saved bookmark content, account information, or other personal content. The only exception is information you explicitly submit through the optional feedback form described below.
 
-The extension includes optional anonymous usage analytics. This feature is disabled by default for new and existing users. Data is collected and transmitted only after you explicitly enable **Send anonymous usage statistics** in the Options page.
+Current releases do not include anonymous usage analytics and do not collect, store, or transmit usage-statistics data. The analytics disclosures below are retained only as a historical record for releases before 2.5.4.
 
 When enabled, the extension may send:
 

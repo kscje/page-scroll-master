@@ -341,19 +341,7 @@ function notifyCurrentTab(state) {
   });
 }
 
-function recordAnalyticsToggle(feature, enabled) {
-  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
-  chrome.runtime.sendMessage({
-    action: 'analytics:recordToggle',
-    feature: feature,
-    enabled: enabled === true,
-    source: 'popup'
-  }, function () {
-    if (chrome.runtime.lastError) return;
-  });
-}
-
-function persistCurrentState(nextState, analyticsChange) {
+function persistCurrentState(nextState) {
   if (!currentDomainKey) return;
   pendingLocalChange = true;
   chrome.storage.local.get([STORAGE_KEYS.states], function (result) {
@@ -369,9 +357,6 @@ function persistCurrentState(nextState, analyticsChange) {
     chrome.storage.local.set(data, function () {
       pendingLocalChange = false;
       if (chrome.runtime.lastError) return;
-      if (analyticsChange) {
-        recordAnalyticsToggle(analyticsChange.feature, analyticsChange.enabled);
-      }
       notifyCurrentTab(domainUtils.getState(domainFeatureStates, currentDomainKey, domainFeatureDefaults));
     });
   });
@@ -394,15 +379,7 @@ function handleControlChange(feature) {
   if (ignoreChanges || !currentDomainKey) return;
   setControlsDisabled(false);
   var state = readStateFromControls();
-  persistCurrentState(
-    state,
-    feature === 'autoScroll' ? null : {
-      feature: feature,
-      enabled: feature === 'extension'
-        ? state.extensionEnabled
-        : state.features[feature]
-    }
-  );
+  persistCurrentState(state);
 }
 
 function loadStorageAndRender() {

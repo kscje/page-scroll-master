@@ -1,15 +1,7 @@
 const domainUtils = PageScrollMasterDomain;
 const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
-const analyticsUtils = PageScrollMasterAnalytics;
 const feedbackUtils = PageScrollMasterFeedback;
 const ratingUtils = PageScrollMasterRating;
-let analyticsRuntimeState = {
-  configured: false,
-  permissionOrigin: '',
-  consent: analyticsUtils.normalizeConsent(),
-  events: []
-};
-let analyticsStatusKey = 'disabled';
 let feedbackStatusKey = '';
 let feedbackSubmitting = false;
 const AUTO_SCROLL_ICON_SIZE = '48%';
@@ -337,7 +329,7 @@ Object.assign(translations['en-US'], {
   'settings.siteManagement': 'Site Enable Status',
   'settings.iconCustomizationIntro': 'Configure the icon style and icon color for the top and bottom buttons.',
   'settings.resetDefaults': 'Restore Defaults',
-  'settings.resetDefaultsIntro': 'Only restores detailed settings saved in sync storage. Domain states, bookmarks, analytics consent, and rating prompts stay untouched.',
+  'settings.resetDefaultsIntro': 'Only restores detailed settings saved in sync storage. Domain states, bookmarks, and rating prompts stay untouched.',
   'settings.resetBasicDefaults': 'Restore basic button defaults',
   'settings.resetProgressBarDefaults': 'Restore page progress defaults',
   'settings.resetScreenNavigationDefaults': 'Restore screen navigation defaults',
@@ -347,7 +339,7 @@ Object.assign(translations['en-US'], {
   'settings.resetIconCustomizationDefaults': 'Restore button icon defaults',
   'settings.resetAllSyncDefaults': 'Restore all sync defaults',
   'settings.resetModuleDefaults': 'Restore this module',
-  'settings.resetConfirm': 'Restore these sync settings to their defaults? Local domain states, bookmarks, analytics consent, and rating prompts will not be cleared.',
+  'settings.resetConfirm': 'Restore these sync settings to their defaults? Local domain states, bookmarks, and rating prompts will not be cleared.',
   'settings.domainSearch': 'Search domains',
   'settings.domainInput': 'example.com or https://example.com/page',
   'settings.domainEnabled': 'Enabled',
@@ -1529,119 +1521,6 @@ Object.keys(translations).forEach((lang) => {
   });
 });
 
-const analyticsTranslations = {
-  'zh-CN': {
-    title: '隐私与统计',
-    enabled: '发送匿名使用统计',
-    description: '开启后，将发送不含身份标识的设置类别和功能操作汇总，帮助改进默认设置与功能优先级。不会发送访问网址、域名、页面标题、页面内容、书签内容或滚动位置。',
-    preview: '查看待发送数据',
-    disabled: '匿名统计当前已关闭。',
-    enabledStatus: '匿名统计已开启，可在下方检查待发送数据。',
-    unavailable: '统计服务尚未配置；待发送汇总仅保存在本机，不会发送。',
-    permissionDenied: '未获得统计服务访问权限，匿名统计保持关闭。',
-    error: '无法更新匿名统计设置，请稍后重试。'
-  },
-  'zh-TW': {
-    title: '隱私與統計',
-    enabled: '傳送匿名使用統計',
-    description: '開啟後，將傳送不含身分識別的設定類別與功能操作彙總，用於改善預設設定與功能優先順序。不會傳送網址、網域、頁面標題、頁面內容、書籤內容或捲動位置。',
-    preview: '查看待傳送資料',
-    disabled: '匿名統計目前已關閉。',
-    enabledStatus: '匿名統計已開啟，可在下方檢查待傳送資料。',
-    unavailable: '統計服務尚未設定；待傳送彙總只會保留在本機，不會傳送。',
-    permissionDenied: '未取得統計服務存取權限，匿名統計維持關閉。',
-    error: '無法更新匿名統計設定，請稍後再試。'
-  },
-  'en-US': {
-    title: 'Privacy & Analytics',
-    enabled: 'Send anonymous usage analytics',
-    description: 'When enabled, the extension sends anonymous setting categories and aggregated feature actions to improve defaults and priorities. It never sends visited URLs, domains, page titles, page content, bookmark content, or scroll positions.',
-    preview: 'View pending data',
-    disabled: 'Anonymous analytics is currently off.',
-    enabledStatus: 'Anonymous analytics is on. You can inspect pending data below.',
-    unavailable: 'The analytics service is not configured. Pending aggregates stay on this device and are not sent.',
-    permissionDenied: 'Analytics service access was not granted, so analytics remains off.',
-    error: 'The analytics setting could not be updated. Please try again.'
-  },
-  'es-ES': {
-    title: 'Privacidad y estadísticas',
-    enabled: 'Enviar estadísticas de uso anónimas',
-    description: 'Al activarlo, la extensión envía categorías de configuración y acciones agregadas sin identificadores. Nunca envía URLs, dominios, títulos, contenido de páginas, marcadores ni posiciones de desplazamiento.',
-    preview: 'Ver datos pendientes',
-    disabled: 'Las estadísticas anónimas están desactivadas.',
-    enabledStatus: 'Las estadísticas anónimas están activadas. Puedes revisar los datos pendientes abajo.',
-    unavailable: 'El servicio no está configurado. Los datos pendientes permanecen en este dispositivo y no se envían.',
-    permissionDenied: 'No se concedió acceso al servicio; las estadísticas siguen desactivadas.',
-    error: 'No se pudo actualizar la configuración de estadísticas.'
-  },
-  'ja-JP': {
-    title: 'プライバシーと統計',
-    enabled: '匿名の利用統計を送信',
-    description: '有効にすると、識別子を含まない設定カテゴリと機能操作の集計を送信します。URL、ドメイン、ページタイトル、本文、ブックマーク内容、スクロール位置は送信しません。',
-    preview: '送信待ちデータを表示',
-    disabled: '匿名統計は現在オフです。',
-    enabledStatus: '匿名統計はオンです。下で送信待ちデータを確認できます。',
-    unavailable: '統計サービスは未設定です。保留中の集計はこの端末だけに保存され、送信されません。',
-    permissionDenied: '統計サービスへのアクセスが許可されなかったため、オフのままです。',
-    error: '匿名統計の設定を更新できませんでした。'
-  },
-  'de-DE': {
-    title: 'Datenschutz und Statistik',
-    enabled: 'Anonyme Nutzungsstatistiken senden',
-    description: 'Wenn aktiviert, sendet die Erweiterung anonyme Einstellungskategorien und zusammengefasste Funktionsaktionen. URLs, Domains, Seitentitel, Seiteninhalte, Lesezeicheninhalte und Scrollpositionen werden nie gesendet.',
-    preview: 'Ausstehende Daten anzeigen',
-    disabled: 'Anonyme Statistiken sind derzeit deaktiviert.',
-    enabledStatus: 'Anonyme Statistiken sind aktiviert. Ausstehende Daten können unten geprüft werden.',
-    unavailable: 'Der Statistikdienst ist nicht konfiguriert. Ausstehende Daten bleiben auf diesem Gerät und werden nicht gesendet.',
-    permissionDenied: 'Der Zugriff wurde nicht erlaubt; die Statistiken bleiben deaktiviert.',
-    error: 'Die Statistik-Einstellung konnte nicht aktualisiert werden.'
-  },
-  'fr-FR': {
-    title: 'Confidentialité et statistiques',
-    enabled: 'Envoyer des statistiques d’utilisation anonymes',
-    description: 'Une fois activée, l’extension envoie des catégories de réglages et des actions agrégées sans identifiant. Elle n’envoie jamais les URL, domaines, titres, contenus, marque-pages ou positions de défilement.',
-    preview: 'Voir les données en attente',
-    disabled: 'Les statistiques anonymes sont désactivées.',
-    enabledStatus: 'Les statistiques anonymes sont activées. Les données en attente sont visibles ci-dessous.',
-    unavailable: 'Le service n’est pas configuré. Les données en attente restent sur cet appareil et ne sont pas envoyées.',
-    permissionDenied: 'L’accès au service a été refusé ; les statistiques restent désactivées.',
-    error: 'Impossible de mettre à jour le réglage des statistiques.'
-  },
-  'pt-BR': {
-    title: 'Privacidade e estatísticas',
-    enabled: 'Enviar estatísticas de uso anônimas',
-    description: 'Quando ativada, a extensão envia categorias de configuração e ações agregadas sem identificadores. Nunca envia URLs, domínios, títulos, conteúdo de páginas, conteúdo de favoritos ou posições de rolagem.',
-    preview: 'Ver dados pendentes',
-    disabled: 'As estatísticas anônimas estão desativadas.',
-    enabledStatus: 'As estatísticas anônimas estão ativadas. Confira os dados pendentes abaixo.',
-    unavailable: 'O serviço não está configurado. Os dados pendentes ficam neste dispositivo e não são enviados.',
-    permissionDenied: 'O acesso ao serviço não foi concedido; as estatísticas continuam desativadas.',
-    error: 'Não foi possível atualizar a configuração de estatísticas.'
-  },
-  'ko-KR': {
-    title: '개인정보 및 통계',
-    enabled: '익명 사용 통계 보내기',
-    description: '사용하면 식별자가 없는 설정 범주와 기능 동작 집계를 전송합니다. 방문 URL, 도메인, 페이지 제목과 내용, 북마크 내용, 스크롤 위치는 전송하지 않습니다.',
-    preview: '전송 대기 데이터 보기',
-    disabled: '익명 통계가 꺼져 있습니다.',
-    enabledStatus: '익명 통계가 켜져 있습니다. 아래에서 전송 대기 데이터를 확인할 수 있습니다.',
-    unavailable: '통계 서비스가 구성되지 않았습니다. 대기 중인 집계는 이 기기에만 저장되며 전송되지 않습니다.',
-    permissionDenied: '통계 서비스 접근 권한이 없어 통계가 꺼진 상태로 유지됩니다.',
-    error: '통계 설정을 업데이트할 수 없습니다.'
-  },
-  'it-IT': {
-    title: 'Privacy e statistiche',
-    enabled: 'Invia statistiche di utilizzo anonime',
-    description: 'Se attivata, l’estensione invia categorie di impostazioni e azioni aggregate senza identificatori. Non invia URL, domini, titoli, contenuti delle pagine, contenuti dei segnalibri o posizioni di scorrimento.',
-    preview: 'Mostra dati in attesa',
-    disabled: 'Le statistiche anonime sono disattivate.',
-    enabledStatus: 'Le statistiche anonime sono attive. Puoi controllare i dati in attesa qui sotto.',
-    unavailable: 'Il servizio non è configurato. I dati in attesa restano su questo dispositivo e non vengono inviati.',
-    permissionDenied: 'L’accesso al servizio non è stato concesso; le statistiche restano disattivate.',
-    error: 'Impossibile aggiornare l’impostazione delle statistiche.'
-  }
-};
-
 const feedbackTranslations = {
   'zh-CN': {
     title: '提交建议与反馈',
@@ -2224,12 +2103,6 @@ const v23LanguageTranslations = {
       'settings.domainAutoScroll': 'Автопрокрутка',
       'settings.releaseNotes': 'История изменений'
     },
-    analytics: {
-      title: 'Приватность и аналитика',
-      enabled: 'Отправлять анонимную аналитику использования',
-      description: 'Если включено, расширение отправляет анонимные категории настроек и агрегированные действия функций, чтобы улучшать значения по умолчанию и приоритеты. Оно никогда не отправляет посещенные URL, домены, заголовки страниц, содержимое страниц, содержимое закладок или позиции прокрутки.',
-      preview: 'Посмотреть ожидающие данные'
-    },
     feedback: {
       title: 'Отправить предложение или отзыв', type: 'Тип отзыва', typeFeature: 'Предложение функции', typeBug: 'Отчет об ошибке',
       typeCompatibility: 'Проблема совместимости', typeTranslation: 'Проблема перевода', typeOther: 'Другое',
@@ -2482,12 +2355,6 @@ const v23LanguageTranslations = {
       'settings.onboardingFeatureAutoScroll': 'Otomatik kaydırma',
       'settings.domainAutoScroll': 'Otomatik kaydırma',
       'settings.releaseNotes': 'Sürüm Notları'
-    },
-    analytics: {
-      title: 'Gizlilik ve Analitik',
-      enabled: 'Anonim kullanım analitiği gönder',
-      description: 'Etkinleştirildiğinde uzantı, varsayılanları ve öncelikleri iyileştirmek için anonim ayar kategorileri ve toplu özellik eylemleri gönderir. Ziyaret edilen URL, alan adı, sayfa başlığı, sayfa içeriği, yer imi içeriği veya kaydırma konumu asla gönderilmez.',
-      preview: 'Bekleyen verileri görüntüle'
     },
     feedback: {
       title: 'Öneri ve geri bildirim gönder', type: 'Geri bildirim türü', typeFeature: 'Özellik önerisi', typeBug: 'Hata bildirimi',
@@ -2742,12 +2609,6 @@ const v23LanguageTranslations = {
       'settings.domainAutoScroll': 'Gulir otomatis',
       'settings.releaseNotes': 'Catatan Rilis'
     },
-    analytics: {
-      title: 'Privasi & Analitik',
-      enabled: 'Kirim analitik penggunaan anonim',
-      description: 'Saat diaktifkan, ekstensi mengirim kategori pengaturan anonim dan tindakan fitur agregat untuk memperbaiki default dan prioritas. Ekstensi tidak pernah mengirim URL yang dikunjungi, domain, judul halaman, konten halaman, isi bookmark, atau posisi gulir.',
-      preview: 'Lihat data tertunda'
-    },
     feedback: {
       title: 'Kirim saran dan masukan', type: 'Jenis masukan', typeFeature: 'Saran fitur', typeBug: 'Laporan bug',
       typeCompatibility: 'Masalah kompatibilitas', typeTranslation: 'Masalah terjemahan', typeOther: 'Lainnya',
@@ -2825,13 +2686,11 @@ const v23LanguageTranslations = {
 Object.keys(v23LanguageTranslations).forEach((lang) => {
   const text = v23LanguageTranslations[lang];
   translations[lang] = Object.assign({}, translations['en-US'], text.base);
-  analyticsTranslations[lang] = Object.assign({}, analyticsTranslations['en-US'], text.analytics);
   feedbackTranslations[lang] = Object.assign({}, feedbackTranslations['en-US'], text.feedback);
   onboardingTranslations[lang] = Object.assign({}, onboardingTranslations['en-US'], text.onboarding);
 });
 
 Object.keys(translations).forEach((lang) => {
-  const analyticsText = analyticsTranslations[lang] || analyticsTranslations['en-US'];
   const onboardingText = onboardingTranslations[lang] || onboardingTranslations['en-US'];
   const feedbackText = feedbackTranslations[lang] || feedbackTranslations['en-US'];
   Object.assign(translations[lang], {
@@ -2847,15 +2706,8 @@ Object.keys(translations).forEach((lang) => {
     'settings.onboardingFeatureProgress': onboardingText.featureProgress,
     'settings.onboardingFeatureBookmarks': onboardingText.featureBookmarks,
     'settings.onboardingFeatureOutline': onboardingText.featureOutline,
-    'settings.onboardingPrivacyTitle': onboardingText.privacyTitle,
-    'settings.onboardingPrivacyDescription': onboardingText.privacyDescription,
-    'settings.onboardingPrivacyOff': onboardingText.privacyOff,
     'settings.onboardingDismiss': onboardingText.dismiss,
     'settings.onboardingReopen': onboardingText.reopen,
-    'settings.analyticsTitle': analyticsText.title,
-    'settings.analyticsEnabled': analyticsText.enabled,
-    'settings.analyticsDescription': analyticsText.description,
-    'settings.analyticsPreview': analyticsText.preview,
     'settings.feedbackFormTitle': feedbackText.title,
     'settings.feedbackType': feedbackText.type,
     'settings.feedbackType.feature': feedbackText.typeFeature,
@@ -2892,6 +2744,14 @@ Object.keys(translations).forEach((lang) => {
 });
 
 const RELEASE_NOTES = [
+  {
+    version: '2.5.4',
+    categories: {
+      improved: [
+        'analyticsRetirement'
+      ]
+    }
+  },
   {
     version: '2.5.3',
     categories: {
@@ -3442,6 +3302,26 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
     releaseNotesTranslations['en-US'].items,
     releaseNotesTranslations[lang].items
   );
+});
+
+const v254ReleaseNotesItems = {
+  'zh-CN': '下线匿名使用统计及其云端接收服务，并更新隐私披露。',
+  'zh-TW': '下線匿名使用統計及其雲端接收服務，並更新隱私揭露。',
+  'en-US': 'Retired anonymous usage analytics and its cloud endpoint, with updated privacy disclosures.',
+  'es-ES': 'Se retiraron las estadísticas de uso anónimas y su servicio en la nube, y se actualizaron las divulgaciones de privacidad.',
+  'ja-JP': '匿名利用統計とクラウド受信サービスを廃止し、プライバシー開示を更新しました。',
+  'de-DE': 'Anonyme Nutzungsstatistiken und ihr Cloud-Endpunkt wurden eingestellt; die Datenschutzangaben wurden aktualisiert.',
+  'fr-FR': 'Les statistiques d’utilisation anonymes et leur service cloud ont été retirés, avec une mise à jour des informations de confidentialité.',
+  'pt-BR': 'As estatísticas anônimas de uso e o serviço em nuvem foram desativados, com atualização das divulgações de privacidade.',
+  'ko-KR': '익명 사용 통계와 클라우드 수신 서비스를 종료하고 개인정보 처리 고지를 업데이트했습니다.',
+  'it-IT': 'Sono state ritirate le statistiche anonime e il relativo servizio cloud, con l’aggiornamento delle informative sulla privacy.',
+  'ru-RU': 'Анонимная статистика и облачный сервис её приёма отключены, а сведения о конфиденциальности обновлены.',
+  'tr-TR': 'Anonim kullanım istatistikleri ve bulut uç noktası kaldırıldı; gizlilik açıklamaları güncellendi.',
+  'id-ID': 'Statistik penggunaan anonim dan layanan cloud-nya dihentikan, serta pengungkapan privasi diperbarui.'
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  releaseNotesTranslations[lang].items.analyticsRetirement = v254ReleaseNotesItems[lang];
 });
 
 const DEFAULT_ADVANCED_SETTINGS = {
@@ -4006,7 +3886,6 @@ function applyTranslation(lang) {
     }
   });
   renderReleaseNotes(lang);
-  renderAnalyticsState();
   renderFeedbackImages();
   renderFeedbackStatus();
 }
@@ -4980,7 +4859,7 @@ function renderDomainFeatureStatesList() {
         saveDomainFeatureState(domainKey, (current) => ({
           ...current,
           extensionEnabled: checked
-        }), () => recordAnalyticsToggle('extension', checked));
+        }));
       }
     );
     const featureToggles = domainUtils.FEATURE_KEYS.map((featureKey) => {
@@ -5003,7 +4882,7 @@ function renderDomainFeatureStatesList() {
               ...current.features,
               [featureKey]: checked
             }
-          }), featureKey === 'autoScroll' ? null : () => recordAnalyticsToggle(featureKey, checked));
+          }));
         }
       );
     });
@@ -5095,7 +4974,6 @@ function openSavedBookmark(key, bookmark) {
     }
   }, () => {
     if (logChromeStorageError('storage.local.set pending bookmark restore')) return;
-    recordAnalyticsAction('bookmarkRestoreClicks');
     chrome.tabs.create({ url });
   });
 }
@@ -5408,189 +5286,14 @@ function renderReleaseNotes(lang) {
     });
 }
 
-function getAnalyticsLanguage() {
+function getInterfaceLanguage() {
   const selected = document.getElementById('languageSelector')?.value;
   if (selected && selected !== 'auto') return selected;
   return normalizeLanguage(navigator.language || navigator.userLanguage);
 }
 
-function getAnalyticsText(key) {
-  const lang = getAnalyticsLanguage();
-  const localized = analyticsTranslations[lang] || analyticsTranslations['en-US'];
-  return localized[key] || analyticsTranslations['en-US'][key] || key;
-}
-
-function renderAnalyticsState() {
-  const toggle = document.getElementById('analyticsEnabled');
-  const status = document.getElementById('analyticsStatus');
-  const preview = document.getElementById('analyticsPreviewData');
-  if (!toggle || !status || !preview) return;
-
-  toggle.checked = analyticsRuntimeState.consent.enabled === true;
-  toggle.disabled = false;
-  if (!analyticsRuntimeState.configured && toggle.checked) {
-    analyticsStatusKey = 'unavailable';
-  } else if (analyticsStatusKey !== 'permissionDenied' && analyticsStatusKey !== 'error') {
-    analyticsStatusKey = toggle.checked ? 'enabledStatus' : 'disabled';
-  }
-  status.textContent = getAnalyticsText(analyticsStatusKey);
-  preview.textContent = JSON.stringify(analyticsRuntimeState.events || [], null, 2);
-}
-
-function sendAnalyticsMessage(message, callback) {
-  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') {
-    callback({ ok: false, reason: 'runtime_unavailable' });
-    return;
-  }
-  chrome.runtime.sendMessage(message, (response) => {
-    if (chrome.runtime.lastError) {
-      callback({ ok: false, reason: 'runtime_error' });
-      return;
-    }
-    callback(response || { ok: false, reason: 'empty_response' });
-  });
-}
-
-function recordAnalyticsAction(actionKey) {
-  sendAnalyticsMessage({
-    action: analyticsUtils.MESSAGE_ACTIONS.recordAction,
-    actionKey
-  }, () => {});
-}
-
-function recordAnalyticsToggle(feature, enabled) {
-  sendAnalyticsMessage({
-    action: analyticsUtils.MESSAGE_ACTIONS.recordToggle,
-    feature,
-    enabled: enabled === true,
-    source: 'domainManager'
-  }, () => {});
-}
-
-function refreshAnalyticsState(statusKey) {
-  if (statusKey) analyticsStatusKey = statusKey;
-  sendAnalyticsMessage({ action: analyticsUtils.MESSAGE_ACTIONS.getState }, (response) => {
-    if (response.ok && response.state) {
-      analyticsRuntimeState = response.state;
-    }
-    renderAnalyticsState();
-  });
-}
-
-function getAnalyticsSettingsSnapshotPayload(buttonSettings, advancedSettings, language) {
-  const manifest = chrome.runtime?.getManifest ? chrome.runtime.getManifest() : { version: 'unknown' };
-  return analyticsUtils.buildSettingsSnapshotPayload({
-    locale: language === 'auto' ? getAnalyticsLanguage() : language,
-    extensionVersion: manifest.version,
-    buttonSettings,
-    advancedSettings
-  });
-}
-
-function recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, callback) {
-  const payload = getAnalyticsSettingsSnapshotPayload(buttonSettings, advancedSettings, language);
-  sendAnalyticsMessage({
-    action: analyticsUtils.MESSAGE_ACTIONS.recordSettingsSnapshot,
-    payload
-  }, (response) => {
-    if (typeof callback === 'function') callback(response);
-  });
-}
-
-function getCurrentAnalyticsSettingsSnapshotPayload() {
-  return getAnalyticsSettingsSnapshotPayload({
-    horizontalPosition: document.getElementById('horizontalPosition').value,
-    verticalAlignment: document.getElementById('verticalAlignment').value,
-    buttonSize: Number(document.getElementById('buttonSize').value),
-    buttonShape: document.getElementById('buttonShape').value,
-    buttonSpacing: Number(document.getElementById('buttonSpacing').value),
-    edgeDistance: Number(document.getElementById('edgeDistance').value),
-    topButtonColor: document.getElementById('topButtonColor').value,
-    bottomButtonColor: document.getElementById('bottomButtonColor').value,
-    opacity: Number(document.getElementById('opacity').value),
-    enableHoverHide: document.getElementById('enableHoverHide').checked
-  }, domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls()), getAnalyticsLanguage());
-}
-
-function removeAnalyticsPermission(callback) {
-  if (!analyticsRuntimeState.permissionOrigin ||
-      !chrome.permissions ||
-      typeof chrome.permissions.remove !== 'function') {
-    callback();
-    return;
-  }
-  chrome.permissions.remove({
-    permissions: ['alarms'],
-    origins: [analyticsRuntimeState.permissionOrigin]
-  }, callback);
-}
-
-function disableAnalytics() {
-  sendAnalyticsMessage({
-    action: analyticsUtils.MESSAGE_ACTIONS.setConsent,
-    enabled: false
-  }, (response) => {
-    removeAnalyticsPermission(() => {
-      refreshAnalyticsState(response.ok ? 'disabled' : 'error');
-    });
-  });
-}
-
-function enableAnalytics() {
-  const persistConsent = () => {
-    sendAnalyticsMessage({
-      action: analyticsUtils.MESSAGE_ACTIONS.setConsent,
-      enabled: true
-    }, (response) => {
-      if (!response.ok) {
-        analyticsStatusKey = 'error';
-        renderAnalyticsState();
-        return;
-      }
-      sendAnalyticsMessage({
-        action: analyticsUtils.MESSAGE_ACTIONS.recordSettingsSnapshot,
-        payload: getCurrentAnalyticsSettingsSnapshotPayload()
-      }, () => refreshAnalyticsState(
-        analyticsRuntimeState.configured ? 'enabledStatus' : 'unavailable'
-      ));
-    });
-  };
-
-  if (!analyticsRuntimeState.configured) {
-    persistConsent();
-    return;
-  }
-  if (!analyticsRuntimeState.permissionOrigin ||
-      !chrome.permissions ||
-      typeof chrome.permissions.request !== 'function') {
-    analyticsStatusKey = 'error';
-    renderAnalyticsState();
-    return;
-  }
-
-  chrome.permissions.request({
-    permissions: ['alarms'],
-    origins: [analyticsRuntimeState.permissionOrigin]
-  }, (granted) => {
-    if (!granted || chrome.runtime.lastError) {
-      analyticsStatusKey = 'permissionDenied';
-      renderAnalyticsState();
-      return;
-    }
-    persistConsent();
-  });
-}
-
-function handleAnalyticsToggle(event) {
-  if (event.target.checked) {
-    enableAnalytics();
-  } else {
-    disableAnalytics();
-  }
-}
-
 function getFeedbackText(key) {
-  const lang = getAnalyticsLanguage();
+  const lang = getInterfaceLanguage();
   const localized = feedbackTranslations[lang] || feedbackTranslations['en-US'];
   return localized[key] || feedbackTranslations['en-US'][key] || key;
 }
@@ -5669,7 +5372,7 @@ async function sendFeedback(validated) {
   form.append('message', validated.message);
   form.append('contact', validated.contact);
   form.append('extensionVersion', getManifestVersion());
-  form.append('language', getAnalyticsLanguage());
+  form.append('language', getInterfaceLanguage());
   form.append('website', document.getElementById('feedbackWebsite').value || '');
   validated.files.forEach((file) => form.append('images[]', file, file.name));
 
@@ -5828,8 +5531,8 @@ function notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings) 
 }
 
 function confirmResetDefaults() {
-  const fallback = 'Restore these sync settings to their defaults? Local domain states, bookmarks, analytics consent, and rating prompts will not be cleared.';
-  const message = translations[getAnalyticsLanguage()]?.['settings.resetConfirm'] ||
+  const fallback = 'Restore these sync settings to their defaults? Local domain states, bookmarks, and rating prompts will not be cleared.';
+  const message = translations[getInterfaceLanguage()]?.['settings.resetConfirm'] ||
     translations['en-US']['settings.resetConfirm'] ||
     fallback;
   if (typeof window.confirm !== 'function') return true;
@@ -5875,9 +5578,6 @@ function persistResetDefaults(nextSettings) {
       updatePreviewButtons();
     }
     notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
-    recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, () => {
-      refreshAnalyticsState();
-    });
   });
 }
 
@@ -6044,10 +5744,6 @@ function saveSettings() {
       return;
     }
 
-    recordAnalyticsSettingsSnapshot(buttonSettings, advancedSettings, language, () => {
-      refreshAnalyticsState();
-    });
-
     showSaveButtonFeedback('settings.saveSuccess', 'Saved successfully!', '#4CAF50');
     notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
   });
@@ -6069,7 +5765,6 @@ function init() {
   loadAdvancedModuleCollapseState();
   loadDomainFeatureStates();
   loadSavedBookmarks();
-  refreshAnalyticsState();
 
   // 更新快捷键显示（根据操作系统平台）
   updateShortcutKeyDisplay();
@@ -6439,7 +6134,6 @@ function init() {
 
   // 保存按钮点击事件
   document.getElementById('saveButton').addEventListener('click', saveSettings);
-  document.getElementById('analyticsEnabled').addEventListener('change', handleAnalyticsToggle);
   document.getElementById('feedbackForm').addEventListener('submit', handleFeedbackSubmit);
   document.getElementById('feedbackImages').addEventListener('change', () => {
     feedbackStatusKey = '';

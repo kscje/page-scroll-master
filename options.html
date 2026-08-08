@@ -1178,45 +1178,6 @@
       overflow-wrap: anywhere;
     }
 
-    .analytics-toggle-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .analytics-toggle-row label {
-      margin: 0;
-    }
-
-    .analytics-description {
-      margin: 8px 0 0 30px;
-      font-size: 13px;
-    }
-
-    .analytics-status {
-      margin: 10px 0 0 30px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .analytics-preview {
-      margin-top: 16px;
-    }
-
-    .analytics-preview pre {
-      max-height: 280px;
-      margin: 0;
-      overflow: auto;
-      padding: 12px;
-      border-top: 1px solid var(--line);
-      background: #111827;
-      color: #dbeafe;
-      font-size: 12px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
     input[type="checkbox"]:disabled {
       cursor: not-allowed;
       opacity: 0.55;
@@ -1558,19 +1519,6 @@
               </div>
             </li>
 
-            <li class="onboarding-step">
-              <div class="onboarding-step-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M12 3l7 3v5c0 4.6-2.9 8.1-7 10-4.1-1.9-7-5.4-7-10V6z"></path>
-                  <path d="M9 12l2 2 4-4"></path>
-                </svg>
-              </div>
-              <div class="onboarding-step-copy">
-                <h4 data-i18n="settings.onboardingPrivacyTitle">匿名使用分析由你决定</h4>
-                <p data-i18n="settings.onboardingPrivacyDescription">匿名使用分析保持关闭，只有你在“建议&关于插件”的“隐私与统计”中主动选择后才会启用。</p>
-                <span class="onboarding-off-badge" data-i18n="settings.onboardingPrivacyOff">默认关闭</span>
-              </div>
-            </li>
           </ol>
           <div class="onboarding-actions">
             <button type="button" id="dismissOnboardingButton" data-i18n="settings.onboardingDismiss">知道了</button>
@@ -2123,20 +2071,6 @@
           </form>
         </div>
 
-        <div class="setting-group feedback-card">
-          <h3 data-i18n="settings.analyticsTitle">隐私与统计</h3>
-          <div class="analytics-toggle-row">
-            <input type="checkbox" id="analyticsEnabled">
-            <label for="analyticsEnabled" data-i18n="settings.analyticsEnabled">发送匿名使用统计</label>
-          </div>
-          <p class="analytics-description" data-i18n="settings.analyticsDescription">开启后，将发送不含身份标识的设置类别和功能操作汇总，帮助改进默认设置与功能优先级。不会发送访问网址、域名、页面标题、页面内容、书签内容或滚动位置。</p>
-          <p id="analyticsStatus" class="analytics-status"></p>
-          <details class="analytics-preview feedback-disclosure">
-            <summary data-i18n="settings.analyticsPreview">查看待发送数据</summary>
-            <pre id="analyticsPreviewData">[]</pre>
-          </details>
-        </div>
-
         <div class="setting-group feedback-card about-card">
           <h3 data-i18n="settings.about">关于插件</h3>
           <p data-i18n="settings.aboutDescription">Smart Scroll Navigator 用于在网页中快速跳转到顶部或底部，并支持阅读进度与站点启用状态配置。</p>
@@ -2144,7 +2078,7 @@
             <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
             <button type="button" id="openStoreRatingButton" class="onboarding-reopen-button" data-i18n="settings.openStoreRating">前往 Chrome Web Store 评分</button>
           </div>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.4.0</span></p>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.5.4</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
@@ -2185,7 +2119,6 @@
   
   <script src="vendor/tldts.umd.min.js"></script>
   <script src="domain-utils.js"></script>
-  <script src="analytics.js"></script>
   <script src="feedback.js"></script>
   <script src="rating.js"></script>
   <script src="options.js"></script>

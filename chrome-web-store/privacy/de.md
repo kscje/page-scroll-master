@@ -1,12 +1,12 @@
 # Datenschutzrichtlinie für Smart Scroll Navigator
 
-**Letzte Aktualisierung**: 5. Juli 2026
+**Letzte Aktualisierung**: 8. August 2026
 
 ## Datenerhebung
 
 Bei der normalen Scroll-Nutzung erhebt oder überträgt Smart Scroll Navigator **keinen** Browserverlauf, besuchte URLs oder Domains, Seitentitel, Seiteninhalte, Suchbegriffe, Formulareingaben, Scrollpositionen, Lesezeicheninhalte oder Kontoinformationen. Die einzige Ausnahme sind Daten, die Sie ausdrücklich über das unten beschriebene optionale Feedback-Formular senden.
 
-Die Erweiterung enthält eine optionale anonyme Nutzungsstatistik. Sie ist für neue und bestehende Nutzer standardmäßig deaktiviert. Daten werden erst erhoben und übertragen, nachdem Sie auf der Optionsseite **Anonyme Nutzungsstatistiken senden** ausdrücklich aktiviert haben.
+Aktuelle Versionen enthalten keine anonymen Nutzungsstatistiken und erfassen, speichern oder übertragen keine Nutzungsstatistikdaten. Die nachstehenden Statistikhinweise bleiben nur als historischer Nachweis für Versionen vor 2.5.4 erhalten.
 
 Nach der Aktivierung kann die Erweiterung Folgendes senden:
 

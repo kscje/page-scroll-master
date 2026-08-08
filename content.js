@@ -91,15 +91,6 @@ function getSafeStorageResult(result, operation) {
   return isPlainObject(result) ? result : {};
 }
 
-function recordAnalyticsAction(actionKey) {
-  if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return;
-  chrome.runtime.sendMessage({
-    action: 'analytics:recordAction',
-    actionKey
-  }, () => {
-    if (chrome.runtime.lastError) return;
-  });
-}
 const DEFAULT_ADVANCED_SETTINGS = {
   autoScroll: {
     enabled: false,
@@ -2006,9 +1997,6 @@ function navigateOutlineMenuToItem(item, snapshot, menu) {
   if (!didStart && menu && menu.__psmHighlightLockId === item.id) {
     menu.__psmHighlightLockId = '';
   }
-  if (didStart) {
-    recordAnalyticsAction('outlineJumpClicks');
-  }
   return didStart;
 }
 
@@ -2882,9 +2870,6 @@ function handleOutlineToolClick(event) {
     menu,
     model: getOutlineMenuModel({ resolveOutline: true })
   });
-  if (didOpen) {
-    recordAnalyticsAction('outlineOpenClicks');
-  }
 }
 
 function handleReadingToolClick(event) {
@@ -3066,7 +3051,6 @@ function handleHorizontalProgressClick(event) {
   const ratio = rect.width <= 0 ? 0 : (event.clientX - rect.left) / rect.width;
   const container = resolveScrollContainer();
   smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
-  recordAnalyticsAction('progressJumpClicks');
 }
 
 function handleVerticalProgressClick(event) {
@@ -3075,7 +3059,6 @@ function handleVerticalProgressClick(event) {
   const ratio = rect.height <= 0 ? 0 : (event.clientY - rect.top) / rect.height;
   const container = resolveScrollContainer();
   smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
-  recordAnalyticsAction('progressJumpClicks');
 }
 
 function getPointerTargetRatio(event, orientation) {
@@ -3565,7 +3548,6 @@ function saveScrollBookmark() {
         showReadingToast(getContentMessage('scrollBookmarkCannotSavePage', 'Cannot save a position on this page'));
         return;
       }
-      recordAnalyticsAction('bookmarkSaveClicks');
       if (previous) {
         showReadingToast(getContentMessage(
           'scrollBookmarkUpdated',
@@ -3649,7 +3631,6 @@ function restoreCurrentScrollBookmark(options = {}) {
       showReadingToast(getContentMessage('scrollBookmarkCannotRestore', 'The saved position cannot be loaded right now'));
       return;
     }
-    recordAnalyticsAction('bookmarkRestoreClicks');
   });
 }
 
@@ -3939,11 +3920,9 @@ function createScrollButton() {
 
   // 添加事件监听器
   topButton.addEventListener('click', () => {
-    recordAnalyticsAction('floatingTopClicks');
     scrollToTop();
   });
   bottomButton.addEventListener('click', () => {
-    recordAnalyticsAction('floatingBottomClicks');
     scrollToBottom();
   });
   document.addEventListener('click', handleReadingToolDocumentClick, true);
@@ -5185,11 +5164,9 @@ function detectAndUpdateScrollContainer() {
 
       // 重新绑定点击事件
       newTopButton.addEventListener('click', () => {
-        recordAnalyticsAction('floatingTopClicks');
         scrollToTop();
       });
       newBottomButton.addEventListener('click', () => {
-        recordAnalyticsAction('floatingBottomClicks');
         scrollToBottom();
       });
       applyButtonIcons();

@@ -253,9 +253,6 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     addDomainButton: createElement('addDomainButton'),
     clearDisabledSitesButton: createElement('clearDisabledSitesButton'),
     restoreAllSitesButton: createElement('restoreAllSitesButton'),
-    analyticsEnabled: createElement('analyticsEnabled'),
-    analyticsStatus: createElement('analyticsStatus'),
-    analyticsPreviewData: createElement('analyticsPreviewData', { textContent: '[]' }),
     feedbackForm: createElement('feedbackForm'),
     feedbackType: createElement('feedbackType', { value: 'feature' }),
     feedbackMessage: createElement('feedbackMessage'),
@@ -343,22 +340,11 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
   const syncData = JSON.parse(JSON.stringify(initialSyncData));
   const localData = JSON.parse(JSON.stringify(initialLocalData));
   const sentMessages = [];
-  const analyticsMessages = [];
   const createdTabs = [];
   const commandShortcuts = {
     'scroll-to-top': 'Command+Shift+Up',
     'scroll-to-bottom': 'Command+Shift+Down',
     ...initialCommandShortcuts
-  };
-  let analyticsPermissionRequestCount = 0;
-  const analyticsState = {
-    configured: true,
-    permissionOrigin: 'https://page-scroll-master-analytics.kscje-apps.workers.dev/*',
-    consent: {
-      enabled: initialLocalData.analyticsConsent?.enabled === true,
-      policyVersion: 2
-    },
-    events: []
   };
   const runtime = {
     lastError: null,
@@ -366,31 +352,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       return MANIFEST;
     },
     sendMessage(message, callback) {
-      analyticsMessages.push(JSON.parse(JSON.stringify(message)));
-      if (message.action === 'analytics:getState') {
-        callback({
-          ok: true,
-          state: JSON.parse(JSON.stringify(analyticsState))
-        });
-        return;
-      }
-      if (message.action === 'analytics:setConsent') {
-        analyticsState.consent.enabled = message.enabled === true;
-        if (!analyticsState.consent.enabled) analyticsState.events = [];
-        callback({ ok: true });
-        return;
-      }
-      if (message.action === 'analytics:recordSettingsSnapshot' &&
-          analyticsState.consent.enabled) {
-        analyticsState.events = [{
-          eventName: 'settings_snapshot',
-          eventDate: '2026-06-13',
-          payload: message.payload
-        }];
-        callback({ ok: true });
-        return;
-      }
-      callback({ ok: false, reason: 'consent_disabled' });
+      if (callback) callback({ ok: true });
     }
   };
 
@@ -517,7 +479,6 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       runtime,
       permissions: {
         request(options, callback) {
-          analyticsPermissionRequestCount += 1;
           callback(true);
         },
         remove(options, callback) {
@@ -541,11 +502,6 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     syncData,
     localData,
     sentMessages,
-    analyticsMessages,
-    analyticsState,
-    get analyticsPermissionRequestCount() {
-      return analyticsPermissionRequestCount;
-    },
     createdTabs,
     commandShortcuts,
     dispatchWindowEvent(type) {
@@ -592,15 +548,14 @@ assert(
   'new-user guidance appears on the default basic tab before detailed settings'
 );
 assert(
-  (OPTIONS_HTML.match(/class="onboarding-step"/g) || []).length === 4,
-  'new-user guidance covers four onboarding topics'
+  (OPTIONS_HTML.match(/class="onboarding-step"/g) || []).length === 3,
+  'new-user guidance covers three onboarding topics'
 );
 assert(
   OPTIONS_HTML.includes('data-i18n="settings.onboardingCoreDescription"') &&
   OPTIONS_HTML.includes('data-i18n="settings.onboardingPopupDescription"') &&
-  OPTIONS_HTML.includes('data-i18n="settings.onboardingSiteControlsDescription"') &&
-  OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyDescription"'),
-  'onboarding explains scroll buttons, toolbar Popup, site controls, and analytics consent'
+    OPTIONS_HTML.includes('data-i18n="settings.onboardingSiteControlsDescription"'),
+  'onboarding explains scroll buttons, toolbar Popup, and site controls'
 );
 assert(
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureAutoScroll"') &&
@@ -609,10 +564,6 @@ assert(
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureBookmarks"') &&
   OPTIONS_HTML.includes('data-i18n="settings.onboardingFeatureOutline"'),
   'onboarding names the advanced features controlled from the Popup'
-);
-assert(
-  OPTIONS_HTML.includes('data-i18n="settings.onboardingPrivacyOff"'),
-  'onboarding visibly states that anonymous analytics is off by default'
 );
 assert(
   (OPTIONS_HTML.match(/<details[^>]*class="[^"]*advanced-module/g) || []).length === 6,
@@ -720,10 +671,7 @@ assert(
   !/<details[^>]*id="advancedResetDefaultsModule"[^>]*\sopen(?:\s|=|>)/.test(OPTIONS_HTML),
   'restore defaults module is collapsed by default'
 );
-assert(page.elements.analyticsEnabled.checked === false, 'anonymous analytics defaults to disabled');
-assert(page.elements.analyticsEnabled.disabled === false, 'analytics local consent remains available before upload is configured');
-assert(page.elements.analyticsPreviewData.textContent === '[]', 'analytics preview starts empty');
-assert(OPTIONS_HTML.includes('id="analyticsEnabled"'), 'settings page exposes the anonymous analytics control');
+assert(!OPTIONS_HTML.includes('id="analyticsEnabled"'), 'settings page no longer exposes anonymous analytics controls');
 assert(
   OPTIONS_HTML.includes('data-i18n="settings.tab.feedback">建议&关于插件</'),
   'suggestions tab uses the suggestions and about title'
@@ -757,12 +705,8 @@ assert(
   'returning focus to the settings page refreshes command bindings'
 );
 assert(
-  (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 4,
-  'feedback page uses one card style for submission, privacy, about, and release notes'
-);
-assert(
-  OPTIONS_HTML.includes('class="analytics-preview feedback-disclosure"'),
-  'analytics preview uses the shared disclosure interaction style'
+  (OPTIONS_HTML.match(/class="setting-group feedback-card/g) || []).length === 3,
+  'feedback page uses one card style for submission, about, and release notes'
 );
 assert(
   OPTIONS_HTML.includes('id="feedbackForm"') &&
@@ -979,35 +923,6 @@ assert(
   'domain search resets pagination and hides controls for one-page results'
 );
 
-const analyticsConsentPage = createOptionsPage();
-analyticsConsentPage.elements.analyticsEnabled.checked = true;
-analyticsConsentPage.elements.analyticsEnabled.dispatch('change');
-assert(
-  analyticsConsentPage.analyticsState.consent.enabled === true,
-  'the analytics switch records explicit local consent'
-);
-assert(
-  analyticsConsentPage.analyticsPermissionRequestCount === 1,
-  'analytics consent requests the fixed host and scheduling permissions'
-);
-assert(
-  analyticsConsentPage.analyticsMessages.some((message) =>
-    message.action === 'analytics:recordSettingsSnapshot'
-  ),
-  'first consent records one allowlisted settings snapshot'
-);
-assert(
-  analyticsConsentPage.elements.analyticsPreviewData.textContent.includes('settings_snapshot'),
-  'consented pending data is visible in the preview'
-);
-analyticsConsentPage.elements.analyticsEnabled.checked = false;
-analyticsConsentPage.elements.analyticsEnabled.dispatch('change');
-assert(
-  analyticsConsentPage.analyticsState.consent.enabled === false &&
-  analyticsConsentPage.elements.analyticsPreviewData.textContent === '[]',
-  'opting out clears the pending preview'
-);
-
 const aboutCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card about-card"');
 const releaseNotesCardIndex = OPTIONS_HTML.indexOf('class="setting-group feedback-card release-notes-card"');
 assert(aboutCardIndex >= 0 && releaseNotesCardIndex > aboutCardIndex, 'release notes appear after the about card');
@@ -1036,7 +951,7 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1190,15 +1105,6 @@ assert(
   ),
   'save sends detailed advanced settings without enable state'
 );
-assert(
-  page.analyticsMessages.some((message) =>
-    message.action === 'analytics:recordSettingsSnapshot' &&
-    message.payload.buttonSizeBucket === 'large' &&
-    !Object.prototype.hasOwnProperty.call(message.payload, 'topButtonColor')
-  ),
-  'save submits a bucketed settings snapshot without exact colors'
-);
-
 console.log('\nTest 3a: Save storage failures do not report success');
 const failedSavePage = createOptionsPage();
 failedSavePage.elements.scrollSpeed.value = '333';
@@ -1213,11 +1119,6 @@ assert(
   !failedSavePage.sentMessages.some((entry) => entry.message.action === 'updateSpeed'),
   'failed save does not notify active tab with unsaved settings'
 );
-assert(
-  !failedSavePage.analyticsMessages.some((message) => message.action === 'analytics:recordSettingsSnapshot'),
-  'failed save does not record a settings snapshot'
-);
-
 console.log('\nTest 3b: Save validation explains invalid vertical progress height');
 const invalidSavePage = createOptionsPage();
 invalidSavePage.elements.progressVerticalHeight.value = '401';
@@ -1288,9 +1189,6 @@ const resetPage = createOptionsPage({
       scrollPct: 0.3
     }
   },
-  analyticsConsent: {
-    enabled: true
-  },
   ratingPromptState: {
     ratedClicked: true
   }
@@ -1309,7 +1207,6 @@ assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3,
 resetPage.elements.resetAllSyncSettingsButton.dispatch('click');
 assert(resetPage.syncData.language === 'auto', 'all sync restore resets language to automatic');
 assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 1, 'all sync restore resets advanced settings');
-assert(resetPage.localData.analyticsConsent.enabled === true, 'all sync restore preserves analytics consent');
 assert(resetPage.localData.ratingPromptState.ratedClicked === true, 'all sync restore preserves rating prompt state');
 
 console.log('\nTest 5: Preview controls survive packaged output execution');

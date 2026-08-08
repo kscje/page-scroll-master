@@ -225,7 +225,7 @@ function uninstallRequest(overrides = {}) {
 
   const workerPage = createWorker();
   let response = await workerPage.worker.fetch(new Request(
-    'https://page-scroll-master-feedback.kscje-apps.workers.dev/uninstall?version=2.5.3&lang=zh-CN'
+    'https://page-scroll-master-feedback.kscje-apps.workers.dev/uninstall?version=2.5.4&lang=zh-CN'
   ), workerPage.env);
   assert(response.status === 200, 'survey page is served');
   const html = await response.text();

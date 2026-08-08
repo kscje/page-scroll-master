@@ -12,7 +12,6 @@ const MANIFEST = require('./manifest.json');
 const INCLUDED_FILES = [
   'manifest.json',
   'background.js',
-  'analytics.js',
   'feedback.js',
   'rating.js',
   'domain-utils.js',
@@ -351,26 +350,6 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-settings.js')], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-payload-sanitization.js')], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-queue.js')], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-consent.js')], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-upload.js')], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-feedback-client.js')], {
     cwd: ROOT,
     stdio: 'inherit',
@@ -464,15 +443,6 @@ function runRegressionTests() {
     env: {
       ...process.env,
       BACKGROUND_SOURCE: path.join(BUILD_DIR, 'background.js'),
-    },
-    stdio: 'inherit',
-  });
-  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-analytics-upload.js')], {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      BACKGROUND_SOURCE: path.join(BUILD_DIR, 'background.js'),
-      ANALYTICS_SOURCE: path.join(BUILD_DIR, 'analytics.js'),
     },
     stdio: 'inherit',
   });

@@ -219,9 +219,6 @@ console.log('\nTest 2: Feature changes persist by registrable domain and notify 
 toggle(popup, 'progressBarToggle', true);
 assert(popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.progressBar === true, 'progress state is stored under the main domain');
 assert(popup.sentMessages.some((entry) => entry.message.action === 'updateDomainFeatureState'), 'current tab receives an immediate state update');
-const analyticsToggle = popup.runtimeMessages.find((message) => message.action === 'analytics:recordToggle');
-assert(analyticsToggle.feature === 'progressBar' && analyticsToggle.enabled === true, 'popup records only the changed feature state');
-assert(!Object.prototype.hasOwnProperty.call(analyticsToggle, 'domain'), 'popup analytics message excludes the current domain');
 toggle(popup, 'screenNavigationToggle', true);
 assert(
   popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.screenNavigation === true,
@@ -232,13 +229,6 @@ assert(
   popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.autoScroll === true,
   'auto scroll state is stored under the main domain'
 );
-assert(
-  !popup.runtimeMessages.some((message) =>
-    message.action === 'analytics:recordToggle' && message.feature === 'autoScroll'
-  ),
-  'auto scroll toggle does not extend analytics without a disclosure update'
-);
-
 console.log('\nTest 3: Disabling the extension retains feature choices and disables their controls');
 toggle(popup, 'extensionToggle', false);
 const disabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'];

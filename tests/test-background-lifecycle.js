@@ -18,6 +18,7 @@ function createBackground() {
   let failNextOpen = false;
   let storageWriteCount = 0;
   const localData = {};
+  const removedKeys = [];
 
   const runtime = {
     lastError: null,
@@ -51,7 +52,7 @@ function createBackground() {
             if (callback) callback();
           },
           remove(keys, callback) {
-            storageWriteCount += 1;
+            removedKeys.push(Array.isArray(keys) ? keys.slice() : [keys]);
             if (callback) callback();
           }
         }
@@ -93,6 +94,9 @@ function createBackground() {
     },
     get localData() {
       return localData;
+    },
+    get removedKeys() {
+      return removedKeys;
     }
   };
 }
@@ -102,6 +106,14 @@ console.log('=== Page Scroll Master background lifecycle tests ===');
 const background = createBackground();
 
 assert(background.optionsOpenCount === 0, 'service worker startup does not open the options page');
+assert(
+  JSON.stringify(background.removedKeys[0]) === JSON.stringify([
+    'analyticsConsent',
+    'analyticsDailyAggregates',
+    'analyticsPendingBatch'
+  ]),
+  'service worker startup clears legacy anonymous-usage data'
+);
 
 background.trigger('install');
 assert(background.optionsOpenCount === 1, 'a new installation opens the options page');

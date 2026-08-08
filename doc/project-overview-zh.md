@@ -12,7 +12,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 在普通页面和文档类 SPA 中尽量识别真实滚动容器。
 - 通过 Popup 按主域名控制插件和高级功能，降低对无关站点的干扰。
 - 通过 Options 页面提供可视化配置、实时预览、站点管理、书签管理、反馈和关于入口。
-- 在隐私边界内提供默认关闭的匿名统计、主动反馈和 Chrome Web Store 评分入口。
+- 在隐私边界内提供主动反馈和 Chrome Web Store 评分入口。
 
 当前版本：`2.5.0`
 最低 Chrome 版本：`90`
@@ -150,7 +150,6 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 自动滚屏详细参数。
 - 按钮图标自定义。
 - 主域名启停状态管理。
-- 匿名统计同意管理。
 - 建议与反馈表单。
 - 关于插件、版本、联系信息和商店评分入口。
 - 多语言界面选择。
@@ -199,12 +198,10 @@ manifest.json
   ├─ options_ui
   │   ├─ options.html
   │   ├─ options.js
-  │   ├─ analytics.js
   │   ├─ feedback.js
   │   └─ rating.js
   └─ background.service_worker
-      ├─ background.js
-      └─ analytics.js
+      └─ background.js
 ```
 
 ### 3.2 主要模块职责
@@ -214,15 +211,13 @@ manifest.json
 - `domain-utils.js`：主域名归一化、站点状态结构、旧 `enableStates` 迁移和高级功能启停状态归一化。
 - `popup.html` / `popup.js`：工具栏弹窗，负责当前主域名总开关、高级功能开关、设置入口、评分邀请和内容脚本通知。
 - `options.html` / `options.js`：设置页结构、配置加载保存、表单校验、实时预览、站点管理、书签管理、反馈入口、多语言文案和关于模块。
-- `background.js`：MV3 Service Worker，负责全局快捷键消息转发、安装生命周期、匿名统计上传调度和消息处理。
-- `analytics.js`：匿名统计 consent、事件聚合、payload allowlist、保留期和上传数据构造。
+- `background.js`：MV3 Service Worker，负责全局快捷键消息转发、安装生命周期和旧统计数据清理。
 - `feedback.js`：反馈表单客户端校验、图片类型和大小限制、反馈端点配置。
 - `rating.js`：评分邀请频控状态、商店评分 URL、Popup 展示条件和用户操作记录。
 - `_locales/`：Manifest、内容脚本和 Chrome 原生界面的本地化文案。
 - `tests/`：Node + `vm` 模拟环境回归测试。
 - `build.js`：发布包生成入口，负责复制白名单文件、压缩、产物校验、源码和压缩产物回归测试、ZIP 生成。
 - `chrome-web-store/`：商店文案、隐私政策、发布清单、发布指南、最终素材和素材生成工具。
-- `analytics-backend/`：匿名统计 Cloudflare Worker。
 - `feedback-backend/`：反馈转发 Cloudflare Worker。
 
 ### 3.3 页面运行时设计
@@ -275,9 +270,6 @@ manifest.json
 - `enableStates`：旧版站点启停状态，迁移时保留兼容。
 - `bookmarks`：滚动位置书签。
 - `pendingScrollBookmarkRestore`：从设置页打开书签位置后的待恢复状态。
-- `analyticsConsent`：匿名统计同意状态。
-- `analyticsDailyAggregates`：最多 7 个 UTC 日的待上传聚合统计。
-- `analyticsPendingBatch`：统计上传重试批次。
 - `ratingPromptState`：评分邀请本地频控状态。
 
 浏览历史、页面位置、站点状态、评分邀请状态和统计队列都留在本地存储，不进入同步存储。
@@ -287,14 +279,11 @@ manifest.json
 Manifest 当前声明：
 
 - `permissions`：`storage`、`activeTab`。
-- `optional_permissions`：`alarms`。
 - `optional_host_permissions`：
-  - `https://page-scroll-master-analytics.kscje-apps.workers.dev/*`
   - `https://page-scroll-master-feedback.kscje-apps.workers.dev/*`
 
 远程能力均为用户主动或主动同意后触发：
 
-- 匿名统计默认关闭，开启后仅发送 allowlist 内的枚举化设置和日级聚合操作次数。
 - 反馈仅在用户点击提交后发送反馈类型、正文、可选联系方式和最多 3 张图片。
 - 评分入口只打开 Chrome Web Store 页面，不读取用户是否完成评分。
 
@@ -336,7 +325,6 @@ Manifest 当前声明：
 - 多语言：`node tests/test-language-normalization.js`
 - 后台生命周期：`node tests/test-background-lifecycle.js`
 - 安装生命周期：`node tests/test-background-install-lifecycle.js`
-- 匿名统计：`node tests/test-analytics-*.js`
 - 反馈：`node tests/test-feedback-*.js`
 
 功能、设置、Manifest 或本地化改动完成前，应运行相关测试并执行：

@@ -1,16 +1,14 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "kscje",
   "homepage_url": "https://github.com/kscje/page-scroll-master",
   "minimum_chrome_version": "90",
   "permissions": ["storage", "activeTab"],
-  "optional_permissions": ["alarms"],
   "optional_host_permissions": [
-    "https://page-scroll-master-analytics.kscje-apps.workers.dev/*",
     "https://page-scroll-master-feedback.kscje-apps.workers.dev/*"
   ],
   

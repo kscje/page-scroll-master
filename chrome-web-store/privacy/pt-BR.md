@@ -1,12 +1,12 @@
 # Política de Privacidade do Smart Scroll Navigator
 
-**Última atualização**: 5 de julho de 2026
+**Última atualização**: 8 de agosto de 2026
 
 ## Coleta de dados
 
 Durante o uso normal de rolagem, o Smart Scroll Navigator **não** coleta nem transmite histórico, URLs ou domínios visitados, títulos ou conteúdo de páginas, pesquisas, formulários, posições, marcadores ou contas. A única exceção são os dados enviados expressamente pelo formulário opcional descrito abaixo.
 
-A extensão inclui estatísticas anônimas de uso opcionais. Esse recurso fica desativado por padrão para usuários novos e existentes. Os dados só são coletados e transmitidos depois que você ativa expressamente **Enviar estatísticas anônimas de uso** na página de opções.
+As versões atuais não incluem estatísticas anônimas de uso nem coletam, armazenam ou transmitem dados estatísticos de uso. As informações estatísticas abaixo são mantidas apenas como registro histórico das versões anteriores à 2.5.4.
 
 Quando ativada, a extensão pode enviar:
 

@@ -44,7 +44,7 @@ Useful for reading long articles, technical documentation, online courses, paper
 
 Privacy friendly:
 
-Smart Scroll Navigator does not collect browsing history, visited URLs, page content, page titles, bookmark content, or personal identity data. Scroll positions and site states stay in local browser storage. Anonymous analytics is off by default and only sends aggregate data after explicit consent.
+Smart Scroll Navigator does not transmit browsing history, visited URLs, page content, page titles, bookmark content, or anonymous usage statistics to the developer or third parties. Scroll positions and site states stay in local browser storage. Optional feedback is sent only when you submit it and may include the message, contact details, and images you choose to provide.
 
 If you need a scroll-to-top button, scroll-to-bottom tool, auto-scroll extension, reading progress bar, long-page navigator, page outline, scroll bookmark, or Notion/Wiki reading assistant, Smart Scroll Navigator brings these tools together in one lightweight extension.
 
@@ -83,7 +83,7 @@ Smart Scroll Navigator 是一款轻量高效的 Chrome 页面滚动助手，专�
 
 隐私说明：
 
-Smart Scroll Navigator 不收集浏览历史、访问网址、页面内容、页面标题、书签内容或个人身份信息。滚动位置和网站状态保存在浏览器本地。匿名统计默认关闭，仅在用户主动同意后才会发送聚合数据。
+Smart Scroll Navigator 不会向开发者或第三方传输浏览历史、访问网址、页面内容、页面标题、书签内容或匿名使用统计数据。滚动位置和网站状态保存在浏览器本地。只有你主动提交反馈时，才会发送反馈内容、主动填写的联系方式和主动选择的图片。
 
 如果你正在寻找回到顶部按钮、滚动到底部工具、自动滚屏插件、网页阅读进度条、长页面导航器、网页目录工具、滚动位置书签或 Notion/Wiki 阅读助手，Smart Scroll Navigator 可以把这些能力集中在一个轻量扩展中。
 
@@ -120,7 +120,7 @@ Ideal para leer artículos largos, documentación técnica, cursos, papers, docu
 
 Privacidad:
 
-Smart Scroll Navigator no recopila historial, URLs visitadas, contenido de página, títulos, marcadores ni datos personales. Las posiciones y estados de sitio permanecen en el navegador. Las estadísticas anónimas están desactivadas por defecto y solo envían datos agregados con consentimiento.
+Smart Scroll Navigator no transmite al desarrollador ni a terceros historial, URLs visitadas, contenido de página, títulos, marcadores ni estadísticas de uso anónimas. Las posiciones y estados de sitio permanecen en el navegador. Los comentarios opcionales se envían solo al enviarlos e incluyen únicamente el mensaje, contacto e imágenes que proporciones.
 
 Si buscas un botón para volver arriba, ir abajo, auto scroll, barra de progreso, navegación de páginas largas, índice web, marcador de posición o asistente para Notion/Wiki, esta extensión reúne esas herramientas en una solución ligera.
 
@@ -157,7 +157,7 @@ Smart Scroll Navigator は、長い記事、オンライン文書、Notion、Wik
 
 プライバシー：
 
-閲覧履歴、訪問 URL、ページ内容、ページタイトル、ブックマーク内容、個人識別情報を収集しません。スクロール位置とサイト状態はブラウザー内に保存されます。匿名統計は初期状態で無効で、同意後に集計データのみ送信します。
+閲覧履歴、訪問 URL、ページ内容、ページタイトル、ブックマーク内容、匿名利用統計を開発者や第三者に送信しません。スクロール位置とサイト状態はブラウザー内に保存されます。任意のフィードバックは送信を押した場合にのみ送られ、メッセージ、連絡先、画像は自分で入力・選択したものだけです。
 
 ページトップボタン、最下部移動、自動スクロール、読書進捗バー、長ページナビゲーション、ページ目次、スクロールブックマーク、Notion/Wiki 読書補助を探している方に適した軽量拡張機能です。
 
@@ -194,7 +194,7 @@ Smart Scroll Navigator 是一款輕量高效的 Chrome 頁面捲動助手，專�
 
 隱私說明：
 
-Smart Scroll Navigator 不收集瀏覽紀錄、造訪網址、頁面內容、頁面標題、書籤內容或個人身份資訊。閱讀位置和網站狀態保存在瀏覽器本地。匿名統計預設關閉，只有主動同意後才會傳送彙總資料。
+Smart Scroll Navigator 不會向開發者或第三方傳送瀏覽紀錄、造訪網址、頁面內容、頁面標題、書籤內容或匿名使用統計資料。閱讀位置和網站狀態保存在瀏覽器本地。只有你主動送出意見回饋時，才會傳送回饋內容、主動填寫的聯絡方式和主動選擇的圖片。
 
 如果你正在尋找回到頂部按鈕、捲動到底部工具、自動捲動外掛、網頁閱讀進度條、長頁面導覽器、網頁目錄工具、捲動位置書籤或 Notion/Wiki 閱讀助手，這款輕量擴充功能能集中提供這些能力。
 
@@ -231,7 +231,7 @@ Geeignet für lange Artikel, technische Dokumentation, Online-Kurse, wissenschaf
 
 Datenschutz:
 
-Smart Scroll Navigator erfasst keine Browserverläufe, besuchten URLs, Seiteninhalte, Seitentitel, Lesezeicheninhalte oder personenbezogenen Daten. Scroll-Positionen und Website-Zustände bleiben lokal im Browser. Anonyme Statistiken sind standardmäßig deaktiviert und senden nur nach Zustimmung aggregierte Daten.
+Smart Scroll Navigator überträgt dem Entwickler oder Dritten keine Browserverläufe, besuchten URLs, Seiteninhalte, Seitentitel, Lesezeicheninhalte oder anonymen Nutzungsstatistiken. Scroll-Positionen und Website-Zustände bleiben lokal im Browser. Optionales Feedback wird nur nach dem Absenden übertragen und umfasst nur Nachricht, Kontaktangaben und Bilder, die Sie selbst angeben.
 
 Wenn Sie eine Nach-oben-Schaltfläche, ein Werkzeug zum Seitenende, Auto-Scroll, Lesefortschritt, Langseiten-Navigation, Seitenübersicht, Scroll-Lesezeichen oder einen Notion/Wiki-Leseassistenten suchen, bündelt Smart Scroll Navigator diese Funktionen in einer leichten Erweiterung.
 
@@ -268,7 +268,7 @@ Idéal pour lire de longs articles, documents techniques, cours, papers, documen
 
 Confidentialité :
 
-Smart Scroll Navigator ne collecte pas l’historique, les URL visitées, le contenu des pages, les titres, les marque-pages ni les données personnelles. Les positions et états de site restent dans le navigateur. Les statistiques anonymes sont désactivées par défaut et n’envoient des données agrégées qu’avec votre accord.
+Smart Scroll Navigator ne transmet au développeur ni à des tiers l’historique, les URL visitées, le contenu des pages, les titres, les marque-pages ni des statistiques d’utilisation anonymes. Les positions et états de site restent dans le navigateur. Les commentaires facultatifs ne sont envoyés qu’après soumission et ne comprennent que le message, les coordonnées et les images que vous choisissez de fournir.
 
 Si vous cherchez un bouton retour en haut, un outil pour aller en bas, le défilement automatique, une barre de progression, une navigation longue page, un sommaire, des positions enregistrées ou un assistant Notion/Wiki, cette extension réunit ces outils dans une solution légère.
 
@@ -305,7 +305,7 @@ Ideal para ler artigos longos, documentação técnica, cursos online, papers, d
 
 Privacidade:
 
-Smart Scroll Navigator não coleta histórico, URLs visitadas, conteúdo da página, títulos, favoritos nem dados pessoais. Posições de leitura e estados de site ficam no navegador. Estatísticas anônimas ficam desativadas por padrão e só enviam dados agregados com consentimento.
+Smart Scroll Navigator não transmite ao desenvolvedor nem a terceiros histórico, URLs visitadas, conteúdo da página, títulos, favoritos nem estatísticas de uso anônimas. Posições de leitura e estados de site ficam no navegador. O feedback opcional só é enviado após o envio e inclui apenas a mensagem, o contato e as imagens que você escolher fornecer.
 
 Se você procura botão voltar ao topo, ferramenta para ir ao fim, rolagem automática, barra de progresso, navegador de páginas longas, índice, marcador de posição ou assistente para Notion/Wiki, esta extensão reúne tudo em uma ferramenta leve.
 
@@ -342,7 +342,7 @@ Smart Scroll Navigator는 긴 글, 온라인 문서, Notion, Wiki, 지식 베이
 
 개인정보 보호:
 
-Smart Scroll Navigator는 방문 기록, 방문 URL, 페이지 내용, 페이지 제목, 북마크 내용 또는 개인 식별 정보를 수집하지 않습니다. 스크롤 위치와 사이트 상태는 브라우저에 저장됩니다. 익명 통계는 기본적으로 꺼져 있으며 동의 후 집계 데이터만 전송합니다.
+Smart Scroll Navigator는 방문 기록, 방문 URL, 페이지 내용, 페이지 제목, 북마크 내용 또는 익명 사용 통계를 개발자나 제3자에게 전송하지 않습니다. 스크롤 위치와 사이트 상태는 브라우저에 저장됩니다. 선택적 피드백은 제출할 때만 전송되며, 직접 제공한 메시지, 연락처, 이미지에 한합니다.
 
 맨 위로 이동 버튼, 맨 아래 이동 도구, 자동 스크롤, 읽기 진행률 표시줄, 긴 페이지 탐색기, 웹페이지 목차, 스크롤 북마크 또는 Notion/Wiki 읽기 도우미를 찾는다면 이 가벼운 확장 프로그램이 필요한 기능을 제공합니다.
 
@@ -379,7 +379,7 @@ Ideale per leggere articoli lunghi, documentazione tecnica, corsi online, paper,
 
 Privacy:
 
-Smart Scroll Navigator non raccoglie cronologia, URL visitati, contenuti, titoli, segnalibri o dati personali. Le posizioni di lettura e gli stati dei siti restano nel browser. Le statistiche anonime sono disattivate per impostazione predefinita e inviano solo dati aggregati dopo il consenso.
+Smart Scroll Navigator non trasmette allo sviluppatore o a terzi cronologia, URL visitati, contenuti, titoli, segnalibri o statistiche di utilizzo anonime. Le posizioni di lettura e gli stati dei siti restano nel browser. Il feedback facoltativo viene inviato solo dopo l’invio e include soltanto messaggio, contatto e immagini forniti dall’utente.
 
 Se cerchi un pulsante torna su, uno strumento per andare in fondo, scorrimento automatico, barra di avanzamento, navigazione di pagine lunghe, indice, segnalibro di posizione o assistente Notion/Wiki, questa estensione leggera riunisce tutto.
 
@@ -416,7 +416,7 @@ Smart Scroll Navigator — легкий помощник прокрутки дл
 
 Конфиденциальность:
 
-Smart Scroll Navigator не собирает историю браузера, посещенные URL, содержимое страниц, заголовки, содержимое закладок или персональные данные. Позиции прокрутки и состояния сайтов хранятся локально в браузере. Анонимная статистика выключена по умолчанию и отправляет только агрегированные данные после согласия.
+Smart Scroll Navigator не передает разработчику или третьим лицам историю браузера, посещенные URL, содержимое страниц, заголовки, содержимое закладок или анонимную статистику использования. Позиции прокрутки и состояния сайтов хранятся локально в браузере. Необязательная обратная связь отправляется только после отправки и включает лишь указанные вами сообщение, контакты и изображения.
 
 Если вам нужна кнопка наверх, переход вниз, автопрокрутка, индикатор чтения, навигация по длинным страницам, оглавление, закладка позиции или помощник для Notion/Wiki, Smart Scroll Navigator объединяет эти инструменты в одном легком расширении.
 
@@ -453,7 +453,7 @@ Uzun makaleler, teknik belgeler, çevrimiçi kurslar, araştırma metinleri, ür
 
 Gizlilik:
 
-Smart Scroll Navigator tarama geçmişi, ziyaret edilen URL, sayfa içeriği, sayfa başlığı, yer imi içeriği veya kişisel kimlik bilgisi toplamaz. Kaydırma konumları ve site durumları tarayıcıda yerel olarak kalır. Anonim istatistikler varsayılan olarak kapalıdır ve yalnızca onaydan sonra toplu veri gönderir.
+Smart Scroll Navigator tarama geçmişi, ziyaret edilen URL, sayfa içeriği, sayfa başlığı, yer imi içeriği veya anonim kullanım istatistiklerini geliştiriciye ya da üçüncü taraflara iletmez. Kaydırma konumları ve site durumları tarayıcıda yerel olarak kalır. İsteğe bağlı geri bildirim yalnızca gönderildiğinde iletilir ve sadece sağladığınız mesajı, iletişim bilgisini ve görselleri içerir.
 
 Üste dön düğmesi, sayfa sonuna gitme aracı, otomatik kaydırma, okuma ilerleme çubuğu, uzun sayfa gezgini, sayfa içeriği, kaydırma yer imi veya Notion/Wiki okuma yardımcısı arıyorsanız, Smart Scroll Navigator bunları hafif bir uzantıda birleştirir.
 
@@ -490,7 +490,7 @@ Cocok untuk membaca artikel panjang, dokumentasi teknis, kursus online, paper, d
 
 Privasi:
 
-Smart Scroll Navigator tidak mengumpulkan riwayat browser, URL yang dikunjungi, konten halaman, judul halaman, isi bookmark, atau data identitas pribadi. Posisi gulir dan status situs tetap tersimpan secara lokal di browser. Statistik anonim nonaktif secara default dan hanya mengirim data agregat setelah persetujuan.
+Smart Scroll Navigator tidak mengirim riwayat browser, URL yang dikunjungi, konten halaman, judul halaman, isi bookmark, atau statistik penggunaan anonim kepada pengembang atau pihak ketiga. Posisi gulir dan status situs tetap tersimpan secara lokal di browser. Umpan balik opsional hanya dikirim setelah Anda mengirimkannya dan hanya mencakup pesan, kontak, serta gambar yang Anda berikan.
 
 Jika Anda membutuhkan tombol kembali ke atas, alat ke bawah halaman, gulir otomatis, bilah progres baca, navigator halaman panjang, daftar isi halaman, bookmark posisi, atau asisten baca Notion/Wiki, Smart Scroll Navigator menggabungkannya dalam satu ekstensi ringan.
 

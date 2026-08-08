@@ -194,9 +194,6 @@ const onboardingTranslationKeys = [
   'settings.onboardingFeatureProgress',
   'settings.onboardingFeatureBookmarks',
   'settings.onboardingFeatureOutline',
-  'settings.onboardingPrivacyTitle',
-  'settings.onboardingPrivacyDescription',
-  'settings.onboardingPrivacyOff',
   'settings.onboardingDismiss',
   'settings.onboardingReopen'
 ];
@@ -244,7 +241,7 @@ expectedOptionLanguages.forEach((lang) => {
   );
 });
 
-assert(optionsContext.__releaseNotes[0].version === '2.5.3', 'release notes are ordered newest first');
+assert(optionsContext.__releaseNotes[0].version === '2.5.4', 'release notes are ordered newest first');
 assert(
   optionsContext.__releaseNotes[optionsContext.__releaseNotes.length - 1].version === '1.8.0',
   'release notes start at v1.8'

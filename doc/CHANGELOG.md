@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.4] - 2026-08-08
+
+### Changed
+- ✅ 下线匿名使用统计及其云端接收服务，扩展不再收集、存储或传输匿名使用统计数据
+- ✅ 移除“关于插件”中的“隐私与统计”模块，并清理遗留的统计权限、上传调度和本地待发送数据
+- ✅ 更新 Chrome Web Store 长描述、隐私政策和发布清单，明确本地书签与用户主动提交反馈的数据处理范围
+
 ## [2.5.3] - 2026-07-06
 
 ### Changed
@@ -254,6 +261,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.5.4]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.4
 [2.5.3]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.3
 [2.5.1]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.1
 [2.5.0]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.0

@@ -1,12 +1,12 @@
 # Política de privacidad de Navegador Scroll Inteligente
 
-**Última actualización**: 5 de julio de 2026
+**Última actualización**: 8 de agosto de 2026
 
 ## Recopilación de datos
 
 Durante el uso normal de desplazamiento, Navegador Scroll Inteligente **no** recopila ni transmite historial, URL o dominios visitados, títulos o contenido de páginas, búsquedas, formularios, posiciones, marcadores ni cuentas. La única excepción son los datos que usted envía expresamente mediante el formulario opcional descrito abajo.
 
-La extensión incluye estadísticas de uso anónimas opcionales. Esta función está desactivada de forma predeterminada para usuarios nuevos y existentes. Solo se recopilan y transmiten datos después de activar expresamente **Enviar estadísticas de uso anónimas** en la página de opciones.
+Las versiones actuales no incluyen estadísticas de uso anónimas ni recopilan, almacenan o transmiten datos estadísticos de uso. La información estadística siguiente se conserva solo como registro histórico de versiones anteriores a la 2.5.4.
 
 Cuando se activa, la extensión puede enviar:
 
