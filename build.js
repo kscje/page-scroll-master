@@ -370,6 +370,10 @@ function runRegressionTests() {
     cwd: ROOT,
     stdio: 'inherit',
   });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-scroll-animation-performance.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-spa-loading.js')], {
     cwd: ROOT,
     stdio: 'inherit',

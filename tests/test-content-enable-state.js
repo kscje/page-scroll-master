@@ -105,6 +105,8 @@ function createContext() {
         hasLoadedExtensionEnabledState,
         isExtensionEnabled,
         currentDomainKey,
+        scrollMode,
+        scrollSpeed,
         autoScrollEnabled: advancedSettings.autoScroll.enabled,
         progressEnabled: advancedSettings.progressBar.enabled,
         screenNavigationEnabled: advancedSettings.screenNavigation.enabled,
@@ -385,6 +387,15 @@ assert(context.removeCalls === 1, 'disabled hostname should remove any button cr
 const state = context.getState();
 assert(state.hasLoadedExtensionEnabledState === true, 'enable state load flag should be set');
 assert(state.isExtensionEnabled === false, 'disabled hostname should be reflected in content state');
+assert(state.scrollMode === 'custom', 'legacy settings without a mode use custom scrolling at runtime');
+assert(state.scrollSpeed === 100, 'legacy scroll duration is preserved at runtime');
+
+const smoothScrollContext = createContext();
+smoothScrollContext.runSyncGet({ scrollMode: 'smooth', scrollSpeed: 480, buttonSettings: {}, advancedSettings: {} });
+smoothScrollContext.runLocalGet({ enableStates: {} });
+const smoothScrollState = smoothScrollContext.getState();
+assert(smoothScrollState.scrollMode === 'smooth', 'a saved smooth mode loads into the content runtime');
+assert(smoothScrollState.scrollSpeed === 480, 'a saved custom duration remains available outside custom mode');
 
 const enabledContext = createContext();
 enabledContext.runSyncGet({ scrollSpeed: 100, buttonSettings: {}, advancedSettings: {} });
@@ -442,6 +453,26 @@ defaultContext.runLocalGet({
 const defaultState = defaultContext.getState();
 assert(defaultState.isExtensionEnabled === true, 'an unrecorded domain remains enabled by default');
 assert(defaultContext.initializeCalls === 1, 'an unrecorded domain initializes the extension');
+
+const disabledDefaultContext = createContext();
+disabledDefaultContext.runSyncGet({ scrollSpeed: 100, buttonSettings: {}, advancedSettings: {} });
+disabledDefaultContext.runLocalGet({
+  domainFeatureMigrationVersion: 2,
+  domainFeatureDefaults: {
+    extensionEnabled: false,
+    features: {
+      autoScroll: false,
+      progressBar: false,
+      screenNavigation: false,
+      scrollBookmarks: false,
+      outlineNavigation: false
+    }
+  },
+  domainFeatureStates: {}
+});
+const disabledDefaultState = disabledDefaultContext.getState();
+assert(disabledDefaultState.isExtensionEnabled === false, 'an unrecorded domain follows a saved disabled default');
+assert(disabledDefaultContext.initializeCalls === 0, 'a disabled new-site default does not initialize the extension');
 
 const storageErrorContext = createContext();
 storageErrorContext.runSyncGet(undefined, { message: 'sync storage unavailable' });

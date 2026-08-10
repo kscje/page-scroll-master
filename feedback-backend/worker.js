@@ -653,14 +653,15 @@ async function writeLog(env, values) {
   await env.DB.prepare(`
     INSERT INTO feedback_logs (
       request_id, feedback_type, image_count, included_page_url, delivery_status,
-      created_at, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      provider_status, created_at, expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     values.requestId,
     values.type,
     values.imageCount,
     values.includedPageUrl ? 1 : 0,
     values.status,
+    values.providerStatus,
     values.createdAt,
     values.expiresAt
   ).run();
@@ -670,8 +671,9 @@ async function writeUninstallLog(env, values) {
   await env.DB.prepare(`
     INSERT INTO uninstall_feedback_logs (
       request_id, reasons, reason_count, has_message, has_contact,
-      extension_version, language, delivery_status, created_at, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      extension_version, language, delivery_status, provider_status, created_at,
+      expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     values.requestId,
     values.reasons.join(','),
@@ -681,6 +683,7 @@ async function writeUninstallLog(env, values) {
     values.extensionVersion,
     values.language,
     values.status,
+    values.providerStatus,
     values.createdAt,
     values.expiresAt
   ).run();
@@ -718,22 +721,14 @@ async function sendEmail(env, feedback) {
     <hr>
     <pre style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escapeHtml(feedback.message)}</pre>
   `;
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: env.FEEDBACK_FROM_EMAIL,
-      to: [env.FEEDBACK_TO_EMAIL],
-      subject: `[Page Scroll Master] ${feedback.type} feedback`,
-      text: lines.join('\n'),
-      html,
-      attachments
-    })
+  return sendResendEmail(env, {
+    from: env.FEEDBACK_FROM_EMAIL,
+    to: [env.FEEDBACK_TO_EMAIL],
+    subject: `[Page Scroll Master] ${feedback.type} feedback`,
+    text: lines.join('\n'),
+    html,
+    attachments
   });
-  return response.ok;
 }
 
 async function sendUninstallEmail(env, feedback) {
@@ -762,21 +757,48 @@ async function sendUninstallEmail(env, feedback) {
     <hr>
     <pre style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escapeHtml(feedback.message || 'No additional details provided.')}</pre>
   `;
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: env.FEEDBACK_FROM_EMAIL,
-      to: [env.FEEDBACK_TO_EMAIL],
-      subject: '[Page Scroll Master] uninstall feedback',
-      text: lines.join('\n'),
-      html
-    })
+  return sendResendEmail(env, {
+    from: env.FEEDBACK_FROM_EMAIL,
+    to: [env.FEEDBACK_TO_EMAIL],
+    subject: '[Page Scroll Master] uninstall feedback',
+    text: lines.join('\n'),
+    html
   });
-  return response.ok;
+}
+
+async function sendResendEmail(env, payload) {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    return {
+      delivered: response.ok,
+      failureKind: response.ok ? '' : 'provider_response',
+      providerStatus: Number.isInteger(response.status) ? response.status : null
+    };
+  } catch {
+    return {
+      delivered: false,
+      failureKind: 'provider_network',
+      providerStatus: null
+    };
+  }
+}
+
+function logDeliveryFailure(requestId, channel, result) {
+  // Keep diagnostics content-free: no feedback fields or upstream response body.
+  console.warn(JSON.stringify({
+    event: 'feedback_delivery_failed',
+    requestId,
+    channel,
+    failureKind: result.failureKind,
+    providerStatus: result.providerStatus
+  }));
 }
 
 async function parseFeedback(request) {
@@ -877,7 +899,7 @@ async function handleFeedback(request, env, origin) {
   }
 
   const requestId = crypto.randomUUID();
-  const delivered = await sendEmail(env, parsed.feedback);
+  const delivery = await sendEmail(env, parsed.feedback);
   const createdAt = now.toISOString();
   try {
     await writeLog(env, {
@@ -885,14 +907,16 @@ async function handleFeedback(request, env, origin) {
       type: parsed.feedback.type,
       imageCount: parsed.feedback.images.length,
       includedPageUrl: false,
-      status: delivered ? 'sent' : 'failed',
+      status: delivery.delivered ? 'sent' : 'failed',
+      providerStatus: delivery.delivered ? null : delivery.providerStatus,
       createdAt,
       expiresAt: new Date(now.getTime() + LOG_RETENTION_DAYS * 86400000).toISOString()
     });
   } catch {
     // A metadata logging failure must not cause a successfully delivered email to be resent.
   }
-  if (!delivered) {
+  if (!delivery.delivered) {
+    logDeliveryFailure(requestId, 'feedback', delivery);
     return jsonResponse({ error: 'delivery_failed', requestId }, 502, origin);
   }
   return jsonResponse({ accepted: true, requestId }, 202, origin);
@@ -919,7 +943,7 @@ async function handleUninstallFeedback(request, env, origin) {
   }
 
   const requestId = crypto.randomUUID();
-  const delivered = await sendUninstallEmail(env, parsed.feedback);
+  const delivery = await sendUninstallEmail(env, parsed.feedback);
   const createdAt = now.toISOString();
   try {
     await writeUninstallLog(env, {
@@ -929,14 +953,16 @@ async function handleUninstallFeedback(request, env, origin) {
       hasContact: parsed.feedback.contact.length > 0,
       extensionVersion: parsed.feedback.extensionVersion,
       language: parsed.feedback.language,
-      status: delivered ? 'sent' : 'failed',
+      status: delivery.delivered ? 'sent' : 'failed',
+      providerStatus: delivery.delivered ? null : delivery.providerStatus,
       createdAt,
       expiresAt: new Date(now.getTime() + LOG_RETENTION_DAYS * 86400000).toISOString()
     });
   } catch {
     // A metadata logging failure must not cause a successfully delivered email to be resent.
   }
-  if (!delivered) {
+  if (!delivery.delivered) {
+    logDeliveryFailure(requestId, 'uninstall_feedback', delivery);
     return jsonResponse({ error: 'delivery_failed', requestId }, 502, origin);
   }
   return jsonResponse({ accepted: true, requestId }, 202, origin);

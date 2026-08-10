@@ -2745,6 +2745,18 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.5',
+    categories: {
+      improved: [
+        'scrollModesPerformance',
+        'newSiteDefaultBehavior'
+      ],
+      fixed: [
+        'outlineHeaderOcclusion'
+      ]
+    }
+  },
+  {
     version: '2.5.4',
     categories: {
       improved: [
@@ -3324,6 +3336,29 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
   releaseNotesTranslations[lang].items.analyticsRetirement = v254ReleaseNotesItems[lang];
 });
 
+const v255ReleaseNotesItems = {
+  'zh-CN': ['新增立即、顺滑和自定义滚动模式，并优化原生顺滑及动态页面滚动性能。', '基础设置现在可以配置未单独设置网站的默认启停状态。', '修复固定或粘性页头可能遮挡目录跳转目标标题的问题。'],
+  'zh-TW': ['新增立即、順滑與自訂捲動模式，並最佳化原生順滑及動態頁面捲動效能。', '基礎設定現在可設定未個別設定網站的預設啟停狀態。', '修正固定或黏性頁首可能遮擋目錄跳轉目標標題的問題。'],
+  'en-US': ['Added instant, smooth, and custom scroll modes, with faster native smooth scrolling and dynamic-page handling.', 'Basic settings can now choose the default enable state for sites without an individual setting.', 'Fixed fixed or sticky headers obscuring headings reached from outline navigation.'],
+  'es-ES': ['Se añadieron modos de desplazamiento inmediato, suave y personalizado, con mejoras de rendimiento en páginas dinámicas.', 'Los ajustes básicos permiten elegir el estado predeterminado de los sitios sin configuración individual.', 'Se corrigió que los encabezados fijos ocultaran títulos alcanzados desde el esquema.'],
+  'ja-JP': ['即時、スムーズ、カスタムの各スクロールモードを追加し、動的ページでの性能を改善しました。', '個別設定のないサイトの既定の有効状態を基本設定で選べるようになりました。', '固定ヘッダーがアウトライン移動先の見出しを隠す問題を修正しました。'],
+  'de-DE': ['Sofortiges, sanftes und benutzerdefiniertes Scrollen hinzugefügt und die Leistung auf dynamischen Seiten verbessert.', 'In den Grundeinstellungen lässt sich nun der Standardstatus für Websites ohne eigene Einstellung wählen.', 'Behoben, dass feste Kopfzeilen über die Gliederung angesprungene Überschriften verdecken konnten.'],
+  'fr-FR': ['Ajout des modes immédiat, fluide et personnalisé, avec de meilleures performances sur les pages dynamiques.', 'Les réglages de base permettent désormais de choisir l’état par défaut des sites sans réglage individuel.', 'Correction des en-têtes fixes qui pouvaient masquer les titres atteints depuis le plan.'],
+  'pt-BR': ['Adicionados modos de rolagem instantâneo, suave e personalizado, com melhor desempenho em páginas dinâmicas.', 'As configurações básicas agora permitem escolher o estado padrão de sites sem configuração individual.', 'Corrigidos cabeçalhos fixos que podiam ocultar títulos acessados pelo sumário.'],
+  'ko-KR': ['즉시, 부드럽게, 사용자 지정 스크롤 모드를 추가하고 동적 페이지 성능을 개선했습니다.', '개별 설정이 없는 사이트의 기본 활성 상태를 기본 설정에서 선택할 수 있습니다.', '고정 헤더가 개요 탐색으로 이동한 제목을 가리는 문제를 수정했습니다.'],
+  'it-IT': ['Aggiunte le modalità immediata, fluida e personalizzata, con prestazioni migliori nelle pagine dinamiche.', 'Le impostazioni di base consentono ora di scegliere lo stato predefinito dei siti senza configurazione individuale.', 'Corretto il problema delle intestazioni fisse che potevano coprire i titoli raggiunti dall’indice.'],
+  'ru-RU': ['Добавлены мгновенный, плавный и пользовательский режимы прокрутки, улучшена работа на динамических страницах.', 'В основных настройках теперь можно выбрать состояние по умолчанию для сайтов без отдельной настройки.', 'Исправлено перекрытие заголовков фиксированной шапкой при переходе из оглавления.'],
+  'tr-TR': ['Anında, akıcı ve özel kaydırma modları eklendi; dinamik sayfalardaki performans iyileştirildi.', 'Temel ayarlarda ayrı ayarı olmayan sitelerin varsayılan etkinlik durumu artık seçilebilir.', 'Sabit üstbilgilerin içerik gezinmesiyle ulaşılan başlıkları kapatması düzeltildi.'],
+  'id-ID': ['Menambahkan mode gulir langsung, halus, dan kustom serta meningkatkan performa pada halaman dinamis.', 'Pengaturan dasar kini dapat memilih status default untuk situs tanpa pengaturan tersendiri.', 'Memperbaiki header tetap yang dapat menutupi judul tujuan navigasi kerangka.']
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  const values = v255ReleaseNotesItems[lang] || v255ReleaseNotesItems['en-US'];
+  releaseNotesTranslations[lang].items.scrollModesPerformance = values[0];
+  releaseNotesTranslations[lang].items.newSiteDefaultBehavior = values[1];
+  releaseNotesTranslations[lang].items.outlineHeaderOcclusion = values[2];
+});
+
 const DEFAULT_ADVANCED_SETTINGS = {
   autoScroll: {
     enabled: false,
@@ -3393,7 +3428,12 @@ const DEFAULT_ADVANCED_SETTINGS = {
   }
 };
 
+const SCROLL_MODES = new Set(['instant', 'smooth', 'custom']);
+const DEFAULT_SCROLL_MODE = 'instant';
+const LEGACY_SCROLL_MODE = 'custom';
 const DEFAULT_SCROLL_SPEED = 100;
+const MIN_SCROLL_SPEED = 10;
+const MAX_SCROLL_SPEED = 2000;
 const DEFAULT_BUTTON_SETTINGS = {
   showButton: true,
   horizontalPosition: 'right',
@@ -3409,6 +3449,61 @@ const DEFAULT_BUTTON_SETTINGS = {
   enableHoverHide: true,
   hoverHideKey: 'Ctrl'
 };
+
+const defaultExtensionEnabledTranslations = {
+  'zh-CN': ['新网站默认状态', '未单独设置的网站', '默认启用', '默认关闭', '仅影响未单独设置的网站；按主域名手动启用或禁用的设置会优先保留。'],
+  'zh-TW': ['新網站預設狀態', '未個別設定的網站', '預設啟用', '預設停用', '僅影響未個別設定的網站；依主網域手動啟用或停用的設定會優先保留。'],
+  'en-US': ['Default behavior for new sites', 'Sites without a separate setting', 'Enabled by default', 'Disabled by default', 'Only affects sites without a separate setting. Per-domain enable or disable choices take priority.'],
+  'es-ES': ['Comportamiento predeterminado para sitios nuevos', 'Sitios sin una configuración independiente', 'Activado de forma predeterminada', 'Desactivado de forma predeterminada', 'Solo afecta a los sitios sin una configuración independiente. Las elecciones de activar o desactivar por dominio tienen prioridad.'],
+  'ja-JP': ['新しいサイトの既定の動作', '個別設定のないサイト', '既定で有効', '既定で無効', '個別設定のないサイトにのみ適用されます。ドメインごとの有効・無効設定が優先されます。'],
+  'de-DE': ['Standardverhalten für neue Websites', 'Websites ohne eigene Einstellung', 'Standardmäßig aktiviert', 'Standardmäßig deaktiviert', 'Gilt nur für Websites ohne eigene Einstellung. Einstellungen zum Aktivieren oder Deaktivieren pro Domain haben Vorrang.'],
+  'fr-FR': ['Comportement par défaut des nouveaux sites', 'Sites sans réglage distinct', 'Activé par défaut', 'Désactivé par défaut', 'S’applique uniquement aux sites sans réglage distinct. Les choix d’activation ou de désactivation par domaine sont prioritaires.'],
+  'pt-BR': ['Comportamento padrão para novos sites', 'Sites sem configuração separada', 'Ativado por padrão', 'Desativado por padrão', 'Afeta apenas sites sem configuração separada. As escolhas de ativar ou desativar por domínio têm prioridade.'],
+  'ko-KR': ['새 사이트의 기본 동작', '별도 설정이 없는 사이트', '기본으로 사용', '기본으로 사용 안 함', '별도 설정이 없는 사이트에만 적용됩니다. 도메인별 사용 또는 사용 안 함 선택이 우선합니다.'],
+  'it-IT': ['Comportamento predefinito per i nuovi siti', 'Siti senza un’impostazione separata', 'Attivato per impostazione predefinita', 'Disattivato per impostazione predefinita', 'Si applica solo ai siti senza un’impostazione separata. Le scelte di attivazione o disattivazione per dominio hanno la priorità.'],
+  'ru-RU': ['Поведение по умолчанию для новых сайтов', 'Сайты без отдельной настройки', 'Включено по умолчанию', 'Выключено по умолчанию', 'Влияет только на сайты без отдельной настройки. Настройки включения или выключения для домена имеют приоритет.'],
+  'tr-TR': ['Yeni siteler için varsayılan davranış', 'Ayrı ayarı olmayan siteler', 'Varsayılan olarak etkin', 'Varsayılan olarak devre dışı', 'Yalnızca ayrı ayarı olmayan siteleri etkiler. Alan adına özel etkinleştirme veya devre dışı bırakma seçimleri önceliklidir.'],
+  'id-ID': ['Perilaku default untuk situs baru', 'Situs tanpa pengaturan terpisah', 'Aktif secara default', 'Nonaktif secara default', 'Hanya memengaruhi situs tanpa pengaturan terpisah. Pilihan aktif atau nonaktif per domain diprioritaskan.']
+};
+
+Object.keys(translations).forEach((lang) => {
+  const values = defaultExtensionEnabledTranslations[lang] || defaultExtensionEnabledTranslations['en-US'];
+  Object.assign(translations[lang], {
+    'settings.siteDefaultBehavior': values[0],
+    'settings.defaultExtensionEnabled': values[1],
+    'settings.defaultExtensionEnabled.on': values[2],
+    'settings.defaultExtensionEnabled.off': values[3],
+    'settings.defaultExtensionEnabledHint': values[4]
+  });
+});
+
+const scrollModeTranslations = {
+  'zh-CN': ['滚动模式', '立即', '顺滑', '自定义', '自定义动画时长', '数值越小，滚动越快。'],
+  'zh-TW': ['捲動模式', '立即', '順滑', '自訂', '自訂動畫時間', '數值越小，捲動越快。'],
+  'en-US': ['Scroll mode', 'Instant', 'Smooth', 'Custom', 'Custom animation duration', 'Lower values scroll faster.'],
+  'es-ES': ['Modo de desplazamiento', 'Inmediato', 'Suave', 'Personalizado', 'Duración de animación personalizada', 'Los valores más bajos se desplazan más rápido.'],
+  'ja-JP': ['スクロールモード', '即時', 'スムーズ', 'カスタム', 'カスタムアニメーション時間', '値が小さいほど速くスクロールします。'],
+  'de-DE': ['Scrollmodus', 'Sofort', 'Sanft', 'Benutzerdefiniert', 'Benutzerdefinierte Animationsdauer', 'Niedrigere Werte scrollen schneller.'],
+  'fr-FR': ['Mode de défilement', 'Immédiat', 'Fluide', 'Personnalisé', 'Durée d’animation personnalisée', 'Une valeur plus faible accélère le défilement.'],
+  'pt-BR': ['Modo de rolagem', 'Instantâneo', 'Suave', 'Personalizado', 'Duração personalizada da animação', 'Valores menores tornam a rolagem mais rápida.'],
+  'ko-KR': ['스크롤 모드', '즉시', '부드럽게', '사용자 지정', '사용자 지정 애니메이션 시간', '값이 작을수록 더 빠르게 스크롤합니다.'],
+  'it-IT': ['Modalità di scorrimento', 'Immediato', 'Fluido', 'Personalizzato', 'Durata animazione personalizzata', 'Valori più bassi rendono lo scorrimento più veloce.'],
+  'ru-RU': ['Режим прокрутки', 'Мгновенно', 'Плавно', 'Пользовательский', 'Длительность пользовательской анимации', 'Чем меньше значение, тем быстрее прокрутка.'],
+  'tr-TR': ['Kaydırma modu', 'Anında', 'Akıcı', 'Özel', 'Özel animasyon süresi', 'Daha düşük değerler daha hızlı kaydırır.'],
+  'id-ID': ['Mode gulir', 'Langsung', 'Halus', 'Kustom', 'Durasi animasi kustom', 'Nilai yang lebih kecil menggulir lebih cepat.']
+};
+
+Object.keys(translations).forEach((lang) => {
+  const values = scrollModeTranslations[lang] || scrollModeTranslations['en-US'];
+  Object.assign(translations[lang], {
+    'settings.scrollMode': values[0],
+    'settings.scrollMode.instant': values[1],
+    'settings.scrollMode.smooth': values[2],
+    'settings.scrollMode.custom': values[3],
+    'settings.customScrollDuration': values[4],
+    'settings.customScrollDurationHint': values[5]
+  });
+});
 
 let advancedSettingsState = mergeAdvancedSettings();
 let domainFeatureStates = {};
@@ -3477,11 +3572,55 @@ function getDefaultAdvancedSettingsForSync() {
 
 function getDefaultSyncSettings() {
   return {
+    scrollMode: DEFAULT_SCROLL_MODE,
     scrollSpeed: DEFAULT_SCROLL_SPEED,
     buttonSettings: clonePlainObject(DEFAULT_BUTTON_SETTINGS),
     advancedSettings: getDefaultAdvancedSettingsForSync(),
     language: 'auto'
   };
+}
+
+function normalizeScrollMode(value, fallback = LEGACY_SCROLL_MODE) {
+  return SCROLL_MODES.has(value) ? value : fallback;
+}
+
+function normalizeScrollSpeed(value) {
+  const speed = Number.parseInt(value, 10);
+  if (!Number.isFinite(speed)) return DEFAULT_SCROLL_SPEED;
+  return Math.max(MIN_SCROLL_SPEED, Math.min(MAX_SCROLL_SPEED, speed));
+}
+
+function getScrollModeControls() {
+  return [
+    document.getElementById('scrollModeInstant'),
+    document.getElementById('scrollModeSmooth'),
+    document.getElementById('scrollModeCustom')
+  ].filter(Boolean);
+}
+
+function getSelectedScrollMode() {
+  const selected = getScrollModeControls().find((control) => control.checked);
+  return normalizeScrollMode(selected && selected.value, DEFAULT_SCROLL_MODE);
+}
+
+function setSelectedScrollMode(mode) {
+  const normalizedMode = normalizeScrollMode(mode);
+  getScrollModeControls().forEach((control) => {
+    control.checked = control.value === normalizedMode;
+  });
+  updateScrollModeControls();
+}
+
+function updateScrollModeControls() {
+  const isCustom = getSelectedScrollMode() === 'custom';
+  const customSettings = document.getElementById('customScrollSpeedSettings');
+  const speedInput = document.getElementById('scrollSpeed');
+  if (customSettings) {
+    customSettings.style.display = isCustom ? 'block' : 'none';
+  }
+  if (speedInput) {
+    speedInput.disabled = !isCustom;
+  }
 }
 
 function validateHexColor(color, fallback) {
@@ -4367,29 +4506,61 @@ function setupPreviewButtonInteractions() {
   const topButton = document.getElementById('previewTopButton');
   const bottomButton = document.getElementById('previewBottomButton');
   if (!topButton || !bottomButton) return;
+  let previewScrollFrame = null;
 
-  // 获取滚动速度设置
   function getScrollSpeed() {
     const speedInput = document.getElementById('scrollSpeed');
-    return speedInput ? parseInt(speedInput.value) : 100;
+    return normalizeScrollSpeed(speedInput ? speedInput.value : DEFAULT_SCROLL_SPEED);
   }
 
-  // 平滑滚动到顶部
-  topButton.addEventListener('click', () => {
-    const speed = getScrollSpeed();
-    window.scrollTo({
-      top: 0,
-      behavior: speed < 100 ? 'auto' : 'smooth'
-    });
+  function cancelPreviewScroll() {
+    if (previewScrollFrame !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(previewScrollFrame);
+    }
+    previewScrollFrame = null;
+  }
+
+  getScrollModeControls().forEach((control) => {
+    control.addEventListener('change', cancelPreviewScroll);
   });
 
-  // 平滑滚动到底部
+  function scrollPreviewTo(targetTop) {
+    cancelPreviewScroll();
+    const mode = getSelectedScrollMode();
+    if (mode !== 'custom') {
+      window.scrollTo({
+        top: targetTop,
+        behavior: mode === 'instant' ? 'auto' : 'smooth'
+      });
+      return;
+    }
+
+    const startTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+    const distance = targetTop - startTop;
+    const duration = getScrollSpeed();
+    const startTime = performance.now();
+    const animate = (timestamp) => {
+      const currentTime = Number.isFinite(timestamp) ? timestamp : performance.now();
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      window.scrollTo({ top: startTop + (distance * eased), behavior: 'auto' });
+      if (progress < 1) {
+        previewScrollFrame = requestAnimationFrame(animate);
+      } else {
+        previewScrollFrame = null;
+      }
+    };
+    previewScrollFrame = requestAnimationFrame(animate);
+  }
+
+  topButton.addEventListener('click', () => {
+    scrollPreviewTo(0);
+  });
+
   bottomButton.addEventListener('click', () => {
-    const speed = getScrollSpeed();
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: speed < 100 ? 'auto' : 'smooth'
-    });
+    scrollPreviewTo(document.documentElement.scrollHeight);
   });
 }
 
@@ -4937,7 +5108,10 @@ function loadDomainFeatureStates() {
       const migration = domainUtils.migrateStorage(localResult, syncResult.advancedSettings);
       domainFeatureStates = migration.states;
       domainFeatureDefaults = migration.defaults;
-      const finish = () => renderDomainFeatureStatesList();
+      const finish = () => {
+        updateDefaultExtensionEnabledControl();
+        renderDomainFeatureStatesList();
+      };
       if (!migration.needsWrite) {
         finish();
         return;
@@ -4947,6 +5121,26 @@ function loadDomainFeatureStates() {
         finish();
       });
     });
+  });
+}
+
+function updateDefaultExtensionEnabledControl() {
+  const control = document.getElementById('defaultExtensionEnabled');
+  if (!control) return;
+  control.value = domainFeatureDefaults.extensionEnabled ? 'true' : 'false';
+}
+
+function saveDefaultExtensionEnabled(callback) {
+  const control = document.getElementById('defaultExtensionEnabled');
+  const nextDefaults = domainUtils.normalizeDefaults({
+    ...domainFeatureDefaults,
+    extensionEnabled: control?.value !== 'false'
+  });
+  chrome.storage.local.set({ [DOMAIN_STORAGE_KEYS.defaults]: nextDefaults }, () => {
+    if (logChromeStorageError('storage.local.set domain feature defaults')) return;
+    domainFeatureDefaults = nextDefaults;
+    renderDomainFeatureStatesList();
+    if (callback) callback();
   });
 }
 
@@ -5457,12 +5651,13 @@ function updateRangeFills() {
 
 // 加载保存的设置
 function loadSettings() {
-  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
+  chrome.storage.sync.get(['scrollMode', 'scrollSpeed', 'buttonSettings', 'language', 'advancedSettings'], (result) => {
     result = getSafeStorageResult(result, 'storage.sync.get settings');
-    if (result.scrollSpeed) {
-      document.getElementById('scrollSpeed').value = result.scrollSpeed;
-      document.getElementById('speedValue').textContent = result.scrollSpeed + 'ms';
-    }
+    const scrollMode = normalizeScrollMode(result.scrollMode);
+    const scrollSpeed = normalizeScrollSpeed(result.scrollSpeed);
+    setSelectedScrollMode(scrollMode);
+    document.getElementById('scrollSpeed').value = scrollSpeed;
+    document.getElementById('speedValue').textContent = scrollSpeed + 'ms';
 
     if (result.buttonSettings) {
       const buttonSettings = result.buttonSettings;
@@ -5505,14 +5700,18 @@ function loadSettings() {
   });
 }
 
-function notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings) {
+function notifyActiveTabSettings(scrollMode, scrollSpeed, buttonSettings, advancedSettings) {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     const tab = tabs[0];
     if (!tab || !tab.id) {
       return;
     }
 
-    chrome.tabs.sendMessage(tab.id, {action: 'updateSpeed', speed: scrollSpeed}, () => {
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'updateScrollBehavior',
+      mode: scrollMode,
+      speed: scrollSpeed
+    }, () => {
       if (chrome.runtime.lastError) {
         return;
       }
@@ -5546,9 +5745,12 @@ function persistResetDefaults(nextSettings) {
       return;
     }
 
+    const scrollMode = Object.prototype.hasOwnProperty.call(nextSettings, 'scrollMode')
+      ? normalizeScrollMode(nextSettings.scrollMode, DEFAULT_SCROLL_MODE)
+      : getSelectedScrollMode();
     const scrollSpeed = Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed')
       ? nextSettings.scrollSpeed
-      : parseInt(document.getElementById('scrollSpeed').value);
+      : normalizeScrollSpeed(document.getElementById('scrollSpeed').value);
     const buttonSettings = nextSettings.buttonSettings || {
       showButton: true,
       horizontalPosition: document.getElementById('horizontalPosition').value,
@@ -5571,13 +5773,18 @@ function persistResetDefaults(nextSettings) {
       : document.getElementById('languageSelector').value;
 
     setAdvancedSettingsControls(advancedSettings);
-    if (nextSettings.buttonSettings || Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed') || Object.prototype.hasOwnProperty.call(nextSettings, 'language')) {
+    if (
+      nextSettings.buttonSettings ||
+      Object.prototype.hasOwnProperty.call(nextSettings, 'scrollMode') ||
+      Object.prototype.hasOwnProperty.call(nextSettings, 'scrollSpeed') ||
+      Object.prototype.hasOwnProperty.call(nextSettings, 'language')
+    ) {
       loadSettings();
     } else {
       updateAdvancedPreviewControls();
       updatePreviewButtons();
     }
-    notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
+    notifyActiveTabSettings(scrollMode, scrollSpeed, buttonSettings, advancedSettings);
   });
 }
 
@@ -5589,6 +5796,7 @@ function resetBasicDefaults() {
     const defaultAdvancedSettings = getDefaultAdvancedSettingsForSync();
     advancedSettings.iconCustomization = clonePlainObject(defaultAdvancedSettings.iconCustomization);
     persistResetDefaults({
+      scrollMode: DEFAULT_SCROLL_MODE,
       scrollSpeed: DEFAULT_SCROLL_SPEED,
       buttonSettings: clonePlainObject(DEFAULT_BUTTON_SETTINGS),
       advancedSettings
@@ -5663,7 +5871,8 @@ function showSaveButtonFeedback(messageKey, fallback, color) {
 
 // 保存设置
 function saveSettings() {
-  const scrollSpeed = parseInt(document.getElementById('scrollSpeed').value);
+  const scrollMode = getSelectedScrollMode();
+  const scrollSpeed = normalizeScrollSpeed(document.getElementById('scrollSpeed').value);
   const buttonSize = parseInt(document.getElementById('buttonSize').value);
   const buttonSpacing = parseInt(document.getElementById('buttonSpacing').value);
   const edgeDistance = parseInt(document.getElementById('edgeDistance').value);
@@ -5738,14 +5947,15 @@ function saveSettings() {
   const language = document.getElementById('languageSelector').value;
   const advancedSettings = domainUtils.stripLegacyEnabled(getAdvancedSettingsFromControls());
 
-  chrome.storage.sync.set({scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, advancedSettings: advancedSettings, language: language}, () => {
+  chrome.storage.sync.set({scrollMode: scrollMode, scrollSpeed: scrollSpeed, buttonSettings: buttonSettings, advancedSettings: advancedSettings, language: language}, () => {
     if (logChromeStorageError('storage.sync.set settings')) {
       showSaveButtonFeedback('settings.saveError', 'Save failed. Please try again.', '#D93025');
       return;
     }
-
-    showSaveButtonFeedback('settings.saveSuccess', 'Saved successfully!', '#4CAF50');
-    notifyActiveTabSettings(scrollSpeed, buttonSettings, advancedSettings);
+    saveDefaultExtensionEnabled(() => {
+      showSaveButtonFeedback('settings.saveSuccess', 'Saved successfully!', '#4CAF50');
+      notifyActiveTabSettings(scrollMode, scrollSpeed, buttonSettings, advancedSettings);
+    });
   });
 }
 
@@ -5773,6 +5983,9 @@ function init() {
   // 监听滚动速度变化
   document.getElementById('scrollSpeed').addEventListener('input', (e) => {
     document.getElementById('speedValue').textContent = e.target.value + 'ms';
+  });
+  getScrollModeControls().forEach((control) => {
+    control.addEventListener('change', updateScrollModeControls);
   });
 
   // 监听颜色选择器变化
@@ -6166,6 +6379,7 @@ if (chrome.storage.onChanged && chrome.storage.onChanged.addListener) {
       domainFeatureDefaults = domainUtils.normalizeDefaults(
         changes[DOMAIN_STORAGE_KEYS.defaults].newValue
       );
+      updateDefaultExtensionEnabledControl();
     }
     if (changes[DOMAIN_STORAGE_KEYS.states]) {
       domainFeatureStates = domainUtils.normalizeStates(

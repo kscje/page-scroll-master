@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.5] - 2026-08-10
+
+### Changed
+- ✅ 新增“立即、顺滑、自定义”三种滚动模式，新用户默认立即，历史用户保留原速度并迁移为自定义模式
+- ✅ 顺滑模式统一使用浏览器原生平滑滚动，自定义模式继续支持 `10ms - 2000ms` 动画时长
+- ✅ 优化动态页面的滚动容器检测和 DOM 变化处理，降低长页面滚动期间的布局计算与主线程开销
+- ✅ 设置页支持配置未单独设置网站的默认启停状态
+
+### Fixed
+- ✅ 修复固定或粘性页头可能遮挡目录跳转目标标题的问题
+
 ## [2.5.4] - 2026-08-08
 
 ### Changed
@@ -261,6 +272,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 图标系统搭建
 - 🚧 多语言支持框架
 
+[2.5.5]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.5
 [2.5.4]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.4
 [2.5.3]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.3
 [2.5.1]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.1

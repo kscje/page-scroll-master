@@ -14,6 +14,8 @@ function assert(condition, message) {
 
 function createContext() {
   const frames = new Map();
+  const windowListeners = {};
+  const nativeScrollCalls = [];
   let nextFrameId = 1;
   let now = 0;
 
@@ -63,12 +65,20 @@ function createContext() {
         pushState() {},
         replaceState() {}
       },
-      addEventListener() {},
-      removeEventListener() {},
+      addEventListener(type, callback) {
+        windowListeners[type] = windowListeners[type] || [];
+        windowListeners[type].push(callback);
+      },
+      removeEventListener(type, callback) {
+        windowListeners[type] = (windowListeners[type] || []).filter((listener) => listener !== callback);
+      },
       getComputedStyle(element) {
         return { overflowY: element.overflowY || 'visible' };
       },
       scrollTo(x, y) {
+        const options = typeof x === 'object' ? x : { left: x, top: y, behavior: 'auto' };
+        nativeScrollCalls.push({ ...options });
+        y = options.top;
         this.pageYOffset = y;
         documentElement.scrollTop = y;
         body.scrollTop = y;
@@ -140,10 +150,109 @@ function createContext() {
     frames,
     runNextFrame,
     runUntilIdle,
+    dispatchWindow(type) {
+      (windowListeners[type] || []).slice().forEach((listener) => listener({ type }));
+    },
+    nativeScrollCalls,
     setNow(value) {
       now = value;
     }
   };
+}
+
+{
+  const context = createContext();
+  const { sandbox, body, documentElement } = context;
+  vm.runInContext("scrollMode = 'smooth';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(context.frames.size === 0, 'default top/bottom action does not schedule a JavaScript animation frame');
+  assert(context.nativeScrollCalls.length === 1, 'default bottom action starts one native scroll');
+  assert(context.nativeScrollCalls[0].behavior === 'smooth', 'default bottom action requests native smooth behavior');
+  assert(context.nativeScrollCalls[0].top === 11200, 'native bottom action targets the current scroll range');
+
+  documentElement.scrollHeight = 14000;
+  body.scrollHeight = 14000;
+  context.dispatchWindow('scrollend');
+
+  assert(context.nativeScrollCalls.length === 2, 'native bottom action retargets when the page grows');
+  assert(context.nativeScrollCalls[1].top === 13200, 'native retarget uses the latest bottom range');
+  context.dispatchWindow('scrollend');
+  assert(vm.runInContext('activeNativeScrollState === null', sandbox), 'native scroll state clears after completion');
+}
+
+{
+  const context = createContext();
+  const { sandbox, documentElement } = context;
+  documentElement.scrollTop = 8000;
+  sandbox.window.pageYOffset = 8000;
+  vm.runInContext("scrollMode = 'custom'; scrollSpeed = 300;", sandbox);
+
+  sandbox.scrollToTop();
+
+  assert(context.frames.size === 1, 'a non-default saved duration keeps the custom animation compatibility path');
+  assert(context.nativeScrollCalls.length === 0, 'custom-duration compatibility does not start native smooth scrolling');
+}
+
+{
+  const context = createContext();
+  const { sandbox, documentElement } = context;
+  documentElement.scrollTop = 8000;
+  sandbox.window.pageYOffset = 8000;
+  vm.runInContext("scrollMode = 'instant'; scrollSpeed = 600;", sandbox);
+
+  sandbox.scrollToTop();
+
+  assert(vm.runInContext('activeScrollAnimationState === null', sandbox), 'instant mode does not start a JavaScript scroll animation');
+  assert(context.nativeScrollCalls.length === 1, 'instant mode performs one native scroll call');
+  assert(context.nativeScrollCalls[0].behavior === 'auto', 'instant mode requests immediate native behavior');
+  assert(documentElement.scrollTop === 0, 'instant mode reaches the target immediately');
+}
+
+{
+  const context = createContext();
+  const { sandbox } = context;
+  const calls = [];
+  const listeners = {};
+  const customContainer = {
+    tagName: 'DIV',
+    scrollHeight: 5000,
+    clientHeight: 800,
+    scrollTop: 0,
+    isConnected: true,
+    scrollTo(options) {
+      calls.push({ ...options });
+      this.scrollTop = options.top;
+    },
+    addEventListener(type, callback) {
+      listeners[type] = callback;
+    },
+    removeEventListener(type) {
+      delete listeners[type];
+    }
+  };
+  vm.runInContext("scrollMode = 'smooth';", sandbox);
+
+  sandbox.scrollToPosition(customContainer, 3200);
+
+  assert(calls.length === 1, 'smooth mode supports a custom scroll container');
+  assert(calls[0].behavior === 'smooth', 'custom containers use native smooth behavior when available');
+  assert(context.frames.size === 0, 'custom-container native smooth scrolling avoids a JavaScript scroll animation');
+}
+
+{
+  const context = createContext();
+  const { sandbox, documentElement } = context;
+  documentElement.scrollTop = 6000;
+  sandbox.window.pageYOffset = 6000;
+  sandbox.window.matchMedia = () => ({ matches: true });
+  vm.runInContext("scrollMode = 'smooth';", sandbox);
+
+  sandbox.scrollToTop();
+
+  assert(context.nativeScrollCalls[0].behavior === 'auto', 'reduced-motion preference makes smooth mode immediate');
+  assert(vm.runInContext('activeNativeScrollState === null', sandbox), 'reduced-motion scrolling does not retain native animation state');
 }
 
 {

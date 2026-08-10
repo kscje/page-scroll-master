@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS feedback_logs (
   image_count INTEGER NOT NULL CHECK (image_count BETWEEN 0 AND 3),
   included_page_url INTEGER NOT NULL CHECK (included_page_url IN (0, 1)),
   delivery_status TEXT NOT NULL CHECK (delivery_status IN ('sent', 'failed')),
+  provider_status INTEGER,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
 );
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS uninstall_feedback_logs (
   extension_version TEXT NOT NULL,
   language TEXT NOT NULL,
   delivery_status TEXT NOT NULL CHECK (delivery_status IN ('sent', 'failed')),
+  provider_status INTEGER,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL
 );

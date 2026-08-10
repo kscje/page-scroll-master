@@ -386,6 +386,52 @@
       color: var(--muted);
     }
 
+    .scroll-mode-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .scroll-mode-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #354052;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .scroll-mode-option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid #d6deea;
+      border-radius: 9px;
+      background: #ffffff;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .scroll-mode-option:has(input:checked) {
+      border-color: var(--primary);
+      background: rgba(74, 158, 221, 0.1);
+      box-shadow: 0 0 0 2px rgba(74, 158, 221, 0.1);
+    }
+
+    .scroll-mode-option input {
+      margin: 0 7px 0 0;
+      accent-color: var(--primary);
+    }
+
+    .custom-scroll-speed-settings {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
     input[type="number"],
     input[type="text"],
     textarea,
@@ -1212,6 +1258,14 @@
         grid-template-columns: 1fr;
       }
 
+      .scroll-mode-options {
+        grid-template-columns: 1fr;
+      }
+
+      .scroll-mode-option {
+        justify-content: flex-start;
+      }
+
       .onboarding-steps {
         grid-template-columns: 1fr;
       }
@@ -1526,11 +1580,39 @@
         </section>
 
         <div class="setting-grid">
+          <div class="setting-group full-width">
+            <h3 data-i18n="settings.siteDefaultBehavior">新网站默认状态</h3>
+            <label for="defaultExtensionEnabled" data-i18n="settings.defaultExtensionEnabled">未单独设置的网站</label>
+            <select id="defaultExtensionEnabled">
+              <option value="true" data-i18n="settings.defaultExtensionEnabled.on">默认启用</option>
+              <option value="false" data-i18n="settings.defaultExtensionEnabled.off">默认关闭</option>
+            </select>
+            <p class="muted-note" data-i18n="settings.defaultExtensionEnabledHint">仅影响未单独设置的网站；按主域名手动启用或禁用的设置会优先保留。</p>
+          </div>
+
           <div class="setting-group">
             <h3 data-i18n="settings.scrollBehavior">滚动行为</h3>
-            <label for="scrollSpeed" data-i18n="settings.scrollSpeed">滚动速度</label>
-            <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="100">
-            <div class="speed-value" id="speedValue">100ms</div>
+            <span id="scrollModeLabel" class="scroll-mode-label" data-i18n="settings.scrollMode">滚动模式</span>
+            <div class="scroll-mode-options" role="radiogroup" aria-labelledby="scrollModeLabel">
+              <label class="scroll-mode-option" for="scrollModeInstant">
+                <input type="radio" id="scrollModeInstant" name="scrollMode" value="instant" checked>
+                <span data-i18n="settings.scrollMode.instant">立即</span>
+              </label>
+              <label class="scroll-mode-option" for="scrollModeSmooth">
+                <input type="radio" id="scrollModeSmooth" name="scrollMode" value="smooth">
+                <span data-i18n="settings.scrollMode.smooth">顺滑</span>
+              </label>
+              <label class="scroll-mode-option" for="scrollModeCustom">
+                <input type="radio" id="scrollModeCustom" name="scrollMode" value="custom">
+                <span data-i18n="settings.scrollMode.custom">自定义</span>
+              </label>
+            </div>
+            <div id="customScrollSpeedSettings" class="custom-scroll-speed-settings" style="display: none;">
+              <label for="scrollSpeed" data-i18n="settings.customScrollDuration">自定义动画时长</label>
+              <input type="range" id="scrollSpeed" min="10" max="2000" step="10" value="100">
+              <div class="speed-value" id="speedValue">100ms</div>
+              <p class="muted-note" data-i18n="settings.customScrollDurationHint">数值越小，滚动越快。</p>
+            </div>
           </div>
 
           <div class="setting-group">

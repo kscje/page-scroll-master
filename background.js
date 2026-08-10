@@ -1,4 +1,10 @@
 const ONBOARDING_VISIBLE_KEY = 'showOnboarding';
+const DEFAULT_SCROLL_MODE = 'instant';
+const LEGACY_SCROLL_MODE = 'custom';
+const DEFAULT_SCROLL_SPEED = 100;
+const MIN_SCROLL_SPEED = 10;
+const MAX_SCROLL_SPEED = 2000;
+const SCROLL_MODES = new Set(['instant', 'smooth', 'custom']);
 const LEGACY_USAGE_STORAGE_KEYS = [
   'analyticsConsent',
   'analyticsDailyAggregates',
@@ -40,6 +46,44 @@ function readSyncStorage(keys) {
       }
       resolve(result || {});
     });
+  });
+}
+
+function normalizeScrollSpeed(value) {
+  const speed = Number.parseInt(value, 10);
+  if (!Number.isFinite(speed)) return DEFAULT_SCROLL_SPEED;
+  return Math.max(MIN_SCROLL_SPEED, Math.min(MAX_SCROLL_SPEED, speed));
+}
+
+function initializeScrollBehavior(details, callback) {
+  const finish = typeof callback === 'function' ? callback : () => {};
+  if (!chrome.storage || !chrome.storage.sync || typeof chrome.storage.sync.get !== 'function') {
+    finish();
+    return;
+  }
+
+  const keys = ['scrollMode', 'scrollSpeed', 'buttonSettings', 'advancedSettings', 'language'];
+  chrome.storage.sync.get(keys, (result) => {
+    result = chrome.runtime.lastError || !result ? {} : result;
+    const hasValidMode = SCROLL_MODES.has(result.scrollMode);
+    const scrollSpeed = normalizeScrollSpeed(result.scrollSpeed);
+    const hasValidSpeed = Number(result.scrollSpeed) === scrollSpeed;
+    if (hasValidMode && hasValidSpeed) {
+      finish();
+      return;
+    }
+
+    const isUpdate = details && details.reason === 'update';
+    const hasLegacySyncSettings = keys.some((key) => Object.prototype.hasOwnProperty.call(result, key));
+    const scrollMode = hasValidMode
+      ? result.scrollMode
+      : (isUpdate || hasLegacySyncSettings ? LEGACY_SCROLL_MODE : DEFAULT_SCROLL_MODE);
+
+    if (typeof chrome.storage.sync.set !== 'function') {
+      finish();
+      return;
+    }
+    chrome.storage.sync.set({ scrollMode, scrollSpeed }, () => finish());
   });
 }
 
@@ -107,16 +151,19 @@ chrome.runtime.onInstalled.addListener((details) => {
     registerUninstallSurveyUrl();
   }
 
-  if (!details || details.reason !== 'install') {
+  if (!details || (details.reason !== 'install' && details.reason !== 'update')) {
     return;
   }
 
-  chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: true }, () => {
-    chrome.runtime.openOptionsPage(() => {
-      // Ignore failures so onboarding cannot block extension initialization.
-      if (chrome.runtime.lastError) {
-        return;
-      }
+  initializeScrollBehavior(details, () => {
+    if (details.reason !== 'install') return;
+    chrome.storage.local.set({ [ONBOARDING_VISIBLE_KEY]: true }, () => {
+      chrome.runtime.openOptionsPage(() => {
+        // Ignore failures so onboarding cannot block extension initialization.
+        if (chrome.runtime.lastError) {
+          return;
+        }
+      });
     });
   });
 });

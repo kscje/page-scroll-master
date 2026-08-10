@@ -1,6 +1,6 @@
 # Page Scroll Master 项目总览
 
-本文档汇总 Page Scroll Master 当前产品形态、技术架构、关键数据边界、验证方式和后续规划入口。除特别注明外，本文以当前源码、`manifest.json`、`README.md` 和 `doc/CHANGELOG.md` 中的 `2.5.0` 状态为准。
+本文档汇总 Page Scroll Master 当前产品形态、技术架构、关键数据边界、验证方式和后续规划入口。除特别注明外，本文以当前源码、`manifest.json`、`README.md` 和 `doc/CHANGELOG.md` 中的 `2.5.5` 状态为准。
 
 ## 1. 项目定位
 
@@ -14,7 +14,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 通过 Options 页面提供可视化配置、实时预览、站点管理、书签管理、反馈和关于入口。
 - 在隐私边界内提供主动反馈和 Chrome Web Store 评分入口。
 
-当前版本：`2.5.0`
+当前版本：`2.5.5`
 最低 Chrome 版本：`90`
 扩展架构：Manifest V3、原生 JavaScript / HTML / CSS、内容脚本 + Popup + Options + Service Worker。
 
@@ -26,7 +26,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 快捷键：
   - `Ctrl+Shift+Up` / `Command+Shift+Up`：回到顶部。
   - `Ctrl+Shift+Down` / `Command+Shift+Down`：回到底部。
-- 平滑滚动动画，默认滚动速度为 `100ms`，可在 `10ms - 2000ms` 范围内配置。
+- 支持立即、浏览器原生顺滑和自定义三种滚动模式；新用户默认立即，自定义动画时长可在 `10ms - 2000ms` 范围内配置。
 - 自定义滚动容器检测，兼容 Notion、飞书 Wiki、语雀、钉钉文档等 SPA 或文档类页面。
 - 全屏模式下自动隐藏浮动按钮。
 - 鼠标悬停 + 指定快捷键隐藏按钮。
@@ -64,7 +64,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 设置页入口。
 - 满足频控条件后的 Chrome Web Store 评分邀请。
 
-主域名状态按可注册主域名归一化，同一主域名下的不同子域名共享状态。未出现在本地状态表中的站点默认启用。
+主域名状态按可注册主域名归一化，同一主域名下的不同子域名共享状态。新安装时，未出现在本地状态表中的站点默认启用；用户可在基础设置中改为默认关闭，且手动设置的主域名状态始终优先。
 
 ### 2.4 页面进度条
 
@@ -140,7 +140,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 
 设置页负责全局配置、实时预览和管理入口：
 
-- 滚动速度。
+- 滚动模式和自定义动画时长。
 - 按钮位置、尺寸、形状、间距、颜色、透明度。
 - 悬停隐藏和快捷键。
 - 页面进度条详细参数。
@@ -253,7 +253,8 @@ manifest.json
 
 同步存储保存跨设备配置：
 
-- `scrollSpeed`：滚动速度。
+- `scrollMode`：滚动模式，支持立即、浏览器原生顺滑和自定义动画；新用户默认立即，缺少该字段的历史配置按自定义模式兼容。
+- `scrollSpeed`：自定义滚动动画时长，范围为 `10ms - 2000ms`；切换到其他模式时继续保留该值。
 - `buttonSettings`：按钮位置、尺寸、形状、颜色、透明度、隐藏快捷键等。
 - `advancedSettings`：页面进度条、按屏跳转、书签、目录、自动滚屏、图标等详细参数。
 - `language`：界面语言。

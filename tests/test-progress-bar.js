@@ -60,6 +60,8 @@ class FakeElement {
     this.overflowY = options.overflowY || 'visible';
     this.display = options.display || 'block';
     this.visibility = options.visibility || 'visible';
+    this.position = options.position || 'static';
+    this.pointerEvents = options.pointerEvents || 'auto';
     this.rect = options.rect || { left: 0, top: 0, width: 200, height: 24, right: 200, bottom: 24 };
     this.offsetParent = options.offsetParent === undefined ? {} : options.offsetParent;
     this.isConnected = options.isConnected !== false;
@@ -391,7 +393,9 @@ function createContext(syncData = {}, initialLocalData = {}) {
         return {
           overflowY: element.overflowY,
           display: element.display,
-          visibility: element.visibility
+          visibility: element.visibility,
+          position: element.position,
+          pointerEvents: element.pointerEvents
         };
       },
       addEventListener(type, callback) {
@@ -1083,6 +1087,49 @@ function testOutlineMenuRootPageJump() {
   const closeButton = menu.querySelector('.psm-reading-menu-close');
   menu.listeners.click[0]({ stopPropagation() {}, target: closeButton });
   assert(!menu.classList.contains('psm-open'), 'outline menu closes from its explicit close button');
+}
+
+function testOutlineMenuJumpAvoidsFixedHeader() {
+  const sandbox = createContext({
+    scrollSpeed: 100,
+    advancedSettings: {
+      outlineNavigation: { enabled: true }
+    }
+  });
+  const root = sandbox.getScrollRoot();
+  const header = new FakeElement('header', {
+    position: 'fixed',
+    rect: { left: 0, top: 0, right: 1000, bottom: 96, width: 1000, height: 96 }
+  });
+  const nonInteractiveOverlay = new FakeElement('div', {
+    id: 'other-extension-overlay',
+    position: 'fixed',
+    pointerEvents: 'none',
+    rect: { left: 0, top: 0, right: 1000, bottom: 800, width: 1000, height: 800 }
+  });
+  const target = new FakeElement('h2', {
+    id: 'fixed-header-target',
+    textContent: 'Fixed header target',
+    rect: { left: 0, top: 500, right: 400, bottom: 524, width: 400, height: 24 }
+  });
+  sandbox.document.body.appendChild(header);
+  sandbox.document.body.appendChild(nonInteractiveOverlay);
+  sandbox.document.body.appendChild(target);
+  sandbox.document.querySelectorAll = (selector) => selector === '*'
+    ? [header, nonInteractiveOverlay, target]
+    : [];
+  sandbox.document.documentElement.scrollTop = 300;
+  sandbox.window.pageYOffset = 300;
+
+  sandbox.handleOutlineToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-outline-menu');
+  const targetButton = menu.querySelector('.psm-reading-menu-outline').children[1];
+  menu.listeners.click[0]({ stopPropagation() {}, target: targetButton });
+
+  assert(
+    sandbox.window.pageYOffset === 688,
+    'outline jump uses the fixed header while ignoring a non-interactive full-page overlay'
+  );
 }
 
 function testPinnedOutlineMenuOnlyClosesExplicitly() {
@@ -1911,6 +1958,7 @@ testDynamicReadingToolMenuStructure();
 testOutlineDisabledBookmarkMenuDoesNotScanOrRenderOutline();
 testOutlineMenuListRendering();
 testOutlineMenuRootPageJump();
+testOutlineMenuJumpAvoidsFixedHeader();
 testPinnedOutlineMenuOnlyClosesExplicitly();
 testOutlineMenuCustomContainerJump();
 testOutlineMenuAdjacentActionJumpAndBoundaryState();

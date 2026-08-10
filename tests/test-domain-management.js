@@ -138,6 +138,21 @@ assert(v1Migration.defaults.features.scrollBookmarks === false, 'v1 bookmark def
 assert(v1Migration.defaults.features.outlineNavigation === false, 'v1 outline default is corrected to off');
 assert(v1Migration.states['explicit.example'].features.progressBar === true, 'explicit per-domain feature state is preserved');
 
+const disabledDefault = sandbox.PageScrollMasterDomain.normalizeDefaults({ extensionEnabled: false });
+assert(disabledDefault.extensionEnabled === false, 'new-site default can be set to disabled');
+assert(
+  sandbox.PageScrollMasterDomain.getState({
+    'enabled.example': { extensionEnabled: true }
+  }, 'enabled.example', disabledDefault).extensionEnabled === true,
+  'an explicit enabled domain overrides a disabled new-site default'
+);
+assert(
+  sandbox.PageScrollMasterDomain.getState({
+    'disabled.example': { extensionEnabled: false }
+  }, 'disabled.example', sandbox.PageScrollMasterDomain.normalizeDefaults({ extensionEnabled: true })).extensionEnabled === false,
+  'an explicit disabled domain overrides an enabled new-site default'
+);
+
 const normalizedState = sandbox.PageScrollMasterDomain.normalizeState({
   extensionEnabled: true,
   containerStrategy: 'page',

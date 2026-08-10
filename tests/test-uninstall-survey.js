@@ -19,6 +19,10 @@ function nextTick() {
 function createBackground(options = {}) {
   let installedListener = null;
   const uninstallUrls = [];
+  const syncData = {};
+  if (Object.prototype.hasOwnProperty.call(options, 'language')) {
+    syncData.language = options.language;
+  }
   const runtime = {
     lastError: null,
     getManifest() {
@@ -48,8 +52,18 @@ function createBackground(options = {}) {
       storage: {
         sync: {
           get(keys, callback) {
-            assert(keys === 'language', 'uninstall survey reads only the language preference');
-            callback({ language: options.language });
+            const requestedKeys = Array.isArray(keys) ? keys : [keys];
+            const result = {};
+            requestedKeys.forEach((key) => {
+              if (Object.prototype.hasOwnProperty.call(syncData, key)) {
+                result[key] = syncData[key];
+              }
+            });
+            callback(result);
+          },
+          set(data, callback) {
+            Object.assign(syncData, data);
+            if (callback) callback();
           }
         },
         local: {

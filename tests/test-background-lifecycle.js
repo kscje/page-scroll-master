@@ -12,12 +12,14 @@ function assert(condition, message) {
   }
 }
 
-function createBackground() {
+function createBackground(initialSyncData = {}) {
   let installedListener = null;
   let optionsOpenCount = 0;
   let failNextOpen = false;
   let storageWriteCount = 0;
   const localData = {};
+  const syncData = JSON.parse(JSON.stringify(initialSyncData));
+  let syncWriteCount = 0;
   const removedKeys = [];
 
   const runtime = {
@@ -42,6 +44,23 @@ function createBackground() {
     chrome: {
       runtime,
       storage: {
+        sync: {
+          get(keys, callback) {
+            const requestedKeys = Array.isArray(keys) ? keys : [keys];
+            const result = {};
+            requestedKeys.forEach((key) => {
+              if (Object.prototype.hasOwnProperty.call(syncData, key)) {
+                result[key] = syncData[key];
+              }
+            });
+            callback(result);
+          },
+          set(data, callback) {
+            syncWriteCount += 1;
+            Object.assign(syncData, JSON.parse(JSON.stringify(data)));
+            if (callback) callback();
+          }
+        },
         local: {
           get(keys, callback) {
             callback({});
@@ -95,6 +114,12 @@ function createBackground() {
     get localData() {
       return localData;
     },
+    get syncData() {
+      return syncData;
+    },
+    get syncWriteCount() {
+      return syncWriteCount;
+    },
     get removedKeys() {
       return removedKeys;
     }
@@ -119,6 +144,8 @@ background.trigger('install');
 assert(background.optionsOpenCount === 1, 'a new installation opens the options page');
 assert(background.storageWriteCount === 1, 'a new installation records the onboarding display state');
 assert(background.localData.showOnboarding === true, 'a new installation marks onboarding as visible');
+assert(background.syncData.scrollMode === 'instant', 'a new installation defaults to instant scrolling');
+assert(background.syncData.scrollSpeed === 100, 'a new installation stores the default custom duration');
 
 background.trigger('update');
 background.trigger('chrome_update');
@@ -130,6 +157,26 @@ assert(background.storageWriteCount === 1, 'updates do not change the onboarding
 background.failNextOpen();
 background.trigger('install');
 assert(background.optionsOpenCount === 2, 'an options-page failure is consumed without breaking the listener');
+
+const legacyInstall = createBackground({ scrollSpeed: 750, buttonSettings: { buttonSize: 48 } });
+legacyInstall.trigger('install');
+assert(legacyInstall.syncData.scrollMode === 'custom', 'restored legacy sync settings migrate to custom mode on install');
+assert(legacyInstall.syncData.scrollSpeed === 750, 'legacy custom duration is preserved during install migration');
+
+const legacyUpdate = createBackground();
+legacyUpdate.trigger('update');
+assert(legacyUpdate.syncData.scrollMode === 'custom', 'an existing user without a stored mode migrates to custom mode');
+assert(legacyUpdate.syncData.scrollSpeed === 100, 'legacy users without a saved duration receive the compatibility duration');
+
+const configuredUpdate = createBackground({ scrollMode: 'instant', scrollSpeed: 420 });
+configuredUpdate.trigger('update');
+assert(configuredUpdate.syncData.scrollMode === 'instant', 'an existing valid mode is not overwritten on update');
+assert(configuredUpdate.syncWriteCount === 0, 'an existing valid mode does not trigger another migration write');
+
+const invalidLegacyUpdate = createBackground({ scrollMode: 'unknown', scrollSpeed: 5000 });
+invalidLegacyUpdate.trigger('update');
+assert(invalidLegacyUpdate.syncData.scrollMode === 'custom', 'an invalid historical mode falls back to custom');
+assert(invalidLegacyUpdate.syncData.scrollSpeed === 2000, 'an invalid historical duration is clamped during migration');
 
 assert(!MANIFEST.permissions.includes('management'), 'the implementation does not request management permission');
 

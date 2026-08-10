@@ -136,8 +136,13 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
   const appendedHeadElements = [];
   const windowListeners = {};
   const elements = {
+    scrollModeInstant: createElement('scrollModeInstant', { value: 'instant', checked: true }),
+    scrollModeSmooth: createElement('scrollModeSmooth', { value: 'smooth' }),
+    scrollModeCustom: createElement('scrollModeCustom', { value: 'custom' }),
+    customScrollSpeedSettings: createElement('customScrollSpeedSettings'),
     scrollSpeed: createElement('scrollSpeed', { value: '1000', min: '10', max: '2000' }),
     speedValue: createElement('speedValue', { textContent: '1000ms' }),
+    defaultExtensionEnabled: createElement('defaultExtensionEnabled', { value: 'true' }),
     horizontalPosition: createElement('horizontalPosition', { value: 'right' }),
     verticalAlignment: createElement('verticalAlignment', { value: 'center' }),
     buttonSize: createElement('buttonSize', { value: '40' }),
@@ -341,6 +346,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
   const localData = JSON.parse(JSON.stringify(initialLocalData));
   const sentMessages = [];
   const createdTabs = [];
+  const previewScrollCalls = [];
   const commandShortcuts = {
     'scroll-to-top': 'Command+Shift+Up',
     'scroll-to-bottom': 'Command+Shift+Down',
@@ -383,7 +389,9 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
       confirm() {
         return true;
       },
-      scrollTo() {},
+      scrollTo(options) {
+        previewScrollCalls.push(options);
+      },
       addEventListener(type, callback) {
         windowListeners[type] = windowListeners[type] || [];
         windowListeners[type].push(callback);
@@ -503,6 +511,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     localData,
     sentMessages,
     createdTabs,
+    previewScrollCalls,
     commandShortcuts,
     dispatchWindowEvent(type) {
       (windowListeners[type] || []).forEach((callback) => callback());
@@ -532,20 +541,42 @@ let page = createOptionsPage({
 
 assert(page.elements.scrollSpeed.value === 750, 'scroll speed input is loaded from storage');
 assert(page.elements.speedValue.textContent === '750ms', 'scroll speed label is loaded from storage');
+assert(page.elements.scrollModeCustom.checked === true, 'legacy saved speed loads in custom mode');
+assert(page.elements.customScrollSpeedSettings.style.display === 'block', 'custom mode displays the duration control');
 assert(page.elements.previewTopButton.style.width === '64px', 'preview top button size is applied');
 assert(page.elements.previewBottomButton.style.backgroundColor === '#445566', 'preview bottom button color is applied');
 assert(page.elements.previewTopButton.style.opacity === 0.35, 'preview opacity is applied');
 assert(page.elements.previewTopButton.style.left === '24px', 'preview horizontal edge distance is applied');
 assert(page.elements.previewBottomButton.style.bottom === '24px', 'preview vertical edge distance is applied');
 assert(page.elements.buttonShape.value === 'round', 'button shape defaults to round when not in storage');
+assert(page.elements.defaultExtensionEnabled.value === 'true', 'new sites default to an enabled extension');
+assert(
+  OPTIONS_HTML.includes('id="defaultExtensionEnabled"') &&
+    OPTIONS_HTML.includes('data-i18n="settings.defaultExtensionEnabledHint"'),
+  'basic settings expose a documented default behavior control for new sites'
+);
+assert(
+  OPTIONS_HTML.includes('id="scrollModeInstant"') &&
+    OPTIONS_HTML.includes('id="scrollModeSmooth"') &&
+    OPTIONS_HTML.includes('id="scrollModeCustom"'),
+  'basic settings expose instant, smooth, and custom scroll modes'
+);
 const basicPanelIndex = OPTIONS_HTML.indexOf('data-tab-panel="basic"');
 const onboardingGuideIndex = OPTIONS_HTML.indexOf('class="onboarding-guide"');
 const settingGridIndex = OPTIONS_HTML.indexOf('class="setting-grid"', basicPanelIndex);
+const defaultExtensionEnabledIndex = OPTIONS_HTML.indexOf('id="defaultExtensionEnabled"', settingGridIndex);
+const scrollBehaviorIndex = OPTIONS_HTML.indexOf('data-i18n="settings.scrollBehavior"', settingGridIndex);
 assert(
   basicPanelIndex >= 0 &&
   onboardingGuideIndex > basicPanelIndex &&
   onboardingGuideIndex < settingGridIndex,
   'new-user guidance appears on the default basic tab before detailed settings'
+);
+assert(
+  defaultExtensionEnabledIndex > settingGridIndex &&
+    defaultExtensionEnabledIndex < scrollBehaviorIndex &&
+    OPTIONS_HTML.lastIndexOf('class="setting-group full-width"', defaultExtensionEnabledIndex) > settingGridIndex,
+  'new-site default behavior is the first full-width module in basic settings'
 );
 assert(
   (OPTIONS_HTML.match(/class="onboarding-step"/g) || []).length === 3,
@@ -597,6 +628,25 @@ assert(
     page.elements.onboardingGuide.style.display === 'block',
   'the about section can reopen onboarding on demand'
 );
+const disabledDefaultPage = createOptionsPage({}, {
+  domainFeatureMigrationVersion: 2,
+  domainFeatureDefaults: {
+    extensionEnabled: false,
+    features: {
+      autoScroll: false,
+      progressBar: false,
+      screenNavigation: false,
+      scrollBookmarks: false,
+      outlineNavigation: false
+    }
+  },
+  domainFeatureStates: {}
+});
+assert(disabledDefaultPage.elements.defaultExtensionEnabled.value === 'false', 'saved disabled new-site defaults load into basic settings');
+const smoothModePage = createOptionsPage({ scrollMode: 'smooth', scrollSpeed: 320 });
+assert(smoothModePage.elements.scrollModeSmooth.checked === true, 'saved smooth mode loads into the settings page');
+assert(smoothModePage.elements.customScrollSpeedSettings.style.display === 'none', 'smooth mode hides the custom duration control');
+assert(smoothModePage.elements.scrollSpeed.value === 320, 'smooth mode retains the stored custom duration');
 assert(!OPTIONS_HTML.includes('id="progressBarEnabled"'), 'settings page no longer exposes the progress enable switch');
 assert(!OPTIONS_HTML.includes('id="scrollBookmarksEnabled"'), 'settings page no longer exposes the bookmark enable switch');
 assert(!OPTIONS_HTML.includes('id="outlineNavigationEnabled"'), 'settings page no longer exposes the outline enable switch');
@@ -951,7 +1001,7 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1030,6 +1080,14 @@ assert(
 page.elements.scrollSpeed.value = '250';
 page.elements.scrollSpeed.dispatch('input');
 assert(page.elements.speedValue.textContent === '250ms', 'speed label updates on input');
+page.elements.scrollModeCustom.checked = false;
+page.elements.scrollModeInstant.checked = true;
+page.elements.scrollModeInstant.dispatch('change');
+assert(page.elements.customScrollSpeedSettings.style.display === 'none', 'non-custom mode hides the duration control');
+page.elements.scrollModeInstant.checked = false;
+page.elements.scrollModeCustom.checked = true;
+page.elements.scrollModeCustom.dispatch('change');
+assert(page.elements.customScrollSpeedSettings.style.display === 'block', 'switching back to custom restores the duration control');
 
 console.log('\nTest 3: Save stores settings and notifies the active tab');
 page.elements.autoScrollSpeedPreset.value = 'custom';
@@ -1058,8 +1116,10 @@ page.elements.scrollBookmarkPerDomainLimit.value = '2';
 page.elements.scrollBookmarkRestoreMode.value = 'auto';
 page.elements.iconSet.value = 'doubleArrow';
 page.elements.iconColor.value = '#123456';
+page.elements.defaultExtensionEnabled.value = 'false';
 page.elements.saveButton.dispatch('click');
 assert(page.syncData.scrollSpeed === 250, 'save persists scroll speed');
+assert(page.syncData.scrollMode === 'custom', 'save persists the selected scroll mode');
 assert(page.syncData.buttonSettings.opacity === 42, 'save persists opacity');
 assert(page.syncData.buttonSettings.edgeDistance === 24, 'save persists edge distance');
 assert(!Object.prototype.hasOwnProperty.call(page.syncData.advancedSettings.autoScroll, 'enabled'), 'save omits auto scroll enabled state');
@@ -1096,7 +1156,15 @@ assert(page.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 2, 'sav
 assert(page.syncData.advancedSettings.scrollBookmarks.restoreMode === 'auto', 'save persists scroll bookmark restore mode');
 assert(page.syncData.advancedSettings.iconCustomization.iconSet === 'doubleArrow', 'save persists icon set');
 assert(page.syncData.advancedSettings.iconCustomization.iconColor === '#123456', 'save persists icon color');
-assert(page.sentMessages.some((entry) => entry.message.action === 'updateSpeed' && entry.message.speed === 250), 'save sends updateSpeed message');
+assert(page.localData.domainFeatureDefaults.extensionEnabled === false, 'save persists the new-site default in local storage');
+assert(
+  page.sentMessages.some((entry) =>
+    entry.message.action === 'updateScrollBehavior' &&
+    entry.message.mode === 'custom' &&
+    entry.message.speed === 250
+  ),
+  'save sends the complete scroll behavior in one message'
+);
 assert(page.sentMessages.some((entry) => entry.message.action === 'updateButtonSettings' && entry.message.settings.opacity === 42), 'save sends updateButtonSettings message');
 assert(
   page.sentMessages.some((entry) =>
@@ -1116,7 +1184,7 @@ failedSavePage.context.chrome.storage.sync.set = (data, callback) => {
 failedSavePage.elements.saveButton.dispatch('click');
 assert(failedSavePage.syncData.scrollSpeed === undefined, 'failed save does not persist sync settings');
 assert(
-  !failedSavePage.sentMessages.some((entry) => entry.message.action === 'updateSpeed'),
+  !failedSavePage.sentMessages.some((entry) => entry.message.action === 'updateScrollBehavior'),
   'failed save does not notify active tab with unsaved settings'
 );
 console.log('\nTest 3b: Save validation explains invalid vertical progress height');
@@ -1201,10 +1269,12 @@ assert(resetPage.localData.domainFeatureStates['example.test'].extensionEnabled 
 assert(resetPage.localData.bookmarks['exact:https://example.test/a'], 'module restore does not clear local bookmarks');
 resetPage.elements.resetBasicSettingsButton.dispatch('click');
 assert(resetPage.syncData.scrollSpeed === 100, 'basic restore resets scroll speed');
+assert(resetPage.syncData.scrollMode === 'instant', 'basic restore resets the scroll mode to instant');
 assert(resetPage.syncData.buttonSettings.buttonSize === 40, 'basic restore resets button size');
 assert(resetPage.syncData.advancedSettings.iconCustomization.iconSet === 'defaultArrow', 'basic restore resets button icon settings');
 assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 3, 'basic restore does not reset advanced settings');
 resetPage.elements.resetAllSyncSettingsButton.dispatch('click');
+assert(resetPage.syncData.scrollMode === 'instant', 'all sync restore resets the scroll mode to instant');
 assert(resetPage.syncData.language === 'auto', 'all sync restore resets language to automatic');
 assert(resetPage.syncData.advancedSettings.scrollBookmarks.perDomainLimit === 1, 'all sync restore resets advanced settings');
 assert(resetPage.localData.ratingPromptState.ratedClicked === true, 'all sync restore preserves rating prompt state');
@@ -1213,6 +1283,14 @@ console.log('\nTest 5: Preview controls survive packaged output execution');
 assert(typeof page.elements.previewTopButton.listeners.click?.[0] === 'function', 'preview top click listener is registered');
 assert(typeof page.elements.previewBottomButton.listeners.click?.[0] === 'function', 'preview bottom click listener is registered');
 assert(page.appendedHeadElements.some((element) => element.id === 'preview-button-styles'), 'dynamic preview hover styles are injected');
+page.elements.scrollModeCustom.checked = false;
+page.elements.scrollModeInstant.checked = true;
+page.elements.previewTopButton.dispatch('click');
+assert(page.previewScrollCalls.at(-1).behavior === 'auto', 'instant mode preview jumps without smooth behavior');
+page.elements.scrollModeInstant.checked = false;
+page.elements.scrollModeSmooth.checked = true;
+page.elements.previewBottomButton.dispatch('click');
+assert(page.previewScrollCalls.at(-1).behavior === 'smooth', 'smooth mode preview uses browser-native smooth behavior');
 
 console.log('\nTest 6: Button shape change updates preview button border-radius');
 let page2 = createOptionsPage({

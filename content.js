@@ -1,7 +1,13 @@
 // 默认设置
 const domainUtils = PageScrollMasterDomain;
 const DOMAIN_STORAGE_KEYS = domainUtils.STORAGE_KEYS;
-let scrollSpeed = 100; // 默认滚动速度为100ms
+const SCROLL_MODES = new Set(['instant', 'smooth', 'custom']);
+const LEGACY_SCROLL_MODE = 'custom';
+const DEFAULT_SCROLL_SPEED = 100;
+const MIN_SCROLL_SPEED = 10;
+const MAX_SCROLL_SPEED = 2000;
+let scrollMode = LEGACY_SCROLL_MODE; // 缺少新字段时按历史自定义动画兼容
+let scrollSpeed = DEFAULT_SCROLL_SPEED;
 let isExtensionEnabled = false; // 当前网站插件启用状态
 let hasLoadedExtensionEnabledState = false; // 站点启用状态加载完成前不初始化按钮
 const currentDomainKey = domainUtils.getDomainKey(window.location.href || window.location.hostname);
@@ -33,6 +39,9 @@ const PENDING_BOOKMARK_RESTORE_RETRY_DELAY = 250;
 const PENDING_BOOKMARK_RESTORE_MAX_RETRIES = 20;
 const SCROLL_ANIMATION_MAX_DURATION_FACTOR = 1.5;
 const SCROLL_ANIMATION_BOTTOM_REFRESH_MS = 200;
+const NATIVE_SCROLL_SETTLE_DELAY_MS = 140;
+const NATIVE_SCROLL_MAX_WAIT_MS = 1200;
+const NATIVE_SCROLL_BOTTOM_RETARGET_LIMIT = 2;
 let outlineHighlightScrollTarget = null;
 let outlineHighlightUpdateFrame = null;
 let outlineHighlightMenu = null;
@@ -169,7 +178,11 @@ const SPA_DETECTION_CONFIG = {
   // 动态重试固定间隔（等距重试，不再指数递增）
   retryInterval: 500,
   // 最大重试次数
-  maxRetries: 20
+  maxRetries: 20,
+  // 单轮只保留有限的变更根节点，避免虚拟列表滚动期间积压大量 DOM 引用
+  maxPendingMutationRoots: 24,
+  // 空闲调度最长等待时间，避免繁忙页面永久不处理容器变化
+  idleTimeout: 600
 };
 let spaDetectionState = {
   retryCount: 0,
@@ -177,6 +190,10 @@ let spaDetectionState = {
   initialTimer: null,
   debounceTimer: null,
   retryTimer: null,
+  idleCallback: null,
+  pendingAddedNodes: [],
+  pendingRemovedNodes: [],
+  hasUntrackedAdditions: false,
   domReadyHandler: null,
   isInitialized: false
 };
@@ -210,6 +227,8 @@ let autoScrollRuntime = {
 };
 const scrollAnimationStateMap = new WeakMap();
 let activeScrollAnimationState = null;
+const nativeScrollStateMap = new WeakMap();
+let activeNativeScrollState = null;
 let readingEstimateCache = {
   target: null,
   calculatedAt: 0,
@@ -621,9 +640,23 @@ function shouldReevaluateScrollContainer(mutations) {
       return true;
     }
 
-    const addedNodes = Array.from(mutation.addedNodes || []);
+    const addedNodes = Array.from(mutation.addedNodes || []).filter((node) =>
+      isRootScrollElement(currentScrollContainer) || !nodeContains(currentScrollContainer, node)
+    );
     return addedNodes.some(hasAddedPrimaryScrollCandidate);
   });
+}
+
+function resolveScrollContainerForAction() {
+  const strategy = getEffectiveContainerStrategy();
+  const canReuseCurrentContainer =
+    strategy === currentScrollContainerStrategy &&
+    isScrollContainerUsable(currentScrollContainer) &&
+    isRetainablePrimaryScrollContainer(currentScrollContainer);
+
+  return canReuseCurrentContainer
+    ? currentScrollContainer
+    : resolveScrollContainer({ refresh: true });
 }
 
 function canProgrammaticallyScrollVertically(element) {
@@ -934,6 +967,9 @@ function setCurrentScrollContainer(nextContainer, strategy) {
 
   if (autoScrollRuntime.state !== 'stopped' && autoScrollRuntime.container === oldContainer) {
     stopAutoScroll();
+  }
+  if (activeNativeScrollState && activeNativeScrollState.container === oldContainer) {
+    cancelNativeScrollAnimation(oldContainer, { stopMotion: true });
   }
   currentScrollContainer = nextContainer;
   currentScrollContainerStrategy = nextStrategy;
@@ -1300,6 +1336,7 @@ function startAutoScroll() {
     return false;
   }
   cancelScrollAnimation(container);
+  cancelNativeScrollAnimation(container, { stopMotion: true });
   autoScrollRuntime.state = 'playing';
   autoScrollRuntime.container = container;
   autoScrollRuntime.lastTimestamp = null;
@@ -1443,6 +1480,62 @@ function unbindAutoScrollPauseListeners() {
   }
 }
 
+function getOutlineTopOcclusionOffset(element, container) {
+  if (
+    !element ||
+    !container ||
+    typeof element.getBoundingClientRect !== 'function' ||
+    typeof document.querySelectorAll !== 'function'
+  ) {
+    return 0;
+  }
+
+  const targetRect = element.getBoundingClientRect();
+  const viewportRect = isRootScrollElement(container)
+    ? {
+      top: 0,
+      bottom: window.innerHeight || document.documentElement.clientHeight || 0
+    }
+    : (typeof container.getBoundingClientRect === 'function'
+      ? container.getBoundingClientRect()
+      : null);
+  if (!viewportRect || viewportRect.bottom <= viewportRect.top) return 0;
+
+  let occlusionOffset = 0;
+  const titleStartX = Math.min(targetRect.right - 1, targetRect.left + 24);
+  document.querySelectorAll('*').forEach((candidate) => {
+    if (
+      candidate === element ||
+      candidate.id === HOST_ID ||
+      typeof candidate.getBoundingClientRect !== 'function'
+    ) {
+      return;
+    }
+
+    const style = window.getComputedStyle(candidate);
+    if (
+      !style ||
+      (style.position !== 'fixed' && style.position !== 'sticky') ||
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      style.pointerEvents === 'none'
+    ) {
+      return;
+    }
+
+    const rect = candidate.getBoundingClientRect();
+    const coversTitleStart = rect.left <= titleStartX && rect.right >= titleStartX;
+    const coversViewportTop = rect.top <= viewportRect.top + 1 && rect.bottom > viewportRect.top + 1;
+    if (!coversTitleStart || !coversViewportTop) return;
+
+    occlusionOffset = Math.max(
+      occlusionOffset,
+      Math.min(rect.bottom, viewportRect.bottom) - viewportRect.top
+    );
+  });
+  return occlusionOffset;
+}
+
 function getOutlineTargetScrollTop(element, container, offset = 16) {
   if (
     !element ||
@@ -1454,15 +1547,16 @@ function getOutlineTargetScrollTop(element, container, offset = 16) {
   }
 
   const targetRect = element.getBoundingClientRect();
+  const targetOffset = offset + getOutlineTopOcclusionOffset(element, container);
   if (isRootScrollElement(container)) {
-    return getScrollTop(container) + targetRect.top - offset;
+    return getScrollTop(container) + targetRect.top - targetOffset;
   }
   if (typeof container.getBoundingClientRect !== 'function') {
     return null;
   }
 
   const containerRect = container.getBoundingClientRect();
-  return getScrollTop(container) + targetRect.top - containerRect.top - offset;
+  return getScrollTop(container) + targetRect.top - containerRect.top - targetOffset;
 }
 
 function scrollToOutlineItem(element, container, options = {}) {
@@ -1471,7 +1565,7 @@ function scrollToOutlineItem(element, container, options = {}) {
   if (!options.keepMenuOpen) {
     hideReadingToolMenu();
   }
-  smoothScrollTo(container, targetTop, options);
+  scrollToPosition(container, targetTop, options);
   return true;
 }
 
@@ -1746,13 +1840,40 @@ function getScrollTargetBottom() {
   return getElementScrollRange(container);
 }
 
+function normalizeScrollMode(value, fallback = LEGACY_SCROLL_MODE) {
+  return SCROLL_MODES.has(value) ? value : fallback;
+}
+
+function normalizeScrollSpeed(value) {
+  const speed = Number.parseInt(value, 10);
+  if (!Number.isFinite(speed)) return DEFAULT_SCROLL_SPEED;
+  return clamp(speed, MIN_SCROLL_SPEED, MAX_SCROLL_SPEED);
+}
+
+function cancelActiveScrollMotion() {
+  if (activeNativeScrollState) {
+    cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
+  }
+  if (activeScrollAnimationState) {
+    cancelScrollAnimation(activeScrollAnimationState.container);
+  }
+}
+
+function applyScrollBehaviorSettings(mode, speed) {
+  const nextMode = normalizeScrollMode(mode);
+  const nextSpeed = normalizeScrollSpeed(speed);
+  if (nextMode !== scrollMode || nextSpeed !== scrollSpeed) {
+    cancelActiveScrollMotion();
+  }
+  scrollMode = nextMode;
+  scrollSpeed = nextSpeed;
+}
+
 // 从存储中加载用户设置
 function loadSettings() {
-  chrome.storage.sync.get(['scrollSpeed', 'buttonSettings', 'advancedSettings'], (result) => {
+  chrome.storage.sync.get(['scrollMode', 'scrollSpeed', 'buttonSettings', 'advancedSettings'], (result) => {
     result = getSafeStorageResult(result, 'storage.sync.get settings');
-    if (result.scrollSpeed) {
-      scrollSpeed = result.scrollSpeed;
-    }
+    applyScrollBehaviorSettings(result.scrollMode, result.scrollSpeed);
     if (result.buttonSettings) {
       buttonSettings = { ...buttonSettings, ...result.buttonSettings };
     }
@@ -1826,9 +1947,260 @@ function loadDomainFeatureState(legacyAdvancedSettings) {
   });
 }
 
+function getNativeScrollTarget(container) {
+  return isRootScrollElement(container) ? window : container;
+}
+
+function performNativeScroll(container, top, behavior) {
+  const target = getNativeScrollTarget(container);
+  if (!target || typeof target.scrollTo !== 'function') return false;
+  target.scrollTo({
+    top,
+    behavior
+  });
+  return true;
+}
+
+function prefersReducedScrollMotion() {
+  return typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function removeNativeScrollListeners(state) {
+  if (!state || !state.eventTarget || typeof state.eventTarget.removeEventListener !== 'function') return;
+  state.eventTarget.removeEventListener('scroll', state.handleScroll);
+  state.eventTarget.removeEventListener('scrollend', state.handleScrollEnd);
+}
+
+function clearNativeScrollState(state) {
+  if (!state) return;
+  if (state.settleTimer) {
+    clearTimeout(state.settleTimer);
+    state.settleTimer = null;
+  }
+  if (state.maxWaitTimer) {
+    clearTimeout(state.maxWaitTimer);
+    state.maxWaitTimer = null;
+  }
+  removeNativeScrollListeners(state);
+  if (nativeScrollStateMap.get(state.container) === state) {
+    nativeScrollStateMap.delete(state.container);
+  }
+  if (activeNativeScrollState === state) {
+    activeNativeScrollState = null;
+  }
+}
+
+function cancelNativeScrollAnimation(container, options = {}) {
+  if (!container) return;
+  const state = nativeScrollStateMap.get(container);
+  if (!state) return;
+  clearNativeScrollState(state);
+  if (options.stopMotion === true) {
+    try {
+      performNativeScroll(container, getScrollTop(container), 'auto');
+    } catch (err) {
+      // A later scroll write will still supersede the previous native animation.
+    }
+  }
+  if (typeof state.onCancel === 'function') {
+    state.onCancel();
+  }
+}
+
+function scheduleNativeScrollMaxWait(state) {
+  if (state.maxWaitTimer) {
+    clearTimeout(state.maxWaitTimer);
+  }
+  state.maxWaitTimer = setTimeout(() => {
+    state.maxWaitTimer = null;
+    finishNativeScrollAnimation(state, { force: true });
+  }, NATIVE_SCROLL_MAX_WAIT_MS);
+}
+
+function finishNativeScrollAnimation(state, options = {}) {
+  if (!state || nativeScrollStateMap.get(state.container) !== state) return;
+
+  const currentTop = getScrollTop(state.container);
+  if (state.targetMode === 'bottom') {
+    const latestRange = getElementScrollRange(state.container);
+    if (
+      latestRange > state.targetTop + 1 &&
+      state.bottomRetargetCount < NATIVE_SCROLL_BOTTOM_RETARGET_LIMIT
+    ) {
+      state.bottomRetargetCount++;
+      state.targetTop = latestRange;
+      try {
+        performNativeScroll(state.container, latestRange, 'smooth');
+        scheduleNativeScrollMaxWait(state);
+        return;
+      } catch (err) {
+        // Complete against the latest observed position if native retargeting fails.
+      }
+    }
+  }
+
+  if (options.force !== true && Math.abs(currentTop - state.targetTop) > 2) {
+    return;
+  }
+
+  clearNativeScrollState(state);
+  requestProgressUpdate();
+  if (typeof state.onComplete === 'function') {
+    state.onComplete();
+  } else {
+    requestOutlineHighlightUpdate();
+  }
+  if (
+    typeof state.onNoMovement === 'function' &&
+    Math.abs(state.targetTop - state.startTop) > 1 &&
+    Math.abs(currentTop - state.startTop) <= 1
+  ) {
+    state.onNoMovement();
+  }
+}
+
+function startNativeSmoothScroll(container, targetTop, options = {}) {
+  if (!container) return false;
+  const nativeTarget = getNativeScrollTarget(container);
+  if (!nativeTarget || typeof nativeTarget.scrollTo !== 'function') return false;
+
+  pauseAutoScroll();
+  if (activeScrollAnimationState) {
+    cancelScrollAnimation(activeScrollAnimationState.container);
+  }
+  if (activeNativeScrollState) {
+    cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
+  }
+
+  const startTop = getScrollTop(container);
+  const targetMode = options.targetMode || '';
+  const range = getElementScrollRange(container);
+  const end = clampNumber(targetTop, 0, range, 0);
+
+  if (Math.abs(end - startTop) <= 1) {
+    requestProgressUpdate();
+    if (typeof options.onComplete === 'function') {
+      options.onComplete();
+    } else {
+      requestOutlineHighlightUpdate();
+    }
+    return true;
+  }
+
+  if (prefersReducedScrollMotion()) {
+    try {
+      performNativeScroll(container, end, 'auto');
+    } catch (err) {
+      return false;
+    }
+    requestProgressUpdate();
+    if (typeof options.onComplete === 'function') {
+      options.onComplete();
+    } else {
+      requestOutlineHighlightUpdate();
+    }
+    return true;
+  }
+
+  const eventTarget = getProgressEventTarget(container);
+  const state = {
+    container,
+    eventTarget,
+    startTop,
+    targetTop: end,
+    targetMode,
+    bottomRetargetCount: 0,
+    settleTimer: null,
+    maxWaitTimer: null,
+    onCancel: options.onCancel,
+    onComplete: options.onComplete,
+    onNoMovement: options.onNoMovement,
+    handleScroll: null,
+    handleScrollEnd: null
+  };
+  state.handleScroll = () => {
+    if (state.settleTimer) {
+      clearTimeout(state.settleTimer);
+    }
+    state.settleTimer = setTimeout(() => {
+      state.settleTimer = null;
+      finishNativeScrollAnimation(state);
+    }, NATIVE_SCROLL_SETTLE_DELAY_MS);
+  };
+  state.handleScrollEnd = () => finishNativeScrollAnimation(state);
+
+  nativeScrollStateMap.set(container, state);
+  activeNativeScrollState = state;
+  if (eventTarget && typeof eventTarget.addEventListener === 'function') {
+    eventTarget.addEventListener('scroll', state.handleScroll);
+    eventTarget.addEventListener('scrollend', state.handleScrollEnd);
+  }
+
+  try {
+    performNativeScroll(container, end, 'smooth');
+  } catch (err) {
+    clearNativeScrollState(state);
+    return false;
+  }
+  scheduleNativeScrollMaxWait(state);
+  return true;
+}
+
+function startImmediateScroll(container, targetTop, options = {}) {
+  if (!container) return false;
+  pauseAutoScroll();
+  cancelActiveScrollMotion();
+
+  const startTop = getScrollTop(container);
+  const range = getElementScrollRange(container);
+  const end = clampNumber(targetTop, 0, range, 0);
+  try {
+    if (!performNativeScroll(container, end, 'auto')) {
+      setScrollTop(container, end);
+    }
+  } catch (err) {
+    try {
+      setScrollTop(container, end);
+    } catch (fallbackError) {
+      return false;
+    }
+  }
+
+  const currentTop = getScrollTop(container);
+  requestProgressUpdate();
+  if (typeof options.onComplete === 'function') {
+    options.onComplete();
+  } else {
+    requestOutlineHighlightUpdate();
+  }
+  if (
+    typeof options.onNoMovement === 'function' &&
+    Math.abs(end - startTop) > 1 &&
+    Math.abs(currentTop - startTop) <= 1
+  ) {
+    options.onNoMovement();
+  }
+  return true;
+}
+
+function scrollToPosition(container, targetTop, options = {}) {
+  if (scrollMode === 'instant') {
+    return startImmediateScroll(container, targetTop, options);
+  }
+  if (scrollMode === 'smooth' && startNativeSmoothScroll(container, targetTop, options)) {
+    return true;
+  }
+  smoothScrollTo(container, targetTop, options);
+  return Boolean(container);
+}
+
 function smoothScrollTo(container, targetTop, options = {}) {
   if (!container) return;
   pauseAutoScroll();
+  if (activeNativeScrollState) {
+    cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
+  }
   if (activeScrollAnimationState && activeScrollAnimationState.container !== container) {
     cancelScrollAnimation(activeScrollAnimationState.container);
   }
@@ -1845,7 +2217,9 @@ function smoothScrollTo(container, targetTop, options = {}) {
     frame: null,
     container,
     onCancel: options.onCancel,
-    lastBottomRefreshTime: startTime
+    lastBottomRefreshTime: startTime,
+    lastAssignedTop: start,
+    maxStep: getMaxScrollAnimationStep(container, end - start)
   };
   scrollAnimationStateMap.set(container, animationState);
   activeScrollAnimationState = animationState;
@@ -1857,15 +2231,16 @@ function smoothScrollTo(container, targetTop, options = {}) {
       range = getElementScrollRange(container);
       if (range > end) {
         end = range;
+        animationState.maxStep = getMaxScrollAnimationStep(container, end - start);
       }
     }
 
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const easeProgress = easeInOutCubic(progress);
-    const currentTop = getScrollTop(container);
+    const currentTop = animationState.lastAssignedTop;
     const idealTop = start + (end - start) * easeProgress;
-    const maxStep = getMaxScrollAnimationStep(container, end - start);
+    const maxStep = animationState.maxStep;
     const delta = idealTop - currentTop;
     let nextTop = idealTop;
     let isStepLimited = false;
@@ -1875,6 +2250,7 @@ function smoothScrollTo(container, targetTop, options = {}) {
     }
 
     setScrollTop(container, nextTop);
+    animationState.lastAssignedTop = nextTop;
 
     if (progress < 1 || (isStepLimited && elapsed < maxDuration)) {
       animationState.frame = requestAnimationFrame(scroll);
@@ -2002,25 +2378,25 @@ function navigateOutlineMenuToItem(item, snapshot, menu) {
 
 // 平滑滚动到顶部
 function scrollToTop() {
-  const container = resolveScrollContainer({ refresh: true });
+  const container = resolveScrollContainerForAction();
   if (getElementScrollRange(container) <= 1) {
     startWheelFallbackScroll(-1);
     return;
   }
-  smoothScrollTo(container, 0, {
+  scrollToPosition(container, 0, {
     onNoMovement: () => startWheelFallbackScroll(-1)
   });
 }
 
 // 平滑滚动到底部
 function scrollToBottom() {
-  const container = resolveScrollContainer({ refresh: true });
+  const container = resolveScrollContainerForAction();
   const range = getElementScrollRange(container);
   if (range <= 1) {
     startWheelFallbackScroll(1);
     return;
   }
-  smoothScrollTo(container, range, {
+  scrollToPosition(container, range, {
     targetMode: 'bottom',
     onNoMovement: () => startWheelFallbackScroll(1)
   });
@@ -2057,7 +2433,7 @@ function navigateByScreen(direction) {
     cancelScrollAnimation(screenNavigationAnimationContainer);
   }
   screenNavigationAnimationContainer = container;
-  smoothScrollTo(container, targetTop, {
+  scrollToPosition(container, targetTop, {
     onCancel: () => {
       if (screenNavigationAnimationContainer === container) {
         screenNavigationAnimationContainer = null;
@@ -3050,7 +3426,7 @@ function handleHorizontalProgressClick(event) {
   const rect = event.currentTarget.getBoundingClientRect();
   const ratio = rect.width <= 0 ? 0 : (event.clientX - rect.left) / rect.width;
   const container = resolveScrollContainer();
-  smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+  scrollToPosition(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
 }
 
 function handleVerticalProgressClick(event) {
@@ -3058,7 +3434,7 @@ function handleVerticalProgressClick(event) {
   const rect = event.currentTarget.getBoundingClientRect();
   const ratio = rect.height <= 0 ? 0 : (event.clientY - rect.top) / rect.height;
   const container = resolveScrollContainer();
-  smoothScrollTo(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
+  scrollToPosition(container, getElementScrollRange(container) * clamp(ratio, 0, 1));
 }
 
 function getPointerTargetRatio(event, orientation) {
@@ -3638,7 +4014,7 @@ function restoreScrollBookmark(bookmark) {
   const container = resolveScrollContainer();
   const range = getElementScrollRange(container);
   if (range <= 1) return false;
-  smoothScrollTo(container, range * clamp(bookmark.scrollPct, 0, 1));
+  scrollToPosition(container, range * clamp(bookmark.scrollPct, 0, 1));
   return true;
 }
 
@@ -3948,6 +4324,9 @@ function removeButton() {
   const host = document.getElementById(HOST_ID);
   stopAutoScroll();
   unbindAutoScrollPauseListeners();
+  if (activeNativeScrollState) {
+    cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
+  }
   cancelScrollAnimation(screenNavigationAnimationContainer);
   screenNavigationAnimationContainer = null;
   cancelScrollAnimation(currentScrollContainer || resolveScrollContainer());
@@ -3966,6 +4345,7 @@ function removeButton() {
   if (spaDetectionState.debounceTimer) {
     clearTimeout(spaDetectionState.debounceTimer);
   }
+  cancelSpaMutationIdleCallback();
   if (spaDetectionState.retryTimer) {
     clearTimeout(spaDetectionState.retryTimer);
   }
@@ -3983,6 +4363,10 @@ function removeButton() {
     initialTimer: null,
     debounceTimer: null,
     retryTimer: null,
+    idleCallback: null,
+    pendingAddedNodes: [],
+    pendingRemovedNodes: [],
+    hasUntrackedAdditions: false,
     domReadyHandler: null,
     isInitialized: false
   };
@@ -5081,6 +5465,95 @@ function initializeButton() {
 }
 
 // SPA 页面动态加载检测 - 解决首次加载时滚动容器未就绪的问题
+function hasActiveScrollMotion() {
+  return Boolean(
+    activeScrollAnimationState ||
+    activeNativeScrollState ||
+    autoScrollRuntime.state === 'playing'
+  );
+}
+
+function cancelSpaMutationIdleCallback() {
+  if (spaDetectionState.idleCallback === null) return;
+  if (typeof cancelIdleCallback === 'function') {
+    cancelIdleCallback(spaDetectionState.idleCallback);
+  }
+  spaDetectionState.idleCallback = null;
+}
+
+function queueSpaMutationRoots(mutations) {
+  const maxRoots = SPA_DETECTION_CONFIG.maxPendingMutationRoots;
+  mutations.forEach((mutation) => {
+    Array.from(mutation.removedNodes || []).forEach((node) => {
+      if (spaDetectionState.pendingRemovedNodes.length < maxRoots) {
+        spaDetectionState.pendingRemovedNodes.push(node);
+      }
+    });
+    Array.from(mutation.addedNodes || []).forEach((node) => {
+      if (spaDetectionState.pendingAddedNodes.length < maxRoots) {
+        spaDetectionState.pendingAddedNodes.push(node);
+      } else {
+        spaDetectionState.hasUntrackedAdditions = true;
+      }
+    });
+  });
+}
+
+function processPendingSpaMutations() {
+  spaDetectionState.idleCallback = null;
+  if (hasActiveScrollMotion()) {
+    scheduleSpaMutationProcessing();
+    return;
+  }
+
+  const pendingAddedNodes = spaDetectionState.pendingAddedNodes;
+  const pendingRemovedNodes = spaDetectionState.pendingRemovedNodes;
+  const hasUntrackedAdditions = spaDetectionState.hasUntrackedAdditions;
+  spaDetectionState.pendingAddedNodes = [];
+  spaDetectionState.pendingRemovedNodes = [];
+  spaDetectionState.hasUntrackedAdditions = false;
+
+  const shouldRefreshContainer = shouldReevaluateScrollContainer([{
+    type: 'childList',
+    addedNodes: pendingAddedNodes,
+    removedNodes: pendingRemovedNodes
+  }]) || (
+    hasUntrackedAdditions &&
+    (
+      isRootScrollElement(currentScrollContainer) ||
+      !isRetainablePrimaryScrollContainer(currentScrollContainer)
+    )
+  );
+
+  if (shouldRefreshContainer) {
+    detectAndUpdateScrollContainer();
+  }
+  handleOutlineDomChange();
+}
+
+function scheduleSpaMutationProcessing() {
+  if (spaDetectionState.debounceTimer) {
+    clearTimeout(spaDetectionState.debounceTimer);
+  }
+  cancelSpaMutationIdleCallback();
+
+  spaDetectionState.debounceTimer = setTimeout(() => {
+    spaDetectionState.debounceTimer = null;
+    if (hasActiveScrollMotion()) {
+      scheduleSpaMutationProcessing();
+      return;
+    }
+    if (typeof requestIdleCallback === 'function') {
+      spaDetectionState.idleCallback = requestIdleCallback(
+        processPendingSpaMutations,
+        { timeout: SPA_DETECTION_CONFIG.idleTimeout }
+      );
+      return;
+    }
+    processPendingSpaMutations();
+  }, SPA_DETECTION_CONFIG.mutationDebounceDelay);
+}
+
 function setupSpaDetection() {
   setupOutlineRouteChangeDetection();
 
@@ -5100,20 +5573,9 @@ function setupSpaDetection() {
       );
       
       if (!hasSignificantChanges) return;
-      const shouldRefreshContainer = shouldReevaluateScrollContainer(mutations);
       invalidateReadingEstimateCache();
-      
-      // 防抖处理，避免频繁检测
-      if (spaDetectionState.debounceTimer) {
-        clearTimeout(spaDetectionState.debounceTimer);
-      }
-      
-      spaDetectionState.debounceTimer = setTimeout(() => {
-        if (shouldRefreshContainer) {
-          detectAndUpdateScrollContainer();
-        }
-        handleOutlineDomChange();
-      }, SPA_DETECTION_CONFIG.mutationDebounceDelay);
+      queueSpaMutationRoots(mutations);
+      scheduleSpaMutationProcessing();
     });
     
     // 监听 document.body 的子节点变化
@@ -5213,8 +5675,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'scrollToBottom') {
     if (!isExtensionEnabled) return;
     scrollToBottom();
+  } else if (message.action === 'updateScrollBehavior') {
+    applyScrollBehaviorSettings(message.mode, message.speed);
   } else if (message.action === 'updateSpeed') {
-    scrollSpeed = message.speed;
+    applyScrollBehaviorSettings(scrollMode, message.speed);
   } else if (message.action === 'updateButtonSettings') {
     buttonSettings = { ...buttonSettings, ...message.settings };
     updateButtonPosition();
@@ -5231,8 +5695,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // 监听存储变化
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (changes.scrollSpeed) {
-    scrollSpeed = changes.scrollSpeed.newValue;
+  if (namespace === 'sync' && (changes.scrollMode || changes.scrollSpeed)) {
+    applyScrollBehaviorSettings(
+      changes.scrollMode ? changes.scrollMode.newValue : scrollMode,
+      changes.scrollSpeed ? changes.scrollSpeed.newValue : scrollSpeed
+    );
   }
   if (changes.buttonSettings) {
     buttonSettings = { ...buttonSettings, ...changes.buttonSettings.newValue };

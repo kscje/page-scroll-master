@@ -28,7 +28,7 @@ function createDatabase(rateCount = 1) {
           return null;
         },
         async run() {
-          if (sql.includes('INSERT INTO feedback_logs')) {
+          if (sql.includes('INSERT INTO feedback_logs') || sql.includes('INSERT INTO uninstall_feedback_logs')) {
             logs.push(this.values);
           }
           return { success: true };
@@ -43,6 +43,7 @@ function createDatabase(rateCount = 1) {
 
 function createWorker(resendOk = true, rateCount = 1) {
   const resendRequests = [];
+  const diagnosticLogs = [];
   const database = createDatabase(rateCount);
   const sandbox = {
     URL,
@@ -64,7 +65,13 @@ function createWorker(resendOk = true, rateCount = 1) {
     JSON,
     crypto,
     btoa,
-    console,
+    console: {
+      warn(value) {
+        diagnosticLogs.push(value);
+      },
+      error: console.error,
+      log: console.log
+    },
     async fetch(url, options) {
       resendRequests.push({ url, options });
       return { ok: resendOk, status: resendOk ? 200 : 503 };
@@ -74,6 +81,7 @@ function createWorker(resendOk = true, rateCount = 1) {
   return {
     worker: sandbox.feedbackWorker,
     resendRequests,
+    diagnosticLogs,
     database,
     env: {
       DB: database,
@@ -109,6 +117,30 @@ function createRequest(overrides = {}) {
         'CF-Connecting-IP': '203.0.113.10'
       },
       body: form
+    }
+  );
+}
+
+function createUninstallRequest(overrides = {}) {
+  return new Request(
+    'https://page-scroll-master-feedback.kscje-apps.workers.dev/v1/uninstall-feedback',
+    {
+      method: 'POST',
+      headers: {
+        Origin: 'chrome-extension://test-extension-id',
+        'CF-Connecting-IP': '203.0.113.10',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        type: 'uninstall',
+        reasons: overrides.reasons || ['performance_issue'],
+        message: overrides.message || '',
+        contact: overrides.contact || '',
+        extensionVersion: '2.2.0',
+        language: 'en-US',
+        source: 'uninstall-survey',
+        schemaVersion: 1
+      })
     }
   );
 }
@@ -157,6 +189,28 @@ function createRequest(overrides = {}) {
   assert(
     deliveryFailure.database.logs[0][4] === 'failed',
     'mail delivery failures retain only content-free failure metadata'
+  );
+  assert(
+    deliveryFailure.database.logs[0][5] === 503,
+    'mail delivery failures retain the upstream HTTP status without response content'
+  );
+  assert(deliveryFailure.diagnosticLogs.length === 1, 'mail delivery failures emit one diagnostic');
+  const diagnostic = JSON.parse(deliveryFailure.diagnosticLogs[0]);
+  assert(diagnostic.event === 'feedback_delivery_failed', 'diagnostic has a stable event name');
+  assert(diagnostic.channel === 'feedback', 'diagnostic identifies the feedback channel');
+  assert(diagnostic.failureKind === 'provider_response', 'diagnostic identifies an upstream response failure');
+  assert(diagnostic.providerStatus === 503, 'diagnostic records the upstream HTTP status');
+  assert(
+    !deliveryFailure.diagnosticLogs[0].includes('buttons overlap'),
+    'diagnostic excludes feedback content'
+  );
+
+  const uninstallFailure = createWorker(false);
+  response = await uninstallFailure.worker.fetch(createUninstallRequest(), uninstallFailure.env);
+  assert(response.status === 502, 'failed uninstall delivery returns a retryable error');
+  assert(
+    uninstallFailure.database.logs[0][8] === 503,
+    'failed uninstall delivery retains the upstream HTTP status without response content'
   );
 
   console.log('feedback Worker tests passed');

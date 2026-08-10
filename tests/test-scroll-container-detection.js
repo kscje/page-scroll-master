@@ -18,6 +18,8 @@ class FakeElement {
     this.isConnected = options.isConnected !== false;
     this.overflowY = options.overflowY || 'visible';
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+    this.rectReadCount = 0;
+    this.queryCount = 0;
     this.dispatchedEvents = [];
     Object.defineProperty(this, 'scrollTop', {
       get() {
@@ -42,7 +44,18 @@ class FakeElement {
   }
 
   getBoundingClientRect() {
+    this.rectReadCount += 1;
     return this.rect;
+  }
+
+  contains(target) {
+    if (target === this) return true;
+    return this.children.some((child) => child.contains(target));
+  }
+
+  querySelectorAll() {
+    this.queryCount += 1;
+    return this.children.flatMap((child) => [child, ...child.querySelectorAll()]);
   }
 
   dispatchEvent(event) {
@@ -52,6 +65,8 @@ class FakeElement {
 }
 
 function createContext(elements, options = {}) {
+  const mutationObservers = [];
+  const timers = [];
   const documentElement = options.documentElement || new FakeElement('html', {
     scrollHeight: 900,
     clientHeight: 900,
@@ -117,10 +132,21 @@ function createContext(elements, options = {}) {
     },
     requestAnimationFrame() {},
     MutationObserver: class {
+      constructor(callback) {
+        this.callback = callback;
+        mutationObservers.push(this);
+      }
+
       observe() {}
     },
-    setTimeout() {},
-    clearTimeout() {},
+    setTimeout(callback) {
+      const timer = { callback, canceled: false, ran: false };
+      timers.push(timer);
+      return timer;
+    },
+    clearTimeout(timer) {
+      if (timer) timer.canceled = true;
+    },
     console
   };
 
@@ -128,6 +154,14 @@ function createContext(elements, options = {}) {
   const contentPath = path.join(ROOT, 'content.js');
   vm.runInContext(getSharedRuntimeSource(ROOT, contentPath), sandbox);
   vm.runInContext(fs.readFileSync(contentPath, 'utf8'), sandbox);
+  sandbox.__mutationObservers = mutationObservers;
+  sandbox.__timers = timers;
+  sandbox.__runLatestTimer = () => {
+    const timer = [...timers].reverse().find((candidate) => !candidate.canceled && !candidate.ran);
+    assert(Boolean(timer), 'a pending timer is available');
+    timer.ran = true;
+    timer.callback();
+  };
   return sandbox;
 }
 
@@ -486,6 +520,56 @@ function testScrollActionRefreshesStaleConnectedContainer() {
   );
 }
 
+function testMutationContainerMeasurementWaitsForScrollCompletion() {
+  const currentMain = new FakeElement('main', {
+    scrollHeight: 3200,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const nextMain = new FakeElement('main', {
+    scrollHeight: 4200,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const sandbox = createContext([currentMain, nextMain]);
+  sandbox.currentMain = currentMain;
+  sandbox.nextMain = nextMain;
+  vm.runInContext(`
+    currentScrollContainer = currentMain;
+    currentScrollContainerStrategy = getEffectiveContainerStrategy();
+    spaDetectionState.isInitialized = true;
+    setupSpaDetection();
+    activeScrollAnimationState = { container: currentMain };
+  `, sandbox);
+
+  const observer = sandbox.__mutationObservers[0];
+  assert(Boolean(observer), 'SPA observer is available for deferred mutation processing');
+  const initialRectReads = currentMain.rectReadCount + nextMain.rectReadCount;
+  observer.callback([{ type: 'childList', addedNodes: [nextMain], removedNodes: [] }]);
+
+  assert(
+    currentMain.rectReadCount + nextMain.rectReadCount === initialRectReads,
+    'MutationObserver callback queues DOM changes without measuring layout synchronously'
+  );
+
+  sandbox.__runLatestTimer();
+  assert(
+    currentMain.rectReadCount + nextMain.rectReadCount === initialRectReads,
+    'deferred container measurement stays paused while scrolling is active'
+  );
+
+  vm.runInContext('activeScrollAnimationState = null;', sandbox);
+  sandbox.__runLatestTimer();
+  assert(
+    currentMain.rectReadCount + nextMain.rectReadCount > initialRectReads,
+    'queued container measurement resumes after scrolling completes'
+  );
+}
+
 function testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists() {
   const appViewport = new FakeElement('div', {
     scrollHeight: 860,
@@ -520,6 +604,7 @@ testEventDrivenDetectionUpdatesLateContent();
 testRootWithoutScrollRangeDoesNotBlockLateScrollableContent();
 testAddedPrimaryScrollCandidateTriggersReevaluation();
 testScrollActionRefreshesStaleConnectedContainer();
+testMutationContainerMeasurementWaitsForScrollCompletion();
 testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists();
 
 console.log('scroll container detection tests passed');

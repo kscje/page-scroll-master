@@ -5,7 +5,9 @@ Cloudflare Worker for extension feedback and uninstall survey feedback.
 - `POST /v1/feedback` validates multipart in-extension feedback, limits each
   hashed network address to five submissions per hour, forwards the message and
   optional images through Resend, and retains content-free delivery metadata for
-  30 days.
+  30 days. Failed delivery metadata includes the Resend HTTP status when
+  available and also emits a content-free Worker diagnostic with the request
+  ID, channel, failure class, and status.
 - `GET /uninstall` serves the lightweight uninstall survey page used by
   `chrome.runtime.setUninstallURL()`.
 - `POST /v1/uninstall-feedback` validates JSON uninstall feedback, forwards the
