@@ -247,6 +247,18 @@ const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
 const PROGRAMMATIC_SCROLL_OVERFLOW_VALUES = new Set(['hidden']);
 const WHEEL_FALLBACK_MAX_STEPS = 28;
 const WHEEL_FALLBACK_INTERVAL_MS = 16;
+// Feishu/Lark canvas grids (role="faster") expose no DOM scroll range, so the
+// fallback cannot observe the boundary and must rely on a fixed pulse budget.
+// Measured on real Lark bitable tables: per-event delta is clamped to ~1
+// viewport, events below a 16ms interval are dropped, and the grid's internal
+// velocity model turns 160 pulses into ~84% of a 294-row table. 400 pulses in
+// 80-pulse waves (480ms gaps let cold-load stalls release before the next
+// wave) covers that table twice over; the duration cap stops background-tab
+// timer throttling from stretching the loop.
+const FASTER_GRID_FALLBACK_MAX_STEPS = 400;
+const FASTER_GRID_FALLBACK_MAX_DURATION_MS = 10000;
+const FASTER_GRID_FALLBACK_WAVE_PULSES = 80;
+const FASTER_GRID_FALLBACK_WAVE_GAP_MS = 480;
 const EMBEDDED_FRAME_MIN_AREA_RATIO = 0.2;
 const EMBEDDED_FRAME_MIN_WIDTH_RATIO = 0.45;
 const EMBEDDED_FRAME_MIN_HEIGHT_RATIO = 0.35;
@@ -2693,6 +2705,27 @@ function cancelWheelFallbackScroll() {
   clearWheelFallbackState(activeWheelFallbackState);
 }
 
+function getWheelFallbackBudget(target) {
+  const role = target && target.getAttribute ? (target.getAttribute('role') || '').toLowerCase() : '';
+  if (role === 'faster') {
+    return {
+      maxSteps: FASTER_GRID_FALLBACK_MAX_STEPS,
+      maxDurationMs: FASTER_GRID_FALLBACK_MAX_DURATION_MS,
+      wavePulses: FASTER_GRID_FALLBACK_WAVE_PULSES,
+      waveGapMs: FASTER_GRID_FALLBACK_WAVE_GAP_MS
+    };
+  }
+  return { maxSteps: WHEEL_FALLBACK_MAX_STEPS, maxDurationMs: 0, wavePulses: 0, waveGapMs: 0 };
+}
+
+function getWheelFallbackResumeDelay(state) {
+  if (state.wavePulses > 0 && state.waveGapMs > 0 &&
+    state.steps > 0 && state.steps % state.wavePulses === 0 && state.steps < state.maxSteps) {
+    return state.waveGapMs;
+  }
+  return WHEEL_FALLBACK_INTERVAL_MS;
+}
+
 function startWheelFallbackScroll(direction) {
   pauseAutoScroll();
   cancelActiveScrollMotion();
@@ -2701,9 +2734,15 @@ function startWheelFallbackScroll(direction) {
 
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 800;
   const deltaY = Math.sign(direction || 1) * Math.max(600, viewportHeight * 0.9);
+  const budget = getWheelFallbackBudget(target);
   const state = {
     target,
     steps: 0,
+    maxSteps: budget.maxSteps,
+    maxDurationMs: budget.maxDurationMs,
+    wavePulses: budget.wavePulses,
+    waveGapMs: budget.waveGapMs,
+    startedAt: performance.now(),
     timer: null,
     handleUserWheel: null,
     handlePageHide: null
@@ -2730,6 +2769,10 @@ function startWheelFallbackScroll(direction) {
       return;
     }
     state.timer = null;
+    if (state.maxDurationMs > 0 && performance.now() - state.startedAt >= state.maxDurationMs) {
+      clearWheelFallbackState(state, { completed: true });
+      return;
+    }
     const event = createWheelEvent(deltaY, target);
     if (!event) {
       clearWheelFallbackState(state);
@@ -2744,8 +2787,8 @@ function startWheelFallbackScroll(direction) {
       return;
     }
     state.steps++;
-    if (state.steps < WHEEL_FALLBACK_MAX_STEPS) {
-      state.timer = setTimeout(step, WHEEL_FALLBACK_INTERVAL_MS);
+    if (state.steps < state.maxSteps) {
+      state.timer = setTimeout(step, getWheelFallbackResumeDelay(state));
     } else {
       clearWheelFallbackState(state, { completed: true });
     }

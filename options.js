@@ -2745,6 +2745,14 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.7',
+    categories: {
+      improved: [
+        'fasterCanvasGridWheelFallback'
+      ]
+    }
+  },
+  {
     version: '2.5.6',
     categories: {
       improved: [
@@ -3444,6 +3452,27 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
   releaseNotesTranslations[lang].items.embeddedFrameScroll = values[0];
   releaseNotesTranslations[lang].items.virtualGridScrollContainer = values[1];
   releaseNotesTranslations[lang].items.customElementScrollContainer = values[2];
+});
+
+const v257ReleaseNotesItems = {
+  'zh-CN': '优化飞书/Lark 多维表格等 role="faster" 画布网格的滚轮回退，以分波脉冲和时长上限支持较长表格。',
+  'zh-TW': '最佳化飛書/Lark 多維表格等 role="faster" 畫布網格的滾輪回退，以分波脈衝和時長上限支援較長表格。',
+  'en-US': 'Improved wheel fallback for role="faster" canvas grids such as Feishu/Lark Bitable, using pulse waves and a duration cap for longer tables.',
+  'es-ES': 'Se mejoró el respaldo por rueda para cuadrículas de lienzo role="faster", como Feishu/Lark Bitable, con pulsos por oleadas y un límite de duración para tablas largas.',
+  'ja-JP': 'Feishu/Lark Bitable などの role="faster" キャンバスグリッド向けホイールフォールバックを改善し、長いテーブルに対応するパルス波と時間上限を追加しました。',
+  'de-DE': 'Der Rad-Fallback für role="faster"-Canvas-Raster wie Feishu/Lark Bitable wurde mit Pulswellen und einer Zeitbegrenzung für längere Tabellen verbessert.',
+  'fr-FR': 'Le repli par molette pour les grilles canvas role="faster", comme Feishu/Lark Bitable, est amélioré avec des vagues d’impulsions et une limite de durée pour les tableaux longs.',
+  'pt-BR': 'O fallback por roda para grades canvas role="faster", como Feishu/Lark Bitable, foi melhorado com ondas de pulsos e limite de duração para tabelas longas.',
+  'ko-KR': 'Feishu/Lark Bitable 등의 role="faster" 캔버스 그리드용 휠 폴백을 개선해 긴 표에서도 펄스 묶음과 시간 제한을 사용합니다.',
+  'it-IT': 'Migliorato il fallback della rotellina per le griglie canvas role="faster", come Feishu/Lark Bitable, con ondate di impulsi e un limite di durata per tabelle lunghe.',
+  'ru-RU': 'Улучшена резервная прокрутка колесом для canvas-сеток role="faster", таких как Feishu/Lark Bitable: добавлены волны импульсов и ограничение времени для длинных таблиц.',
+  'tr-TR': 'Feishu/Lark Bitable gibi role="faster" canvas ızgaraları için tekerlek yedeği, uzun tablolar adına darbe dalgaları ve süre sınırıyla iyileştirildi.',
+  'id-ID': 'Fallback roda untuk grid canvas role="faster" seperti Feishu/Lark Bitable ditingkatkan dengan gelombang pulsa dan batas durasi untuk tabel panjang.'
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  releaseNotesTranslations[lang].items.fasterCanvasGridWheelFallback =
+    v257ReleaseNotesItems[lang] || v257ReleaseNotesItems['en-US'];
 });
 
 const DEFAULT_ADVANCED_SETTINGS = {

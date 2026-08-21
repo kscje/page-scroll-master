@@ -180,8 +180,8 @@ function createContext(elements, options = {}) {
 
       observe() {}
     },
-    setTimeout(callback) {
-      const timer = { callback, canceled: false, ran: false };
+    setTimeout(callback, delay) {
+      const timer = { callback, delay: delay || 0, canceled: false, ran: false };
       timers.push(timer);
       return timer;
     },
@@ -1073,6 +1073,26 @@ function testRetainableMainStillWinsOverVirtualGrid() {
 }
 
 function testWheelFallbackStopsAtConfiguredStepBound() {
+  const gridWrapper = new FakeElement('div', {
+    className: 'gridView base-grid',
+    rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
+  });
+  const canvas = new FakeElement('canvas', {
+    rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
+  });
+  gridWrapper.appendChild(canvas);
+  const sandbox = createContext([gridWrapper, canvas], { elementFromPoint: canvas });
+
+  sandbox.scrollToBottom();
+  while (sandbox.__getPendingTimers().length) {
+    sandbox.__runLatestTimer();
+  }
+
+  assert(canvas.dispatchedEvents.length === 28, 'generic canvas fallback should keep its 28-step bound');
+  assert(sandbox.__getPendingTimers().length === 0, 'bounded fallback completion should leave no timer pending');
+}
+
+function testFasterCanvasUsesExtendedWheelFallbackBudget() {
   const canvas = new FakeElement('canvas', {
     attributes: { role: 'faster' },
     rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
@@ -1080,12 +1100,55 @@ function testWheelFallbackStopsAtConfiguredStepBound() {
   const sandbox = createContext([canvas], { elementFromPoint: canvas });
 
   sandbox.scrollToBottom();
+  const resumeDelays = [];
   while (sandbox.__getPendingTimers().length) {
+    const pending = sandbox.__getPendingTimers();
+    resumeDelays.push(pending[pending.length - 1].delay);
     sandbox.__runLatestTimer();
   }
 
-  assert(canvas.dispatchedEvents.length === 28, 'wheel fallback should stop at its configured 28-step bound');
-  assert(sandbox.__getPendingTimers().length === 0, 'bounded fallback completion should leave no timer pending');
+  assert(
+    canvas.dispatchedEvents.length === 400,
+    'role="faster" canvas fallback should use the extended 400-pulse budget'
+  );
+  assert(
+    resumeDelays.length === 399,
+    'the first pulse dispatches immediately and every later pulse is scheduled'
+  );
+  assert(
+    resumeDelays.filter((delay) => delay === 16).length === 395,
+    'intra-wave pulses should keep the 16ms cadence'
+  );
+  const waveGaps = resumeDelays.filter((delay) => delay >= 480);
+  assert(
+    waveGaps.length === 4,
+    'each 80-pulse wave should be followed by one long settle gap'
+  );
+  assert(
+    canvas.dispatchedEvents.every((event) => event.deltaY > 0),
+    'extended budget should keep dispatching toward the requested direction'
+  );
+  assert(sandbox.__getPendingTimers().length === 0, 'extended fallback completion should leave no timer pending');
+}
+
+function testFasterCanvasWheelFallbackStopsAtDurationCap() {
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
+  });
+  const sandbox = createContext([canvas], { elementFromPoint: canvas });
+
+  sandbox.scrollToBottom();
+  assert(canvas.dispatchedEvents.length === 1, 'the first pulse should still dispatch immediately');
+  const durationCap = vm.runInContext('FASTER_GRID_FALLBACK_MAX_DURATION_MS', sandbox);
+  sandbox.performance.now = () => durationCap;
+  sandbox.__runLatestTimer();
+
+  assert(
+    canvas.dispatchedEvents.length === 1,
+    'the duration cap should stop further pulses before dispatching'
+  );
+  assert(sandbox.__getPendingTimers().length === 0, 'duration-capped fallback should leave no timer pending');
 }
 
 testDelayedMainContainerWinsOverRootFallback();
@@ -1122,5 +1185,7 @@ testScrollablePageDoesNotUseWheelFallback();
 testVirtualGridWinsOverAsyncSidebarAndHiddenPanel();
 testRetainableMainStillWinsOverVirtualGrid();
 testWheelFallbackStopsAtConfiguredStepBound();
+testFasterCanvasUsesExtendedWheelFallbackBudget();
+testFasterCanvasWheelFallbackStopsAtDurationCap();
 
 console.log('scroll container detection tests passed');
