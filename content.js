@@ -16,6 +16,7 @@ let domainFeatureDefaults = domainUtils.normalizeDefaults();
 let currentDomainFeatureState = domainUtils.getState({}, currentDomainKey, domainFeatureDefaults);
 let currentScrollContainer = null; // 当前页面的滚动容器
 let currentScrollContainerStrategy = domainUtils.DEFAULT_CONTAINER_STRATEGY;
+let embeddedFrameScrollTarget = null;
 const DEFAULT_BUTTON_COLOR = '#4A9EDD'; // 默认按钮颜色
 const DEFAULT_ICON_COLOR = '#FFFFFF';
 const DEFAULT_PROGRESS_VERTICAL_HEIGHT = 80;
@@ -229,6 +230,8 @@ const scrollAnimationStateMap = new WeakMap();
 let activeScrollAnimationState = null;
 const nativeScrollStateMap = new WeakMap();
 let activeNativeScrollState = null;
+const wheelFallbackDispatchedEvents = new WeakSet();
+let activeWheelFallbackState = null;
 let readingEstimateCache = {
   target: null,
   calculatedAt: 0,
@@ -244,6 +247,10 @@ const SCROLLABLE_OVERFLOW_VALUES = new Set(['auto', 'scroll', 'overlay']);
 const PROGRAMMATIC_SCROLL_OVERFLOW_VALUES = new Set(['hidden']);
 const WHEEL_FALLBACK_MAX_STEPS = 28;
 const WHEEL_FALLBACK_INTERVAL_MS = 16;
+const EMBEDDED_FRAME_MIN_AREA_RATIO = 0.2;
+const EMBEDDED_FRAME_MIN_WIDTH_RATIO = 0.45;
+const EMBEDDED_FRAME_MIN_HEIGHT_RATIO = 0.35;
+const EMBEDDED_FRAME_PARENT_RANGE_TOLERANCE_PX = 8;
 const SCROLL_CONTAINER_CANDIDATE_SELECTOR = [
   'div',
   'section',
@@ -271,6 +278,29 @@ const SCROLL_CONTAINER_CANDIDATE_SELECTOR = [
   '[style*="overflow"]'
 ].join(', ');
 const SCROLL_CONTAINER_PROGRAMMATIC_PROBE_LIMIT = 8;
+const CUSTOM_SCROLL_ELEMENT_CANDIDATE_LIMIT = 200;
+const CUSTOM_SCROLL_ELEMENT_TRAVERSE_LIMIT = 20000;
+
+function appendCustomElementScrollCandidates(candidates, root, limit = CUSTOM_SCROLL_ELEMENT_CANDIDATE_LIMIT) {
+  if (!root) return;
+  const ownerDocument = root.ownerDocument || document;
+  if (typeof ownerDocument.createTreeWalker !== 'function') return;
+  const walker = ownerDocument.createTreeWalker(root, 1, null);
+  const known = new Set(candidates);
+  let collectedCount = 0;
+  let traversedCount = 0;
+  let element = walker.nextNode();
+  while (element) {
+    if (collectedCount >= limit || traversedCount >= CUSTOM_SCROLL_ELEMENT_TRAVERSE_LIMIT) break;
+    traversedCount += 1;
+    if (!known.has(element) && element.tagName && element.tagName.indexOf('-') !== -1) {
+      known.add(element);
+      candidates.push(element);
+      collectedCount += 1;
+    }
+    element = walker.nextNode();
+  }
+}
 const WHEEL_FALLBACK_TARGET_SELECTOR = [
   'main',
   'article',
@@ -565,23 +595,26 @@ function normalizeBookmarkRestoreMode(value, legacyRestorePromptEnabled) {
 }
 
 function isRootScrollElement(element) {
-  return element === document.scrollingElement ||
-    element === document.documentElement ||
-    element === document.body;
+  const ownerDocument = element && element.ownerDocument ? element.ownerDocument : document;
+  return element === ownerDocument.scrollingElement ||
+    element === ownerDocument.documentElement ||
+    element === ownerDocument.body;
 }
 
 function getElementScrollRange(element) {
   if (!element) return 0;
 
   if (isRootScrollElement(element)) {
-    const body = document.body;
-    const documentElement = document.documentElement;
+    const ownerDocument = element.ownerDocument || document;
+    const ownerWindow = ownerDocument.defaultView || window;
+    const body = ownerDocument.body;
+    const documentElement = ownerDocument.documentElement;
     const scrollHeight = Math.max(
       element.scrollHeight || 0,
       body ? body.scrollHeight || 0 : 0,
       documentElement ? documentElement.scrollHeight || 0 : 0
     );
-    const viewportHeight = window.innerHeight || documentElement.clientHeight || element.clientHeight || 0;
+    const viewportHeight = ownerWindow.innerHeight || documentElement.clientHeight || element.clientHeight || 0;
     return Math.max(0, scrollHeight - viewportHeight);
   }
 
@@ -625,6 +658,7 @@ function hasAddedPrimaryScrollCandidate(node) {
   }
   if (typeof node.querySelectorAll === 'function') {
     candidates.push(...Array.from(node.querySelectorAll(SCROLL_CONTAINER_CANDIDATE_SELECTOR)).slice(0, 80));
+    appendCustomElementScrollCandidates(candidates, node, 120);
   }
 
   return candidates.some(isLikelyPrimaryScrollCandidate);
@@ -672,9 +706,11 @@ function getReadOnlyScrollCandidateType(element) {
   if (!element || getElementScrollRange(element) <= 1) return false;
   if (isRootScrollElement(element)) return 'native';
 
-  const overflowY = window.getComputedStyle(element).overflowY;
+  const style = window.getComputedStyle(element);
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  const overflowY = style.overflowY;
   if (SCROLLABLE_OVERFLOW_VALUES.has(overflowY)) return 'native';
-  if (PROGRAMMATIC_SCROLL_OVERFLOW_VALUES.has(overflowY)) return 'programmatic';
+  if (PROGRAMMATIC_SCROLL_OVERFLOW_VALUES.has(overflowY) && style.pointerEvents !== 'none') return 'programmatic';
   return false;
 }
 
@@ -747,6 +783,65 @@ function getWheelFallbackPointCandidates() {
     .filter(Boolean);
 }
 
+function isVirtualGridWheelSurface(element) {
+  if (!element || !element.tagName) return false;
+  const tagName = element.tagName.toLowerCase();
+  const role = element.getAttribute ? (element.getAttribute('role') || '').toLowerCase() : '';
+  if (tagName !== 'canvas' && role !== 'faster') return false;
+
+  const metrics = getElementViewportMetrics(element);
+  if (metrics.areaRatio < 0.12 || metrics.widthRatio < 0.4 || metrics.heightRatio < 0.3) {
+    return false;
+  }
+  if (role === 'faster') return true;
+
+  let current = element;
+  let depth = 0;
+  while (current && depth < 5) {
+    const currentRole = current.getAttribute ? (current.getAttribute('role') || '').toLowerCase() : '';
+    const className = typeof current.className === 'string' ? current.className : '';
+    const id = current.id || '';
+    const signature = `${currentRole} ${id} ${className}`;
+    if (/base|bitable|sheet|grid|table|faster/i.test(signature)) return true;
+    current = current.parentElement;
+    depth++;
+  }
+  return false;
+}
+
+function getVirtualGridWheelSurface(pointCandidates, options = {}) {
+  const candidates = [];
+  const seen = new Set();
+  const pointSurfaceCandidates = new Set();
+  const addCandidate = (element) => {
+    if (!element || seen.has(element)) return;
+    seen.add(element);
+    candidates.push(element);
+  };
+
+  pointCandidates.forEach((element) => {
+    let current = element;
+    let depth = 0;
+    while (current && depth < 5) {
+      addCandidate(current);
+      pointSurfaceCandidates.add(current);
+      current = current.parentElement;
+      depth++;
+    }
+  });
+  if (typeof document.querySelectorAll === 'function') {
+    Array.from(document.querySelectorAll('canvas, [role="faster"]')).slice(0, 40).forEach(addCandidate);
+  }
+
+  return candidates
+    .filter((element) => !options.requirePointHit || pointSurfaceCandidates.has(element))
+    .filter(isVirtualGridWheelSurface)
+    .sort((a, b) => {
+      const pointPriority = Number(pointSurfaceCandidates.has(b)) - Number(pointSurfaceCandidates.has(a));
+      return pointPriority || getElementViewportScore(b) - getElementViewportScore(a);
+    })[0] || null;
+}
+
 function scoreWheelFallbackTarget(element) {
   if (!element || !element.tagName || typeof element.getBoundingClientRect !== 'function') {
     return -Infinity;
@@ -776,8 +871,11 @@ function scoreWheelFallbackTarget(element) {
 function getWheelFallbackTarget() {
   const seen = new Set();
   const candidates = [];
+  const pointCandidates = getWheelFallbackPointCandidates();
+  const virtualGridSurface = getVirtualGridWheelSurface(pointCandidates);
+  if (virtualGridSurface) return virtualGridSurface;
 
-  getWheelFallbackPointCandidates().forEach((element) => {
+  pointCandidates.forEach((element) => {
     let current = element;
     while (current && current !== document.documentElement.parentElement) {
       if (!seen.has(current)) {
@@ -837,6 +935,227 @@ function isRetainablePrimaryScrollContainer(element) {
     (metrics.widthRatio >= 0.45 && metrics.heightRatio >= 0.4);
 }
 
+function shouldPreferVirtualGridWheelFallback(container) {
+  if (container && isRetainablePrimaryScrollContainer(container)) return false;
+  return Boolean(getVirtualGridWheelSurface(getWheelFallbackPointCandidates(), {
+    requirePointHit: true
+  }));
+}
+
+function getEmbeddedFrameViewportMetrics(frame) {
+  return getElementViewportMetrics(frame);
+}
+
+function isEligibleEmbeddedFrame(frame) {
+  if (!frame || !frame.tagName || frame.tagName.toLowerCase() !== 'iframe') return false;
+  if (frame.isConnected === false) return false;
+  const style = typeof window.getComputedStyle === 'function' ? window.getComputedStyle(frame) : null;
+  if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+
+  const metrics = getEmbeddedFrameViewportMetrics(frame);
+  if (
+    metrics.areaRatio < EMBEDDED_FRAME_MIN_AREA_RATIO ||
+    metrics.widthRatio < EMBEDDED_FRAME_MIN_WIDTH_RATIO ||
+    metrics.heightRatio < EMBEDDED_FRAME_MIN_HEIGHT_RATIO
+  ) {
+    return false;
+  }
+  return getWheelFallbackPointCandidates().some((element) => element === frame);
+}
+
+function getEmbeddedFrameDocument(frame) {
+  if (!isEligibleEmbeddedFrame(frame)) return null;
+  try {
+    const frameDocument = frame.contentDocument;
+    const frameWindow = frame.contentWindow;
+    if (!frameDocument || !frameWindow) return null;
+    if (
+      window.location && frameWindow.location &&
+      window.location.origin && frameWindow.location.origin &&
+      window.location.origin !== frameWindow.location.origin
+    ) {
+      return null;
+    }
+    return { frameDocument, frameWindow };
+  } catch (error) {
+    // Cross-origin frames cannot be inspected or controlled by the content script.
+    return null;
+  }
+}
+
+function getEmbeddedFrameElementViewportMetrics(element, frameWindow) {
+  if (!element || typeof element.getBoundingClientRect !== 'function') {
+    return { areaRatio: 0, widthRatio: 0, heightRatio: 0 };
+  }
+
+  const rect = element.getBoundingClientRect();
+  const viewportWidth = frameWindow.innerWidth || 0;
+  const viewportHeight = frameWindow.innerHeight || 0;
+  if (!viewportWidth || !viewportHeight || rect.width <= 0 || rect.height <= 0) {
+    return { areaRatio: 0, widthRatio: 0, heightRatio: 0 };
+  }
+
+  const visibleWidth = Math.max(0, Math.min(rect.right, viewportWidth) - Math.max(rect.left, 0));
+  const visibleHeight = Math.max(0, Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0));
+  return {
+    areaRatio: (visibleWidth * visibleHeight) / (viewportWidth * viewportHeight),
+    widthRatio: visibleWidth / viewportWidth,
+    heightRatio: visibleHeight / viewportHeight
+  };
+}
+
+function getEmbeddedFrameScrollCandidateType(element, frameWindow) {
+  if (!element || getElementScrollRange(element) <= 1) return false;
+  if (isRootScrollElement(element)) return 'native';
+  const style = frameWindow.getComputedStyle(element);
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+  return SCROLLABLE_OVERFLOW_VALUES.has(style.overflowY) ? 'native' : false;
+}
+
+function scoreEmbeddedFrameScrollContainer(element, frameWindow) {
+  const range = getElementScrollRange(element);
+  const metrics = getEmbeddedFrameElementViewportMetrics(element, frameWindow);
+  const tagName = element.tagName ? element.tagName.toLowerCase() : '';
+  const role = element.getAttribute ? (element.getAttribute('role') || '').toLowerCase() : '';
+  const className = typeof element.className === 'string' ? element.className : '';
+  const id = element.id || '';
+  const signature = `${tagName} ${role} ${id} ${className}`;
+  let score = Math.min(range, 3000) + (metrics.areaRatio * 2200);
+
+  if (['main', 'article'].includes(tagName)) score += 700;
+  if (['main', 'document'].includes(role)) score += 600;
+  if (/content|document|doc|article|editor|reader|view|viewport|scroll/i.test(signature)) score += 350;
+  if (metrics.widthRatio >= 0.6) score += 600;
+  if (metrics.heightRatio >= 0.55) score += 500;
+  if (metrics.widthRatio < 0.36 && metrics.heightRatio > 0.45) score -= 2200;
+  if (['nav', 'aside', 'header', 'footer'].includes(tagName)) score -= 1800;
+  if (['navigation', 'complementary', 'banner', 'contentinfo', 'dialog'].includes(role)) score -= 1800;
+  return score;
+}
+
+function getEmbeddedFrameScrollTargetCandidate(frame) {
+  const frameContext = getEmbeddedFrameDocument(frame);
+  if (!frameContext) return null;
+
+  const { frameDocument, frameWindow } = frameContext;
+  if (!frameDocument.querySelectorAll || !frameWindow.getComputedStyle) return null;
+  const candidates = [
+    frameDocument.scrollingElement,
+    frameDocument.documentElement,
+    frameDocument.body,
+    ...Array.from(frameDocument.querySelectorAll(SCROLL_CONTAINER_CANDIDATE_SELECTOR)).slice(0, 120)
+  ].filter(Boolean);
+  appendCustomElementScrollCandidates(candidates, frameDocument.body || frameDocument.documentElement);
+  const seen = new Set();
+  let best = null;
+  let bestScore = -Infinity;
+
+  candidates.forEach((element) => {
+    if (seen.has(element) || !getEmbeddedFrameScrollCandidateType(element, frameWindow)) return;
+    seen.add(element);
+    const metrics = getEmbeddedFrameElementViewportMetrics(element, frameWindow);
+    if (metrics.widthRatio < 0.45 || metrics.heightRatio < 0.35) return;
+    const score = scoreEmbeddedFrameScrollContainer(element, frameWindow);
+    if (score > bestScore) {
+      best = element;
+      bestScore = score;
+    }
+  });
+
+  return best ? { frame, container: best } : null;
+}
+
+function isEmbeddedFrameScrollTargetUsable(target) {
+  if (target && target.bridge === true) {
+    return Boolean(
+      target.frame &&
+      target.frame.isConnected !== false &&
+      isEligibleEmbeddedFrame(target.frame)
+    );
+  }
+  return Boolean(
+    target &&
+    target.frame &&
+    target.frame.isConnected !== false &&
+    target.container &&
+    target.container.isConnected !== false &&
+    isEligibleEmbeddedFrame(target.frame) &&
+    getElementScrollRange(target.container) > 1
+  );
+}
+
+function getEmbeddedFrameBridgeTargetCandidate(frame) {
+  if (!isEligibleEmbeddedFrame(frame)) return null;
+  const frameName = frame.name || '';
+  return frameName ? { frame, frameName, bridge: true } : null;
+}
+
+function sendEmbeddedFrameScrollAction(target, action) {
+  if (!target || !target.frame) return false;
+  try {
+    if (!chrome.runtime || typeof chrome.runtime.sendMessage !== 'function') return false;
+    chrome.runtime.sendMessage({
+      action: 'forwardEmbeddedFrameScroll',
+      frameName: target.frameName || target.frame.name || '',
+      scrollAction: action,
+      scrollMode,
+      scrollSpeed
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function findEmbeddedFrameScrollTarget() {
+  if (isEmbeddedFrameScrollTargetUsable(embeddedFrameScrollTarget)) {
+    return embeddedFrameScrollTarget;
+  }
+
+  embeddedFrameScrollTarget = null;
+  if (typeof document.querySelectorAll !== 'function') return null;
+  const candidates = Array.from(document.querySelectorAll('iframe')).slice(0, 12)
+    .map(getEmbeddedFrameScrollTargetCandidate)
+    .filter(Boolean);
+  if (candidates.length === 0) {
+    const bridgeCandidates = Array.from(document.querySelectorAll('iframe')).slice(0, 12)
+      .map(getEmbeddedFrameBridgeTargetCandidate)
+      .filter(Boolean);
+    if (bridgeCandidates.length === 0) return null;
+    bridgeCandidates.sort((a, b) => {
+      const aMetrics = getEmbeddedFrameViewportMetrics(a.frame);
+      const bMetrics = getEmbeddedFrameViewportMetrics(b.frame);
+      return bMetrics.areaRatio - aMetrics.areaRatio;
+    });
+    embeddedFrameScrollTarget = bridgeCandidates[0];
+    return embeddedFrameScrollTarget;
+  }
+
+  candidates.sort((a, b) => {
+    const aMetrics = getEmbeddedFrameViewportMetrics(a.frame);
+    const bMetrics = getEmbeddedFrameViewportMetrics(b.frame);
+    return bMetrics.areaRatio - aMetrics.areaRatio;
+  });
+  embeddedFrameScrollTarget = candidates[0];
+  return embeddedFrameScrollTarget;
+}
+
+function resolveEmbeddedFrameScrollTargetForAction(container) {
+  if (getEffectiveContainerStrategy() !== 'auto') return null;
+  const parentRange = getElementScrollRange(container);
+  if (parentRange > 1) {
+    const ownerDocument = container && container.ownerDocument ? container.ownerDocument : document;
+    const ownerWindow = ownerDocument.defaultView || window;
+    const style = container && typeof ownerWindow.getComputedStyle === 'function'
+      ? ownerWindow.getComputedStyle(container)
+      : null;
+    const hasNativeOverflow = style && SCROLLABLE_OVERFLOW_VALUES.has(style.overflowY);
+    if (parentRange > EMBEDDED_FRAME_PARENT_RANGE_TOLERANCE_PX || hasNativeOverflow) return null;
+  }
+  if (shouldPreferVirtualGridWheelFallback(container)) return null;
+  return findEmbeddedFrameScrollTarget();
+}
+
 function scoreScrollContainer(element) {
   const range = getElementScrollRange(element);
   const viewportMetrics = getElementViewportMetrics(element);
@@ -882,6 +1201,7 @@ function findScrollContainer(strategy = getEffectiveContainerStrategy(), options
     document.body,
     ...document.querySelectorAll(SCROLL_CONTAINER_CANDIDATE_SELECTOR)
   ].filter(Boolean);
+  appendCustomElementScrollCandidates(candidates, document.body || document.documentElement);
   const seen = new Set();
   const scrollableElements = [];
   const programmaticCandidates = [];
@@ -1209,9 +1529,11 @@ function buildOutlineSnapshot(outlineSettings = advancedSettings.outlineNavigati
 
 function getScrollTop(container) {
   if (isRootScrollElement(container)) {
-    return window.pageYOffset ||
-      document.documentElement.scrollTop ||
-      (document.body ? document.body.scrollTop : 0) ||
+    const ownerDocument = container.ownerDocument || document;
+    const ownerWindow = ownerDocument.defaultView || window;
+    return ownerWindow.pageYOffset ||
+      ownerDocument.documentElement.scrollTop ||
+      (ownerDocument.body ? ownerDocument.body.scrollTop : 0) ||
       0;
   }
 
@@ -1220,10 +1542,12 @@ function getScrollTop(container) {
 
 function setScrollTop(container, top) {
   if (isRootScrollElement(container)) {
-    window.scrollTo(0, top);
-    document.documentElement.scrollTop = top;
-    if (document.body) {
-      document.body.scrollTop = top;
+    const ownerDocument = container.ownerDocument || document;
+    const ownerWindow = ownerDocument.defaultView || window;
+    ownerWindow.scrollTo(0, top);
+    ownerDocument.documentElement.scrollTop = top;
+    if (ownerDocument.body) {
+      ownerDocument.body.scrollTop = top;
     }
     return;
   }
@@ -1668,6 +1992,7 @@ function restartSpaScrollContainerDetection() {
 
 function handleOutlineRouteChange() {
   if (window.location.href === outlineLastKnownUrl) return false;
+  cancelWheelFallbackScroll();
   stopAutoScroll();
   outlineLastKnownUrl = window.location.href;
   bookmarkRestoreCheckedForKey = '';
@@ -1851,6 +2176,7 @@ function normalizeScrollSpeed(value) {
 }
 
 function cancelActiveScrollMotion() {
+  cancelWheelFallbackScroll();
   if (activeNativeScrollState) {
     cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
   }
@@ -1948,7 +2274,9 @@ function loadDomainFeatureState(legacyAdvancedSettings) {
 }
 
 function getNativeScrollTarget(container) {
-  return isRootScrollElement(container) ? window : container;
+  if (!isRootScrollElement(container)) return container;
+  const ownerDocument = container.ownerDocument || document;
+  return ownerDocument.defaultView || window;
 }
 
 function performNativeScroll(container, top, behavior) {
@@ -2185,6 +2513,7 @@ function startImmediateScroll(container, targetTop, options = {}) {
 }
 
 function scrollToPosition(container, targetTop, options = {}) {
+  cancelWheelFallbackScroll();
   if (scrollMode === 'instant') {
     return startImmediateScroll(container, targetTop, options);
   }
@@ -2281,13 +2610,39 @@ function smoothScrollTo(container, targetTop, options = {}) {
   animationState.frame = requestAnimationFrame(scroll);
 }
 
-function createWheelEvent(deltaY) {
+function getWheelEventCoordinates(target) {
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  let clientX = viewportWidth * 0.5;
+  let clientY = viewportHeight * 0.55;
+
+  if (target && typeof target.getBoundingClientRect === 'function') {
+    const rect = target.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      clientX = rect.left + (rect.width / 2);
+      clientY = rect.top + (rect.height / 2);
+    }
+  }
+
+  clientX = clamp(clientX, 0, Math.max(0, viewportWidth - 1));
+  clientY = clamp(clientY, 0, Math.max(0, viewportHeight - 1));
+  return {
+    clientX,
+    clientY,
+    screenX: (window.screenX || 0) + clientX,
+    screenY: (window.screenY || 0) + clientY
+  };
+}
+
+function createWheelEvent(deltaY, target) {
+  const coordinates = getWheelEventCoordinates(target);
   const options = {
     bubbles: true,
     cancelable: true,
     deltaMode: 0,
     deltaX: 0,
-    deltaY
+    deltaY,
+    ...coordinates
   };
   if (typeof WheelEvent === 'function') {
     return new WheelEvent('wheel', options);
@@ -2300,34 +2655,104 @@ function createWheelEvent(deltaY) {
     Object.defineProperty(event, 'deltaY', { value: deltaY });
     Object.defineProperty(event, 'deltaX', { value: 0 });
     Object.defineProperty(event, 'deltaMode', { value: 0 });
+    Object.entries(coordinates).forEach(([name, value]) => {
+      Object.defineProperty(event, name, { value });
+    });
     return event;
   }
   return null;
 }
 
+function unbindWheelFallbackListeners(state) {
+  if (!state) return;
+  if (typeof document.removeEventListener === 'function' && state.handleUserWheel) {
+    document.removeEventListener('wheel', state.handleUserWheel, true);
+  }
+  if (typeof window.removeEventListener === 'function' && state.handlePageHide) {
+    window.removeEventListener('pagehide', state.handlePageHide);
+  }
+}
+
+function clearWheelFallbackState(state, options = {}) {
+  if (!state) return;
+  if (state.timer !== null) {
+    clearTimeout(state.timer);
+    state.timer = null;
+  }
+  unbindWheelFallbackListeners(state);
+  if (activeWheelFallbackState === state) {
+    activeWheelFallbackState = null;
+  }
+  if (options.completed === true) {
+    requestProgressUpdate();
+    requestOutlineHighlightUpdate();
+  }
+}
+
+function cancelWheelFallbackScroll() {
+  clearWheelFallbackState(activeWheelFallbackState);
+}
+
 function startWheelFallbackScroll(direction) {
+  pauseAutoScroll();
+  cancelActiveScrollMotion();
   const target = getWheelFallbackTarget();
   if (!target || typeof target.dispatchEvent !== 'function') return false;
 
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 800;
   const deltaY = Math.sign(direction || 1) * Math.max(600, viewportHeight * 0.9);
-  let steps = 0;
+  const state = {
+    target,
+    steps: 0,
+    timer: null,
+    handleUserWheel: null,
+    handlePageHide: null
+  };
+  state.handleUserWheel = (event) => {
+    if (!wheelFallbackDispatchedEvents.has(event)) {
+      cancelWheelFallbackScroll();
+    }
+  };
+  state.handlePageHide = () => cancelWheelFallbackScroll();
+  activeWheelFallbackState = state;
+  if (typeof document.addEventListener === 'function') {
+    document.addEventListener('wheel', state.handleUserWheel, true);
+  }
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('pagehide', state.handlePageHide);
+  }
+
+  let didDispatch = false;
 
   function step() {
-    const event = createWheelEvent(deltaY);
-    if (!event) return;
-    target.dispatchEvent(event);
-    steps++;
-    if (steps < WHEEL_FALLBACK_MAX_STEPS) {
-      setTimeout(step, WHEEL_FALLBACK_INTERVAL_MS);
+    if (activeWheelFallbackState !== state || target.isConnected === false) {
+      clearWheelFallbackState(state);
+      return;
+    }
+    state.timer = null;
+    const event = createWheelEvent(deltaY, target);
+    if (!event) {
+      clearWheelFallbackState(state);
+      return;
+    }
+    wheelFallbackDispatchedEvents.add(event);
+    try {
+      target.dispatchEvent(event);
+      didDispatch = true;
+    } catch (error) {
+      clearWheelFallbackState(state);
+      return;
+    }
+    state.steps++;
+    if (state.steps < WHEEL_FALLBACK_MAX_STEPS) {
+      state.timer = setTimeout(step, WHEEL_FALLBACK_INTERVAL_MS);
     } else {
-      requestProgressUpdate();
-      requestOutlineHighlightUpdate();
+      clearWheelFallbackState(state, { completed: true });
     }
   }
 
   step();
-  return true;
+  return didDispatch;
 }
 
 function cancelScrollAnimation(container) {
@@ -2379,7 +2804,18 @@ function navigateOutlineMenuToItem(item, snapshot, menu) {
 // 平滑滚动到顶部
 function scrollToTop() {
   const container = resolveScrollContainerForAction();
-  if (getElementScrollRange(container) <= 1) {
+  const embeddedTarget = resolveEmbeddedFrameScrollTargetForAction(container);
+  if (embeddedTarget) {
+    if (embeddedTarget.bridge === true) {
+      sendEmbeddedFrameScrollAction(embeddedTarget, 'scrollToTop');
+      return;
+    }
+    scrollToPosition(embeddedTarget.container, 0, {
+      onNoMovement: () => startWheelFallbackScroll(-1)
+    });
+    return;
+  }
+  if (getElementScrollRange(container) <= 1 || shouldPreferVirtualGridWheelFallback(container)) {
     startWheelFallbackScroll(-1);
     return;
   }
@@ -2391,8 +2827,20 @@ function scrollToTop() {
 // 平滑滚动到底部
 function scrollToBottom() {
   const container = resolveScrollContainerForAction();
+  const embeddedTarget = resolveEmbeddedFrameScrollTargetForAction(container);
+  if (embeddedTarget) {
+    if (embeddedTarget.bridge === true) {
+      sendEmbeddedFrameScrollAction(embeddedTarget, 'scrollToBottom');
+      return;
+    }
+    scrollToPosition(embeddedTarget.container, getElementScrollRange(embeddedTarget.container), {
+      targetMode: 'bottom',
+      onNoMovement: () => startWheelFallbackScroll(1)
+    });
+    return;
+  }
   const range = getElementScrollRange(container);
-  if (range <= 1) {
+  if (range <= 1 || shouldPreferVirtualGridWheelFallback(container)) {
     startWheelFallbackScroll(1);
     return;
   }
@@ -2405,7 +2853,9 @@ function scrollToBottom() {
 function getScrollContainerViewportHeight(container) {
   if (!container) return 0;
   if (isRootScrollElement(container)) {
-    return window.innerHeight || document.documentElement.clientHeight || container.clientHeight || 0;
+    const ownerDocument = container.ownerDocument || document;
+    const ownerWindow = ownerDocument.defaultView || window;
+    return ownerWindow.innerHeight || ownerDocument.documentElement.clientHeight || container.clientHeight || 0;
   }
   return container.clientHeight || 0;
 }
@@ -3378,7 +3828,9 @@ function getProgressLabelText(percentText, remainingText, separator) {
 }
 
 function getProgressEventTarget(container) {
-  return isRootScrollElement(container) ? window : container;
+  if (!isRootScrollElement(container)) return container;
+  const ownerDocument = container.ownerDocument || document;
+  return ownerDocument.defaultView || window;
 }
 
 function requestProgressUpdate() {
@@ -4324,6 +4776,7 @@ function removeButton() {
   const host = document.getElementById(HOST_ID);
   stopAutoScroll();
   unbindAutoScrollPauseListeners();
+  cancelWheelFallbackScroll();
   if (activeNativeScrollState) {
     cancelNativeScrollAnimation(activeNativeScrollState.container, { stopMotion: true });
   }
@@ -5469,6 +5922,7 @@ function hasActiveScrollMotion() {
   return Boolean(
     activeScrollAnimationState ||
     activeNativeScrollState ||
+    activeWheelFallbackState ||
     autoScrollRuntime.state === 'playing'
   );
 }

@@ -15,8 +15,13 @@ class FakeElement {
     this.children = [];
     this.style = {};
     this.attributes = options.attributes || {};
+    this.id = options.id || '';
+    this.className = options.className || '';
     this.isConnected = options.isConnected !== false;
     this.overflowY = options.overflowY || 'visible';
+    this.visibility = options.visibility || 'visible';
+    this.display = options.display || 'block';
+    this.pointerEvents = options.pointerEvents;
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
     this.rectReadCount = 0;
     this.queryCount = 0;
@@ -67,6 +72,8 @@ class FakeElement {
 function createContext(elements, options = {}) {
   const mutationObservers = [];
   const timers = [];
+  const documentListeners = new Map();
+  const runtimeMessages = [];
   const documentElement = options.documentElement || new FakeElement('html', {
     scrollHeight: 900,
     clientHeight: 900,
@@ -87,13 +94,37 @@ function createContext(elements, options = {}) {
     querySelectorAll() {
       return elements;
     },
+    createTreeWalker(root) {
+      const collected = [];
+      const walk = (node) => {
+        for (const child of node.children || []) {
+          collected.push(child);
+          walk(child);
+        }
+      };
+      if (root && root.children) walk(root);
+      let index = 0;
+      return {
+        nextNode() {
+          return index < collected.length ? collected[index++] : null;
+        }
+      };
+    },
     elementFromPoint() {
       return options.elementFromPoint || null;
     },
     getElementById() {
       return null;
     },
-    addEventListener() {}
+    addEventListener(type, listener) {
+      const listeners = documentListeners.get(type) || [];
+      listeners.push(listener);
+      documentListeners.set(type, listeners);
+    },
+    removeEventListener(type, listener) {
+      const listeners = documentListeners.get(type) || [];
+      documentListeners.set(type, listeners.filter((candidate) => candidate !== listener));
+    }
   };
 
   const sandbox = {
@@ -109,7 +140,12 @@ function createContext(elements, options = {}) {
         body.scrollTop = y;
       },
       getComputedStyle(element) {
-        return { overflowY: element.overflowY };
+        return {
+          overflowY: element.overflowY,
+          visibility: element.visibility,
+          display: element.display,
+          pointerEvents: element.pointerEvents
+        };
       },
       addEventListener() {}
     },
@@ -120,7 +156,12 @@ function createContext(elements, options = {}) {
         local: { get() {} },
         onChanged: { addListener() {} }
       },
-      runtime: { onMessage: { addListener() {} } }
+      runtime: {
+        onMessage: { addListener() {} },
+        sendMessage(message) {
+          runtimeMessages.push(message);
+        }
+      }
     },
     navigator: { platform: 'MacIntel', userAgent: 'Chrome' },
     performance: { now: () => 0 },
@@ -155,7 +196,12 @@ function createContext(elements, options = {}) {
   vm.runInContext(getSharedRuntimeSource(ROOT, contentPath), sandbox);
   vm.runInContext(fs.readFileSync(contentPath, 'utf8'), sandbox);
   sandbox.__mutationObservers = mutationObservers;
+  sandbox.__runtimeMessages = runtimeMessages;
   sandbox.__timers = timers;
+  sandbox.__dispatchDocumentEvent = (type, event = {}) => {
+    (documentListeners.get(type) || []).slice().forEach((listener) => listener(event));
+  };
+  sandbox.__getPendingTimers = () => timers.filter((timer) => !timer.canceled && !timer.ran);
   sandbox.__runLatestTimer = () => {
     const timer = [...timers].reverse().find((candidate) => !candidate.canceled && !candidate.ran);
     assert(Boolean(timer), 'a pending timer is available');
@@ -163,6 +209,71 @@ function createContext(elements, options = {}) {
     timer.callback();
   };
   return sandbox;
+}
+
+function createEmbeddedFrame(scrollContainer, options = {}) {
+  const frameWidth = options.frameWidth || 1000;
+  const frameHeight = options.frameHeight || 700;
+  const frame = new FakeElement('iframe', {
+    display: options.display,
+    visibility: options.visibility,
+    rect: options.rect || {
+      left: 120,
+      top: 100,
+      right: 120 + frameWidth,
+      bottom: 100 + frameHeight,
+      width: frameWidth,
+      height: frameHeight
+    }
+  });
+  const documentElement = new FakeElement('html', {
+    scrollHeight: frameHeight,
+    clientHeight: frameHeight,
+    rect: { left: 0, top: 0, right: frameWidth, bottom: frameHeight, width: frameWidth, height: frameHeight }
+  });
+  const body = new FakeElement('body', {
+    scrollHeight: frameHeight,
+    clientHeight: frameHeight,
+    rect: { left: 0, top: 0, right: frameWidth, bottom: frameHeight, width: frameWidth, height: frameHeight }
+  });
+  documentElement.appendChild(body);
+  const frameDocument = {
+    body,
+    documentElement,
+    scrollingElement: documentElement,
+    querySelectorAll() {
+      return [scrollContainer];
+    }
+  };
+  const frameWindow = {
+    innerWidth: frameWidth,
+    innerHeight: frameHeight,
+    location: { origin: options.origin || 'https://example.test' },
+    postedMessages: [],
+    postMessage(message, targetOrigin) {
+      this.postedMessages.push({ message, targetOrigin });
+    },
+    getComputedStyle(element) {
+      return {
+        overflowY: element.overflowY,
+        visibility: element.visibility,
+        display: element.display,
+        pointerEvents: element.pointerEvents
+      };
+    },
+    scrollTo(x, y) {
+      const top = typeof x === 'object' ? x.top : y;
+      documentElement.scrollTop = top;
+      body.scrollTop = top;
+    }
+  };
+  frameDocument.defaultView = frameWindow;
+  [documentElement, body, scrollContainer].forEach((element) => {
+    element.ownerDocument = frameDocument;
+  });
+  frame.contentDocument = frameDocument;
+  frame.contentWindow = frameWindow;
+  return { frame, frameDocument, frameWindow };
 }
 
 function assert(condition, message) {
@@ -414,6 +525,78 @@ function testHiddenNonProgrammableViewportIsIgnored() {
   );
 }
 
+function testCustomElementScrollContainerIsDetected() {
+  const chatScroller = new FakeElement('infinite-scroller', {
+    scrollHeight: 3200,
+    clientHeight: 600,
+    overflowY: 'scroll',
+    className: 'chat-history',
+    rect: { left: 300, top: 40, right: 1200, bottom: 640, width: 900, height: 600 }
+  });
+  const decorativeBlob = new FakeElement('div', {
+    scrollHeight: 4000,
+    clientHeight: 900,
+    overflowY: 'hidden',
+    className: 'nl-blob nl-fg-blob',
+    pointerEvents: 'none',
+    rect: { left: 0, top: 0, right: 1200, bottom: 900, width: 1200, height: 900 }
+  });
+  const sandbox = createContext([decorativeBlob]);
+  sandbox.document.body.appendChild(chatScroller);
+  sandbox.document.body.appendChild(decorativeBlob);
+
+  assert(
+    sandbox.findScrollContainer() === chatScroller,
+    'custom element scroll container should be detected even when it misses selector and class hints'
+  );
+  assert(
+    decorativeBlob.scrollTopWriteCount === 0,
+    'decorative pointer-events none background should not be probed with scrollTop writes'
+  );
+}
+
+function testCustomElementCollectionSurvivesLargeCandidateList() {
+  const chatScroller = new FakeElement('infinite-scroller', {
+    scrollHeight: 3200,
+    clientHeight: 600,
+    overflowY: 'scroll',
+    className: 'chat-history',
+    rect: { left: 300, top: 40, right: 1200, bottom: 640, width: 900, height: 600 }
+  });
+  const selectorFillers = [];
+  for (let i = 0; i < 240; i += 1) {
+    selectorFillers.push(new FakeElement('div', {
+      overflowY: 'hidden',
+      className: 'layout-block-' + i
+    }));
+  }
+  const sandbox = createContext(selectorFillers);
+  sandbox.document.body.appendChild(chatScroller);
+
+  assert(
+    sandbox.findScrollContainer() === chatScroller,
+    'custom element scroll container should still be collected when selector candidates already exceed the custom element limit'
+  );
+}
+
+function testDecorativePointerEventsNoneLayerDoesNotBecomePrimaryContainer() {
+  const decorativeBlob = new FakeElement('div', {
+    scrollHeight: 4000,
+    clientHeight: 900,
+    overflowY: 'hidden',
+    className: 'nl-blob nl-fg-blob',
+    pointerEvents: 'none',
+    rect: { left: 0, top: 0, right: 1200, bottom: 900, width: 1200, height: 900 }
+  });
+  const sandbox = createContext([decorativeBlob]);
+  sandbox.document.body.appendChild(decorativeBlob);
+
+  assert(
+    sandbox.findScrollContainer() === sandbox.document.documentElement,
+    'decorative pointer-events none background should not become the primary scroll container'
+  );
+}
+
 function testPageStrategyForcesRootScrollContainer() {
   const main = new FakeElement('main', {
     scrollHeight: 2400,
@@ -587,6 +770,324 @@ function testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists() {
   assert(appViewport.dispatchedEvents[0].deltaY > 0, 'bottom fallback should scroll downward');
 }
 
+function testSameOriginPrimaryIframeReceivesTopAndBottomActions() {
+  const iframeScroller = new FakeElement('div', {
+    className: 'document-scroll-viewport',
+    scrollHeight: 2500,
+    clientHeight: 700,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller);
+  const sandbox = createContext([frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  sandbox.scrollToBottom();
+  assert(iframeScroller.scrollTop === 1800, 'large same-origin iframe receives the bottom action');
+
+  sandbox.scrollToTop();
+  assert(iframeScroller.scrollTop === 0, 'large same-origin iframe receives the top action');
+  assert(frame.dispatchedEvents.length === 0, 'iframe support avoids synthetic wheel fallback');
+}
+
+function testNormalMainContainerDoesNotDelegateToIframe() {
+  const main = new FakeElement('main', {
+    scrollHeight: 3000,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const iframeScroller = new FakeElement('div', {
+    className: 'document-scroll-viewport',
+    scrollHeight: 2500,
+    clientHeight: 700,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller);
+  const sandbox = createContext([main, frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(main.scrollTop > 0, 'existing primary DOM container keeps the bottom action');
+  assert(iframeScroller.scrollTop === 0, 'existing primary DOM container does not delegate into an iframe');
+}
+
+function testPageStrategyDoesNotDelegateToIframe() {
+  const iframeScroller = new FakeElement('div', {
+    className: 'document-scroll-viewport',
+    scrollHeight: 2500,
+    clientHeight: 700,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller);
+  const sandbox = createContext([frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant'; currentDomainFeatureState.containerStrategy = 'page';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(iframeScroller.scrollTop === 0, 'explicit page strategy keeps its existing root-only contract');
+  assert(frame.dispatchedEvents.length === 1, 'page strategy retains the existing fallback behavior');
+}
+
+function testSmallOrHiddenIframeIsNotDelegatedTo() {
+  const iframeScroller = new FakeElement('div', {
+    className: 'document-scroll-viewport',
+    scrollHeight: 1800,
+    clientHeight: 200,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 280, bottom: 200, width: 280, height: 200 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller, {
+    frameWidth: 280,
+    frameHeight: 200,
+    rect: { left: 40, top: 80, right: 320, bottom: 280, width: 280, height: 200 }
+  });
+  const sandbox = createContext([frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(iframeScroller.scrollTop === 0, 'small embedded panels are not treated as page scroll targets');
+  assert(frame.dispatchedEvents.length === 1, 'small iframe retains the existing fallback behavior');
+}
+
+function testIsolatedIframeReceivesBridgeMessage() {
+  const iframeScroller = new FakeElement('div', {
+    className: 'document-scroll-viewport',
+    scrollHeight: 2500,
+    clientHeight: 700,
+    overflowY: 'auto',
+    rect: { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller);
+  frame.name = 'isolated-frame';
+  Object.defineProperty(frame, 'contentDocument', {
+    get() {
+      throw new Error('cross-origin frame');
+    }
+  });
+  Object.defineProperty(frame, 'contentWindow', {
+    get() {
+      return null;
+    }
+  });
+  const sandbox = createContext([frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+  sandbox.scrollToBottom();
+
+  assert(iframeScroller.scrollTop === 0, 'the parent must not directly access an isolated iframe scroll container');
+  assert(sandbox.__runtimeMessages.length === 1, 'isolated iframe should be routed through extension messaging');
+  assert(
+    sandbox.__runtimeMessages[0].scrollAction === 'scrollToBottom',
+    'bridge message should preserve the requested bottom action'
+  );
+  assert(frame.dispatchedEvents.length === 0, 'isolated iframe support should not fall back to synthetic wheel events');
+}
+
+function testTinyHiddenParentRangeDoesNotBlockIframeBridge() {
+  const iframeHost = new FakeElement('div', {
+    id: 'bitable-iframe-host',
+    scrollHeight: 904,
+    clientHeight: 900,
+    overflowY: 'hidden',
+    rect: { left: 0, top: 0, right: 1200, bottom: 900, width: 1200, height: 900 }
+  });
+  const iframeScroller = new FakeElement('div', {
+    className: 'bear-web-x-container catalogue-opened width-transition',
+    scrollHeight: 2500,
+    clientHeight: 700,
+    overflowY: 'scroll',
+    rect: { left: 0, top: 0, right: 1000, bottom: 700, width: 1000, height: 700 }
+  });
+  const { frame } = createEmbeddedFrame(iframeScroller);
+  frame.name = 'docComponent-layout-tolerance';
+  Object.defineProperty(frame, 'contentDocument', {
+    get() {
+      return null;
+    }
+  });
+  Object.defineProperty(frame, 'contentWindow', {
+    get() {
+      return null;
+    }
+  });
+  const sandbox = createContext([iframeHost, frame], { elementFromPoint: frame });
+  vm.runInContext("scrollMode = 'instant'; currentScrollContainer = document.querySelectorAll()[0];", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(
+    sandbox.__runtimeMessages.length === 1 &&
+      sandbox.__runtimeMessages[0].frameName === 'docComponent-layout-tolerance',
+    'a 4px hidden parent layout range must not preempt the visible iframe bridge'
+  );
+  assert(iframeHost.scrollTop === 0, 'tiny hidden parent layout range should remain untouched');
+}
+
+function testWheelFallbackPrefersLarkCanvasAndAddsPointerCoordinates() {
+  const mainContainer = new FakeElement('div', {
+    id: 'mainContainer',
+    scrollHeight: 900,
+    clientHeight: 900,
+    overflowY: 'hidden',
+    rect: { left: 0, top: 0, right: 1200, bottom: 900, width: 1200, height: 900 }
+  });
+  const gridView = new FakeElement('div', {
+    className: 'faster-view gridView',
+    scrollHeight: 680,
+    clientHeight: 680,
+    overflowY: 'hidden',
+    rect: { left: 240, top: 148, right: 1200, bottom: 828, width: 960, height: 680 }
+  });
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 240, top: 148, right: 1200, bottom: 828, width: 960, height: 680 }
+  });
+  mainContainer.appendChild(gridView);
+  gridView.appendChild(canvas);
+  const sandbox = createContext([mainContainer, gridView, canvas], { elementFromPoint: canvas });
+
+  sandbox.scrollToBottom();
+
+  assert(canvas.dispatchedEvents.length === 1, 'Lark fallback should dispatch to the canvas interaction surface');
+  assert(mainContainer.dispatchedEvents.length === 0, 'Lark fallback should not dispatch to the full-screen wrapper');
+  const event = canvas.dispatchedEvents[0];
+  assert(event.clientX > 240 && event.clientX < 1200, 'wheel clientX should be inside the canvas');
+  assert(event.clientY > 148 && event.clientY < 828, 'wheel clientY should be inside the canvas');
+}
+
+function testWheelFallbackDirectionReplacementAndUserCancellation() {
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
+  });
+  const sandbox = createContext([canvas], { elementFromPoint: canvas });
+
+  sandbox.scrollToBottom();
+  const firstTimer = sandbox.__getPendingTimers()[0];
+  sandbox.scrollToTop();
+
+  assert(firstTimer.canceled === true, 'a new top action should cancel the previous bottom fallback loop');
+  assert(canvas.dispatchedEvents.length === 2, 'replacement action should dispatch its first wheel event immediately');
+  assert(canvas.dispatchedEvents[0].deltaY > 0, 'bottom fallback should dispatch a positive delta');
+  assert(canvas.dispatchedEvents[1].deltaY < 0, 'top fallback should dispatch a negative delta');
+
+  const replacementTimer = sandbox.__getPendingTimers()[0];
+  sandbox.__dispatchDocumentEvent('wheel', { type: 'wheel' });
+  assert(replacementTimer.canceled === true, 'a user wheel event should cancel the active fallback loop');
+  assert(sandbox.__getPendingTimers().length === 0, 'user cancellation should leave no fallback timer pending');
+
+  sandbox.scrollToBottom();
+  const routeTimer = sandbox.__getPendingTimers()[0];
+  sandbox.window.location.href = 'https://example.test/next';
+  sandbox.handleOutlineRouteChange();
+  assert(routeTimer.canceled === true, 'a SPA route change should cancel the active fallback loop');
+}
+
+function testScrollablePageDoesNotUseWheelFallback() {
+  const main = new FakeElement('main', {
+    scrollHeight: 3000,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const sandbox = createContext([main], { elementFromPoint: main });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(main.scrollTop > 0, 'ordinary scrollable pages should still use their DOM scroll range');
+  assert(main.dispatchedEvents.length === 0, 'ordinary scrollable pages should not enter the wheel fallback');
+}
+
+function testVirtualGridWinsOverAsyncSidebarAndHiddenPanel() {
+  const sidebar = new FakeElement('div', {
+    scrollHeight: 1200,
+    clientHeight: 462,
+    overflowY: 'scroll',
+    rect: { left: 0, top: 236, right: 298, bottom: 698, width: 298, height: 462 }
+  });
+  const hiddenAskPanel = new FakeElement('div', {
+    scrollHeight: 530,
+    clientHeight: 395,
+    overflowY: 'scroll',
+    visibility: 'hidden',
+    rect: { left: 1, top: 45, right: 380, bottom: 440, width: 379, height: 395 }
+  });
+  const transientPanel = new FakeElement('div', {
+    scrollHeight: 1800,
+    clientHeight: 560,
+    overflowY: 'auto',
+    rect: { left: 430, top: 160, right: 730, bottom: 720, width: 300, height: 560 }
+  });
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 300, top: 148, right: 1200, bottom: 737, width: 900, height: 589 }
+  });
+  const sandbox = createContext([sidebar, hiddenAskPanel, transientPanel, canvas], {
+    elementFromPoint: canvas
+  });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  assert(
+    sandbox.getReadOnlyScrollCandidateType(hiddenAskPanel) === false,
+    'CSS-hidden panels should not be scroll-container candidates'
+  );
+  assert(
+    sandbox.findScrollContainer() === transientPanel,
+    'the setup should retain a non-primary DOM candidate to exercise Canvas preference'
+  );
+
+  sandbox.scrollToBottom();
+
+  assert(canvas.dispatchedEvents.length === 1, 'point-hit virtual grid should receive the bottom action');
+  assert(sidebar.scrollTop === 0, 'the async sidebar should not receive the table action');
+  assert(hiddenAskPanel.scrollTop === 0, 'the hidden panel should not receive the table action');
+  assert(transientPanel.scrollTop === 0, 'a non-primary DOM panel should not preempt the virtual grid');
+}
+
+function testRetainableMainStillWinsOverVirtualGrid() {
+  const main = new FakeElement('main', {
+    scrollHeight: 3000,
+    clientHeight: 860,
+    overflowY: 'auto',
+    attributes: { role: 'main' },
+    rect: { left: 0, top: 40, right: 1200, bottom: 900, width: 1200, height: 860 }
+  });
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 240, top: 148, right: 1200, bottom: 828, width: 960, height: 680 }
+  });
+  const sandbox = createContext([main, canvas], { elementFromPoint: canvas });
+  vm.runInContext("scrollMode = 'instant';", sandbox);
+
+  sandbox.scrollToBottom();
+
+  assert(main.scrollTop > 0, 'a retainable main DOM container should keep normal scrolling');
+  assert(canvas.dispatchedEvents.length === 0, 'Canvas fallback should not replace normal main scrolling');
+}
+
+function testWheelFallbackStopsAtConfiguredStepBound() {
+  const canvas = new FakeElement('canvas', {
+    attributes: { role: 'faster' },
+    rect: { left: 120, top: 100, right: 1120, bottom: 850, width: 1000, height: 750 }
+  });
+  const sandbox = createContext([canvas], { elementFromPoint: canvas });
+
+  sandbox.scrollToBottom();
+  while (sandbox.__getPendingTimers().length) {
+    sandbox.__runLatestTimer();
+  }
+
+  assert(canvas.dispatchedEvents.length === 28, 'wheel fallback should stop at its configured 28-step bound');
+  assert(sandbox.__getPendingTimers().length === 0, 'bounded fallback completion should leave no timer pending');
+}
+
 testDelayedMainContainerWinsOverRootFallback();
 testMainContainerWinsOverSmallNestedCodeBlock();
 testMainContainerWinsOverScrollableSidebar();
@@ -599,6 +1100,9 @@ testMainContainerWinsOverHiddenProgrammaticDialog();
 testLowerScoredHiddenCandidatesAreNotProbedWhenMainWins();
 testHiddenProgrammaticEdgePanelDoesNotBecomePrimaryContainer();
 testHiddenNonProgrammableViewportIsIgnored();
+testCustomElementScrollContainerIsDetected();
+testCustomElementCollectionSurvivesLargeCandidateList();
+testDecorativePointerEventsNoneLayerDoesNotBecomePrimaryContainer();
 testPageStrategyForcesRootScrollContainer();
 testEventDrivenDetectionUpdatesLateContent();
 testRootWithoutScrollRangeDoesNotBlockLateScrollableContent();
@@ -606,5 +1110,17 @@ testAddedPrimaryScrollCandidateTriggersReevaluation();
 testScrollActionRefreshesStaleConnectedContainer();
 testMutationContainerMeasurementWaitsForScrollCompletion();
 testWheelFallbackTargetsMainViewportWhenNoDomScrollRangeExists();
+testSameOriginPrimaryIframeReceivesTopAndBottomActions();
+testNormalMainContainerDoesNotDelegateToIframe();
+testPageStrategyDoesNotDelegateToIframe();
+testSmallOrHiddenIframeIsNotDelegatedTo();
+testIsolatedIframeReceivesBridgeMessage();
+testTinyHiddenParentRangeDoesNotBlockIframeBridge();
+testWheelFallbackPrefersLarkCanvasAndAddsPointerCoordinates();
+testWheelFallbackDirectionReplacementAndUserCancellation();
+testScrollablePageDoesNotUseWheelFallback();
+testVirtualGridWinsOverAsyncSidebarAndHiddenPanel();
+testRetainableMainStillWinsOverVirtualGrid();
+testWheelFallbackStopsAtConfiguredStepBound();
 
 console.log('scroll container detection tests passed');

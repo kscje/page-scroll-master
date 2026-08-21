@@ -8,11 +8,11 @@
     "description": "Extension description"
   },
   "commandScrollToTop": {
-    "message": "Desplazarse al inicio de la pagina",
+    "message": "Desplazarse al inicio de la página",
     "description": "Command description"
   },
   "commandScrollToBottom": {
-    "message": "Desplazarse al final de la pagina",
+    "message": "Desplazarse al final de la página",
     "description": "Command description"
   },
   "popupScrollTop": {
@@ -40,7 +40,7 @@
     "description": "Auto scroll pause button tooltip"
   },
   "popupSettings": {
-    "message": "Configuracion",
+    "message": "Configuración",
     "description": "Popup settings button label"
   },
   "popupEnableToggle": {

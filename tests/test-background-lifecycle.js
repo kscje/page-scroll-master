@@ -14,6 +14,7 @@ function assert(condition, message) {
 
 function createBackground(initialSyncData = {}) {
   let installedListener = null;
+  let runtimeMessageListener = null;
   let optionsOpenCount = 0;
   let failNextOpen = false;
   let storageWriteCount = 0;
@@ -21,12 +22,18 @@ function createBackground(initialSyncData = {}) {
   const syncData = JSON.parse(JSON.stringify(initialSyncData));
   let syncWriteCount = 0;
   const removedKeys = [];
+  const tabMessages = [];
 
   const runtime = {
     lastError: null,
     onInstalled: {
       addListener(listener) {
         installedListener = listener;
+      }
+    },
+    onMessage: {
+      addListener(listener) {
+        runtimeMessageListener = listener;
       }
     },
     openOptionsPage(callback) {
@@ -83,7 +90,10 @@ function createBackground(initialSyncData = {}) {
       },
       tabs: {
         query() {},
-        sendMessage() {}
+        sendMessage(tabId, message, callback) {
+          tabMessages.push({ tabId, message });
+          if (callback) callback();
+        }
       }
     },
     console
@@ -101,6 +111,10 @@ function createBackground(initialSyncData = {}) {
     },
     triggerWithoutDetails() {
       installedListener();
+    },
+    triggerRuntimeMessage(message, sender) {
+      assert(typeof runtimeMessageListener === 'function', 'background registers the runtime message listener');
+      runtimeMessageListener(message, sender);
     },
     failNextOpen() {
       failNextOpen = true;
@@ -122,6 +136,9 @@ function createBackground(initialSyncData = {}) {
     },
     get removedKeys() {
       return removedKeys;
+    },
+    get tabMessages() {
+      return tabMessages;
     }
   };
 }
@@ -146,6 +163,21 @@ assert(background.storageWriteCount === 1, 'a new installation records the onboa
 assert(background.localData.showOnboarding === true, 'a new installation marks onboarding as visible');
 assert(background.syncData.scrollMode === 'instant', 'a new installation defaults to instant scrolling');
 assert(background.syncData.scrollSpeed === 100, 'a new installation stores the default custom duration');
+
+background.triggerRuntimeMessage({
+  action: 'forwardEmbeddedFrameScroll',
+  frameName: 'docComponent-test',
+  scrollAction: 'scrollToBottom',
+  scrollMode: 'instant',
+  scrollSpeed: 100
+}, { tab: { id: 42 } });
+assert(background.tabMessages.length === 1, 'embedded frame command is forwarded once within the sender tab');
+assert(background.tabMessages[0].tabId === 42, 'embedded frame command stays in the sender tab');
+assert(
+  background.tabMessages[0].message.frameName === 'docComponent-test' &&
+    background.tabMessages[0].message.scrollAction === 'scrollToBottom',
+  'forwarded command preserves the target frame and direction'
+);
 
 background.trigger('update');
 background.trigger('chrome_update');

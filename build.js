@@ -16,6 +16,7 @@ const INCLUDED_FILES = [
   'rating.js',
   'domain-utils.js',
   'content.js',
+  'frame-scroll-bridge.js',
   'popup.html',
   'popup.js',
   'options.html',
@@ -367,6 +368,10 @@ function runRegressionTests() {
     stdio: 'inherit',
   });
   execFileSync(process.execPath, [path.join(TEST_DIR, 'test-scroll-container-detection.js')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  execFileSync(process.execPath, [path.join(TEST_DIR, 'test-frame-scroll-bridge.js')], {
     cwd: ROOT,
     stdio: 'inherit',
   });

@@ -227,7 +227,7 @@ Object.assign(translations['zh-CN'], {
   'settings.iconSet.chevron': '折线箭头',
   'settings.iconSet.doubleArrow': '双箭头',
   'settings.iconColor': '图标颜色',
-  'settings.customIconComingSoon': '上传自定义图标 Coming soon。',
+  'settings.customIconComingSoon': '上传自定义图标即将推出。',
   'settings.siteManagement': '网站启用状态',
   'settings.iconCustomizationIntro': '配置顶部和底部按钮的图标样式与图标颜色。',
   'settings.resetDefaults': '恢复默认',
@@ -360,34 +360,34 @@ Object.assign(translations['en-US'], {
 translations['es-ES'] = Object.assign({}, translations['en-US'], {
   'settings.title': 'Navegador Scroll Inteligente',
   'settings.subtitle': 'Configura botones de desplazamiento, progreso de lectura y estado por sitio.',
-  'settings.tab.basic': 'Basico',
-  'settings.tab.advanced': 'Avanzado',
+  'settings.tab.basic': 'Básico',
+  'settings.tab.advanced': 'Avanzadas',
   'settings.tab.domains': 'Dominios',
   'settings.tab.feedback': 'Sugerencias y acerca de',
-  'settings.basicIntro': 'Ajusta velocidad, posicion, apariencia y atajos.',
-  'settings.advancedIntro': 'Configura los detalles de funciones avanzadas por modulo.',
-  'settings.domainIntro': 'Gestiona si los botones estan activos o inactivos en sitios concretos.',
+  'settings.basicIntro': 'Ajusta velocidad, posición, apariencia y atajos.',
+  'settings.advancedIntro': 'Configura los detalles de funciones avanzadas por módulo.',
+  'settings.domainIntro': 'Gestiona si los botones están activos o inactivos en sitios concretos.',
   'settings.scrollBehavior': 'Desplazamiento',
   'settings.buttonIcons': 'Iconos de botones',
-  'settings.progressBar': 'Barra de progreso de pagina',
+  'settings.progressBar': 'Barra de progreso de página',
   'settings.aboutDescription': 'Navegador Scroll Inteligente te ayuda a ir al inicio o final, ver el progreso de lectura y gestionar ajustes por sitio.',
-  'settings.versionLabel': 'Version: ',
+  'settings.versionLabel': 'Versión: ',
   'settings.authorLabel': 'Autor: ',
   'settings.language': 'Idioma',
   'settings.scrollSpeed': 'Velocidad de desplazamiento',
-  'settings.buttonPosition': 'Posicion del boton',
-  'settings.horizontalPosition': 'Posicion horizontal',
-  'settings.verticalAlignment': 'Alineacion vertical',
+  'settings.buttonPosition': 'Posición del botón',
+  'settings.horizontalPosition': 'Posición horizontal',
+  'settings.verticalAlignment': 'Alineación vertical',
   'settings.position.right': 'Borde derecho',
   'settings.position.left': 'Borde izquierdo',
   'settings.alignment.center': 'Centro',
   'settings.alignment.top': 'Arriba',
   'settings.alignment.bottom': 'Abajo',
-  'settings.buttonStyle': 'Estilo del boton',
-  'settings.buttonShape': 'Forma del boton',
+  'settings.buttonStyle': 'Estilo del botón',
+  'settings.buttonShape': 'Forma del botón',
   'settings.buttonShape.round': 'Redondo',
   'settings.buttonShape.square': 'Cuadrado',
-  'settings.buttonSize': 'Tamano del boton(px)',
+  'settings.buttonSize': 'Tamaño del botón(px)',
   'settings.buttonSpacing': 'Espaciado de botones(px)',
   'settings.edgeDistance': 'Distancia al borde(px)',
   'settings.opacity': 'Opacidad',
@@ -398,23 +398,23 @@ translations['es-ES'] = Object.assign({}, translations['en-US'], {
   'settings.about': 'Acerca de',
   'settings.feedback': 'Para sugerencias o comentarios, contacta al desarrollador:',
   'settings.saveButton': 'Guardar',
-  'settings.saveSuccess': 'Guardado correctamente!',
+  'settings.saveSuccess': '¡Guardado correctamente!',
   'settings.advancedFeatures': 'Funciones avanzadas',
-  'settings.progressBarEnabled': 'Activar barra de progreso de pagina',
-  'settings.progressBarMode.verticalButton': 'Boton vertical de progreso',
+  'settings.progressBarEnabled': 'Activar barra de progreso de página',
+  'settings.progressBarMode.verticalButton': 'Botón vertical de progreso',
   'settings.progressBarMode.horizontalBar': 'Barra horizontal en el borde',
-  'settings.readingToolsIntro': 'El boton de herramientas de lectura esta desactivado por defecto. Activalo para usar las funciones de lectura habilitadas.',
-  'settings.outlineNavigationEnabled': 'Activar navegacion inteligente por secciones',
-  'settings.outlineSources': 'Fuentes del indice',
+  'settings.readingToolsIntro': 'El botón de herramientas de lectura está desactivado por defecto. Actívalo para usar las funciones de lectura habilitadas.',
+  'settings.outlineNavigationEnabled': 'Activar navegación inteligente por secciones',
+  'settings.outlineSources': 'Fuentes del índice',
   'settings.outlineSourceH1': 'Fuente H1',
   'settings.outlineSourceH2': 'Fuente H2',
   'settings.outlineSourceH3': 'Fuente H3',
   'settings.outlineSourceIdBlocks': 'Bloques con id',
   'settings.outlineSourcesReset': 'Se requiere al menos una fuente. Se restauraron H1 + H2.',
-  'settings.outlineMaxItems': 'Elementos del indice por lote',
+  'settings.outlineMaxItems': 'Elementos del índice por lote',
   'settings.outlineMaxItemsError': 'Los elementos por lote deben estar entre 10 y 50.',
-  'settings.outlineFilterShortHeadings': 'Filtrar automaticamente titulos cortos',
-  'settings.outlineHighlightCurrentSection': 'Resaltar la seccion actual',
+  'settings.outlineFilterShortHeadings': 'Filtrar automáticamente títulos cortos',
+  'settings.outlineHighlightCurrentSection': 'Resaltar la sección actual',
   'settings.siteManagement': 'Estado por sitio',
   'settings.domainEnabled': 'Activado',
   'settings.domainDisabled': 'Desactivado',
@@ -442,7 +442,7 @@ translations['ja-JP'] = Object.assign({}, translations['en-US'], {
   'settings.scrollSpeed': 'スクロール速度',
   'settings.buttonPosition': 'ボタン位置',
   'settings.horizontalPosition': '水平位置',
-  'settings.verticalAlignment': '垂直位置',
+  'settings.verticalAlignment': '垂直方向の配置',
   'settings.position.right': '右端',
   'settings.position.left': '左端',
   'settings.alignment.center': '中央',
@@ -593,7 +593,7 @@ translations['zh-TW'] = Object.assign({}, translations['zh-CN'], {
   'settings.iconSet.chevron': '折線箭頭',
   'settings.iconSet.doubleArrow': '雙箭頭',
   'settings.iconColor': '圖示顏色',
-  'settings.customIconComingSoon': '上傳自訂圖示 Coming soon。',
+  'settings.customIconComingSoon': '上傳自訂圖示即將推出。',
   'settings.siteManagement': '網站啟用狀態',
   'settings.domainSearch': '搜尋網域',
   'settings.domainInput': 'example.com 或 https://example.com/page',
@@ -740,7 +740,7 @@ translations['fr-FR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.domains': 'Gestion des domaines',
   'settings.tab.feedback': 'Suggestions et à propos',
   'settings.basicIntro': 'Ajustez la vitesse de défilement, la position, l’apparence et les raccourcis.',
-  'settings.advancedIntro': 'Configurez les details des fonctions avancees par module.',
+  'settings.advancedIntro': 'Configurez les détails des fonctions avancées par module.',
   'settings.domainIntro': 'Gérez l’activation des boutons de défilement sur des sites précis.',
   'settings.scrollBehavior': 'Comportement du défilement',
   'settings.buttonIcons': 'Icônes des boutons',
@@ -864,7 +864,7 @@ translations['pt-BR'] = Object.assign({}, translations['en-US'], {
   'settings.tab.domains': 'Gerenciamento de domínios',
   'settings.tab.feedback': 'Sugestões e sobre',
   'settings.basicIntro': 'Ajuste velocidade de rolagem, posição, aparência e atalhos.',
-  'settings.advancedIntro': 'Configure os detalhes dos recursos avancados por modulo.',
+  'settings.advancedIntro': 'Configure os detalhes dos recursos avançados por módulo.',
   'settings.domainIntro': 'Gerencie se os botões de rolagem ficam ativados em sites específicos.',
   'settings.scrollBehavior': 'Comportamento de rolagem',
   'settings.buttonIcons': 'Ícones dos botões',
@@ -2745,6 +2745,18 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.6',
+    categories: {
+      improved: [
+        'embeddedFrameScroll',
+        'virtualGridScrollContainer'
+      ],
+      fixed: [
+        'customElementScrollContainer'
+      ]
+    }
+  },
+  {
     version: '2.5.5',
     categories: {
       improved: [
@@ -3357,6 +3369,81 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
   releaseNotesTranslations[lang].items.scrollModesPerformance = values[0];
   releaseNotesTranslations[lang].items.newSiteDefaultBehavior = values[1];
   releaseNotesTranslations[lang].items.outlineHeaderOcclusion = values[2];
+});
+
+const v256ReleaseNotesItems = {
+  'zh-CN': [
+    '支持在页面内嵌的 iframe 中滚动到顶部或底部，改善嵌入式文档页面的兼容性。',
+    '优化虚拟化表格、画布和多维表格类页面的滚动容器识别与滚轮回退，减少底部跳转无响应或误选滚动容器。',
+    '修复在以自定义元素作为滚动容器的站点（如 Gemini）上，滚动到顶部/底部按钮可能无反应或误滚装饰层的问题。'
+  ],
+  'zh-TW': [
+    '支援在頁面內嵌的 iframe 中捲動到頂部或底部，改善嵌入式文件頁面的相容性。',
+    '最佳化虛擬化表格、畫布與多維表格類頁面的捲動容器辨識與滾輪回退，減少底部跳轉無回應或誤選捲動容器。',
+    '修復在以自訂元素作為捲動容器的網站（如 Gemini）上，捲動到頂部/底部按鈕可能無反應或誤捲裝飾層的問題。'
+  ],
+  'en-US': [
+    'Scroll-to-top and scroll-to-bottom now work inside embedded iframes for better compatibility with embedded documents.',
+    'Improved scroll container detection and wheel fallback for virtualized tables, canvas grids, and multi-dimensional tables, reducing unresponsive or misdirected bottom jumps.',
+    'Fixed unresponsive or misdirected scroll-to-top and scroll-to-bottom buttons on sites that use custom elements as their scroll container, such as Gemini.'
+  ],
+  'es-ES': [
+    'Ahora se puede desplazar al inicio y al final dentro de iframes incrustados para mejorar la compatibilidad con documentos incrustados.',
+    'Se mejoró la detección del contenedor de desplazamiento y el respaldo por rueda en tablas virtualizadas, cuadrículas de lienzo y tablas multidimensionales.',
+    'Se corrigieron los botones de desplazamiento al inicio y al final que no respondían o se desviaban en sitios que usan elementos personalizados como contenedor de desplazamiento, como Gemini.'
+  ],
+  'ja-JP': [
+    'ページに埋め込まれた iframe 内でも先頭・末尾へのスクロールが動作するようになりました。',
+    '仮想化テーブルやキャンバス、多次元テーブルでのスクロール領域の検出とホイールフォールバックを改善しました。',
+    'カスタム要素をスクロール領域として使うサイト（Gemini など）で、先頭・末尾へのスクロールボタンが反応しない、または装飾層を誤ってスクロールする問題を修正しました。'
+  ],
+  'de-DE': [
+    'Nach oben und unten scrollen funktioniert jetzt auch in eingebetteten iframes und verbessert die Kompatibilität mit eingebetteten Dokumenten.',
+    'Verbesserte Erkennung von Scroll-Containern und Rad-Fallback bei virtualisierten Tabellen, Canvas-Rastern und mehrdimensionalen Tabellen.',
+    'Behoben: Buttons zum Scrollen nach oben und unten reagierten auf Websites mit Custom Elements als Scroll-Container (z. B. Gemini) nicht oder scrollten versehentlich Deko-Ebenen.'
+  ],
+  'fr-FR': [
+    'Le défilement vers le haut et vers le bas fonctionne désormais dans les iframes intégrés pour une meilleure compatibilité avec les documents intégrés.',
+    'Amélioration de la détection du conteneur de défilement et du repli par molette sur les tableaux virtualisés, les grilles canvas et les tableaux multidimensionnels.',
+    'Correction des boutons de défilement vers le haut et le bas qui ne répondaient pas ou ciblaient la mauvaise couche décorative sur les sites utilisant des éléments personnalisés comme conteneur de défilement, comme Gemini.'
+  ],
+  'pt-BR': [
+    'A rolagem para o topo e para o fim agora funciona dentro de iframes incorporados, melhorando a compatibilidade com documentos incorporados.',
+    'Melhorada a detecção do contêiner de rolagem e o fallback por roda em tabelas virtualizadas, grades de canvas e tabelas multidimensionais.',
+    'Corrigidos os botões de rolar para o topo e para o fim que não respondiam ou rolavam a camada decorativa errada em sites que usam elementos personalizados como contêiner de rolagem, como o Gemini.'
+  ],
+  'ko-KR': [
+    '내장 iframe 안에서도 상단·하단으로 스크롤할 수 있어 내장 문서 호환성이 개선되었습니다.',
+    '가상화된 표, 캔버스 그리드, 다차원 표에서 스크롤 영역 감지와 휠 폴백을 개선했습니다.',
+    '커스텀 요소를 스크롤 영역으로 사용하는 사이트(예: Gemini)에서 상단·하단 스크롤 버튼이 반응하지 않거나 장식 레이어를 잘못 스크롤하던 문제를 수정했습니다.'
+  ],
+  'it-IT': [
+    'Lo scorrimento verso l’alto e verso il basso ora funziona anche negli iframe incorporati, migliorando la compatibilità con i documenti incorporati.',
+    'Migliorati il rilevamento del contenitore di scorrimento e il fallback della rotellina nelle tabelle virtualizzate, nelle griglie canvas e nelle tabelle multidimensionali.',
+    'Corretti i pulsanti di scorrimento verso l’alto e il basso che non rispondevano o interessavano il livello decorativo errato sui siti che usano elementi personalizzati come contenitore di scorrimento, come Gemini.'
+  ],
+  'ru-RU': [
+    'Прокрутка к началу и концу страницы теперь работает и внутри встроенных iframe, улучшая совместимость со встроенными документами.',
+    'Улучшено определение контейнера прокрутки и резервная прокрутка колесом на виртуализированных таблицах, canvas-сетках и многомерных таблицах.',
+    'Исправлены кнопки прокрутки к началу и концу страницы, которые не реагировали или прокручивали декоративный слой на сайтах, использующих пользовательские элементы как контейнер прокрутки (например, Gemini).'
+  ],
+  'tr-TR': [
+    'Yukarı ve aşağı kaydırma artık gömülü iframe’lerde de çalışır; gömülü belgelerle uyumluluk iyileştirildi.',
+    'Sanal tablolar, canvas ızgaralar ve çok boyutlu tablolarda kaydırma kapsayıcısı algılama ve tekerlek yedeği iyileştirildi.',
+    'Özel öğeleri kaydırma kapsayıcısı olarak kullanan sitelerde (ör. Gemini) üste ve alta kaydırma düğmelerinin tepki vermemesi veya dekoratif katmanı yanlışlıkla kaydırması sorunu giderildi.'
+  ],
+  'id-ID': [
+    'Gulir ke atas dan ke bawah kini berfungsi di dalam iframe tersemat untuk kompatibilitas yang lebih baik dengan dokumen tersemat.',
+    'Meningkatkan deteksi kontainer gulir dan fallback roda pada tabel virtual, grid canvas, dan tabel multidimensi.',
+    'Memperbaiki tombol gulir ke atas dan ke bawah yang tidak merespons atau salah menggulir lapisan dekoratif di situs yang menggunakan elemen kustom sebagai kontainer gulir, seperti Gemini.'
+  ]
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  const values = v256ReleaseNotesItems[lang] || v256ReleaseNotesItems['en-US'];
+  releaseNotesTranslations[lang].items.embeddedFrameScroll = values[0];
+  releaseNotesTranslations[lang].items.virtualGridScrollContainer = values[1];
+  releaseNotesTranslations[lang].items.customElementScrollContainer = values[2];
 });
 
 const DEFAULT_ADVANCED_SETTINGS = {

@@ -193,3 +193,22 @@ chrome.commands.onCommand.addListener((command) => {
     });
   });
 });
+
+if (chrome.runtime.onMessage && typeof chrome.runtime.onMessage.addListener === 'function') {
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    if (!message || message.action !== 'forwardEmbeddedFrameScroll') return;
+    if (!sender || !sender.tab || !sender.tab.id || !message.frameName) return;
+    if (!['scrollToTop', 'scrollToBottom'].includes(message.scrollAction)) return;
+
+    chrome.tabs.sendMessage(sender.tab.id, {
+      action: 'embeddedFrameScroll',
+      frameName: message.frameName,
+      scrollAction: message.scrollAction,
+      scrollMode: message.scrollMode,
+      scrollSpeed: message.scrollSpeed
+    }, () => {
+      // Ignore tabs or frames that were removed while forwarding the command.
+      if (chrome.runtime.lastError) return;
+    });
+  });
+}

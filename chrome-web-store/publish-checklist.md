@@ -7,7 +7,7 @@
 - [ ] 中文插件名称：智能页面滚动导航器：顶部/底部、进度与跳转
 - [x] 多语言简短描述已从 `listing-content.md` 更新（13 种语言，132字符以内；待填入商店后台）
 - [x] 多语言详细描述已从 `listing-content.md` 更新（13 种语言，4000字符以内；待填入商店后台）
-- [x] 版本号：2.5.5（语义化版本；与 `manifest.json` 一致）
+- [x] 版本号：2.5.6（语义化版本；与 `manifest.json` 一致）
 - [ ] 应用类别：选择合适的类别（如 Productivity, Utilities）
 - [ ] 年龄分级：Everyone
 
@@ -138,10 +138,18 @@
 - [x] 本次改动不新增 Chrome 权限、远程请求或数据处理
 - [ ] 使用正式 ZIP 在 Edge 中复核三种模式，并重新录制顺滑模式 Performance Trace
 
+### 7.6 v2.5.6 内嵌 iframe 与虚拟化网格兼容性专项验收
+- [x] 页面内嵌 iframe（含跨域）中可滚动到顶部或底部，通过 `frame-scroll-bridge.js` + background 消息转发实现
+- [x] `frame-scroll-bridge.js` 已加入发布构建白名单，manifest 引用的内容脚本全部包含在 ZIP 中
+- [x] 滚动容器检测默认仍优先根页面与自定义滚动容器，仅在其不可用时回退到内嵌 iframe
+- [x] 虚拟化表格、画布网格和多维表格类页面使用点命中评分，减少底部跳转无响应或误选侧边栏
+- [x] 本次改动不新增 Chrome 权限、远程请求或数据处理
+- [ ] 使用正式 ZIP 在真实嵌入式文档页面（Notion/多维表格/iframe 文档）手工复核顶部/底部跳转
+
 ### 8. 打包准备 ✅
 - [x] 清理发布构建目录中的临时文件
-- [x] 压缩为 ZIP：已生成 `dist/page-scroll-master-v2.5.5.zip`
-- [x] ZIP 包大小 < 2MB（212,710 bytes / 207.72 KB / 0.20 MB）
+- [x] 压缩为 ZIP：已生成 `dist/page-scroll-master-v2.5.6.zip`
+- [x] ZIP 包大小 < 2MB（729,083 bytes / 712.00 KB / 0.70 MB，46 个条目）
 - [x] 所有必要文件都包含
 - [x] 无多余文件
 - [x] 文件结构正确，`unzip -t` 通过
@@ -162,12 +170,18 @@
 - [ ] popup.js
 - [ ] content.js
 - [ ] background.js
+- [ ] frame-scroll-bridge.js
+- [ ] domain-utils.js
+- [ ] feedback.js
+- [ ] rating.js
 - [ ] options.html
 - [ ] options.js
 - [ ] icons/icon16.png
 - [ ] icons/icon32.png
 - [ ] icons/icon48.png
 - [ ] icons/icon128.png
+- [ ] vendor/tldts.umd.min.js
+- [ ] vendor/TLDTS_LICENSE.txt
 - [ ] _locales/en/messages.json
 - [ ] _locales/zh_CN/messages.json
 - [ ] _locales/zh_TW/messages.json
@@ -222,7 +236,7 @@
 ## 💡 发布技巧
 
 1. **最佳发布时间**：工作日上午，审核速度较快
-2. **版本号策略**：以 `manifest.json` 中的版本号为准，v2.5.5 发布目标为 2.5.5
+2. **版本号策略**：以 `manifest.json` 中的版本号为准，v2.5.6 发布目标为 2.5.6
 3. **描述优化**：使用关键词，提高搜索排名
 4. **截图质量**：使用高质量截图，展示核心功能
 5. **响应时间**：及时响应审核反馈，通常24小时内
@@ -236,8 +250,8 @@
 
 ---
 
-**最后更新时间**：2026-08-10
-**状态**：v2.5.5 发布材料和发布 ZIP 已准备完成，待提交商店后台
-**构建产物**：`dist/page-scroll-master-v2.5.5.zip`（212,710 bytes / 207.72 KB / 0.20 MB，45 个条目）
-**SHA-256**：`b5f8afd0a415e13eff220321d41fb2d5fba81c526d8ff0991fa0c034d10edfeb`
-**验收说明**：v2.5.5 源码回归、商店材料校验、发布构建和 ZIP 完整性验证已完成；Edge 正式 ZIP 手工验收和商店后台填写仍待人工完成
+**最后更新时间**：2026-08-16
+**状态**：v2.5.6 发布材料和发布 ZIP 已准备完成，待提交商店后台
+**构建产物**：`dist/page-scroll-master-v2.5.6.zip`（729,083 bytes / 712.00 KB / 0.70 MB，46 个条目）
+**SHA-256**：`c0f312653d4206d877d9b659dd5000d45e74a099d1c3d5d52d5d60beb5fb1782`
+**验收说明**：v2.5.6 源码回归、商店材料校验、发布构建和 ZIP 完整性验证已完成；正式 ZIP 手工验收（Edge 滚动模式、嵌入式文档页面）和商店后台填写仍待人工完成

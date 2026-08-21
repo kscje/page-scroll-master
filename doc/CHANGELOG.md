@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.6] - 2026-08-16
+
+### Changed
+- ✅ 支持在页面内嵌的 iframe 中滚动到顶部或底部，改善嵌入式文档页面的兼容性
+- ✅ 优化虚拟化表格、画布和多维表格类页面的滚动容器识别与滚轮回退，减少底部跳转无响应或误选滚动容器
+
+### Fixed
+- ✅ 修复在以自定义元素作为滚动容器的站点（如 Gemini）上，滚动到顶部/底部按钮可能无反应或误滚装饰层的问题
+
 ## [2.5.5] - 2026-08-10
 
 ### Changed
