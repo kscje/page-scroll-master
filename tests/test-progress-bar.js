@@ -385,9 +385,10 @@ function createContext(syncData = {}, initialLocalData = {}) {
         }
       },
       scrollTo(x, y) {
-        this.pageYOffset = y;
-        documentElement.scrollTop = y;
-        body.scrollTop = y;
+        const top = x && typeof x === 'object' ? x.top : y;
+        this.pageYOffset = top;
+        documentElement.scrollTop = top;
+        body.scrollTop = top;
       },
       getComputedStyle(element) {
         return {
@@ -518,6 +519,100 @@ function testDefaultCreatesOnlyTwoButtons() {
       styleElement.textContent.includes('background: rgba(17, 24, 39, 0.98);'),
     'outline menu heading must stay visible while the directory list scrolls'
   );
+}
+
+function testAdvancedControlsRemainAvailableWithoutMainButtons() {
+  const domainState = {
+    domainFeatureMigrationVersion: 3,
+    domainFeatureDefaults: {
+      extensionEnabled: true,
+      mainButtonsVisible: true,
+      features: {
+        autoScroll: false,
+        progressBar: false,
+        screenNavigation: false,
+        scrollBookmarks: false,
+        outlineNavigation: false
+      }
+    },
+    domainFeatureStates: {
+      'example.test': {
+        extensionEnabled: true,
+        mainButtonsVisible: false,
+        features: {
+          autoScroll: true,
+          progressBar: true,
+          screenNavigation: false,
+          scrollBookmarks: false,
+          outlineNavigation: false
+        }
+      }
+    }
+  };
+  let sandbox = createContext({
+    scrollMode: 'instant',
+    buttonSettings: { verticalAlignment: 'top' },
+    advancedSettings: {
+      autoScroll: { buttonPosition: 'pageTop' },
+      progressBar: { mode: 'verticalButton', verticalHeight: 80 }
+    }
+  }, domainState);
+  let root = sandbox.getScrollRoot();
+  let topButton = root.querySelector('.psm-scroll-top');
+  let bottomButton = root.querySelector('.psm-scroll-bottom');
+  let progressButton = root.querySelector('.psm-progress-button');
+  let buttonContainer = root.getElementById('page-scroll-master-button');
+  let autoScrollContainer = root.getElementById('page-scroll-master-auto-scroll-tool');
+
+  assert(topButton.style.display === 'none' && bottomButton.style.display === 'none', 'hidden main buttons are not rendered');
+  assert(topButton.disabled === true && bottomButton.disabled === true, 'hidden main buttons cannot be activated');
+  assert(
+    topButton.getAttribute('aria-hidden') === 'true' && topButton.getAttribute('tabindex') === '-1',
+    'hidden main buttons are removed from accessibility and tab navigation'
+  );
+  assert(Boolean(progressButton) && buttonContainer.style.display === 'flex', 'vertical progress remains visible in the main group');
+  assert(sandbox.getMainButtonGroupHeight() === 80, 'hidden main buttons do not reserve layout height');
+  assert(autoScrollContainer.style.top === '96px', 'standalone tools are offset only by visible group controls');
+
+  sandbox.applyDomainFeatureState({
+    ...domainState.domainFeatureStates['example.test'],
+    mainButtonsVisible: true
+  });
+  assert(topButton.style.display === 'flex' && bottomButton.style.display === 'flex', 'main buttons reappear immediately after a domain update');
+  assert(topButton.disabled === false && bottomButton.disabled === false, 'restored main buttons are interactive');
+  assert(topButton.getAttribute('aria-hidden') === null, 'restored main buttons return to accessibility navigation');
+  sandbox.applyDomainFeatureState(domainState.domainFeatureStates['example.test']);
+  assert(topButton.style.display === 'none' && bottomButton.style.display === 'none', 'main buttons hide again without rebuilding the host');
+
+  sandbox.document.documentElement.scrollTop = 500;
+  sandbox.window.pageYOffset = 500;
+  sandbox.__runtimeMessageListeners[0]({ action: 'scrollToTop' });
+  assert(sandbox.document.documentElement.scrollTop === 0, 'global scroll shortcuts remain available when only main buttons are hidden');
+
+  sandbox = createContext({
+    advancedSettings: {
+      progressBar: { mode: 'horizontalBar' }
+    }
+  }, {
+    ...domainState,
+    domainFeatureStates: {
+      'example.test': {
+        extensionEnabled: true,
+        mainButtonsVisible: false,
+        features: {
+          autoScroll: false,
+          progressBar: true,
+          screenNavigation: false,
+          scrollBookmarks: false,
+          outlineNavigation: false
+        }
+      }
+    }
+  });
+  root = sandbox.getScrollRoot();
+  buttonContainer = root.getElementById('page-scroll-master-button');
+  assert(buttonContainer.style.display === 'none', 'an empty main group does not leave a visible container');
+  assert(Boolean(root.getElementById('page-scroll-master-horizontal-progress')), 'horizontal progress remains visible without main buttons');
 }
 
 function testMainOpacityAppliesToAllButtons() {
@@ -788,7 +883,7 @@ function testReadingToolsDomAndBookmarks() {
   const saved = sandbox.__localData.bookmarks;
   const keys = Object.keys(saved || {});
   assert(keys.length === 1, 'saving current position writes one bookmark');
-  assert(keys[0] === 'exact:https://example.test/docs?page=1&ref=keep#section', 'bookmark key keeps non-tracking params and hash');
+  assert(keys[0].startsWith('exact:https://example.test/docs?page=1&ref=keep#section::'), 'bookmark key keeps non-tracking params and hash while adding a unique position id');
   assert(saved[keys[0]].scrollPct === 0.5, 'saved bookmark stores scroll percentage');
 }
 
@@ -859,6 +954,36 @@ function testReadingToolMenuSaveAndRestorePrompt() {
   assert(toast.querySelector('span').textContent === '当前页面没有可加载的已保存位置', 'manual restore explains when the current page has no bookmark');
 }
 
+function testSavingMultipleBookmarkPositionsRespectsLimit() {
+  const sandbox = createContext({
+    advancedSettings: {
+      scrollBookmarks: { enabled: true, perDomainLimit: 3 }
+    }
+  });
+
+  [0.25, 0.5, 0.75].forEach((scrollPct) => {
+    const scrollTop = scrollPct * 1200;
+    sandbox.document.documentElement.scrollTop = scrollTop;
+    sandbox.window.pageYOffset = scrollTop;
+    sandbox.saveScrollBookmark();
+  });
+
+  assert(Object.keys(sandbox.__localData.bookmarks).length === 3, 'saving at multiple positions keeps separate bookmark records');
+  const savedPercentages = Object.values(sandbox.__localData.bookmarks)
+    .map((bookmark) => bookmark.scrollPct)
+    .sort((a, b) => a - b);
+  assert(savedPercentages.join(',') === '0.25,0.5,0.75', 'separate saved positions retain their individual percentages');
+
+  sandbox.document.documentElement.scrollTop = 1080;
+  sandbox.window.pageYOffset = 1080;
+  sandbox.saveScrollBookmark();
+  const limitedPercentages = Object.values(sandbox.__localData.bookmarks)
+    .map((bookmark) => bookmark.scrollPct)
+    .sort((a, b) => a - b);
+  assert(Object.keys(sandbox.__localData.bookmarks).length === 3, 'per-domain bookmark limit still caps multiple positions');
+  assert(limitedPercentages.join(',') === '0.5,0.75,0.9', 'saving a fourth position removes the oldest position');
+}
+
 function testReadingToastActionLabelsUseTextContent() {
   const sandbox = createContext();
   const root = sandbox.getScrollRoot();
@@ -882,6 +1007,53 @@ function testReadingToastActionLabelsUseTextContent() {
     stopPropagation() {}
   });
   assert(clicked === true, 'toast action button still invokes its handler');
+}
+
+function testMultipleBookmarkMenuEntriesRestoreSelectedPosition() {
+  const normalizedUrl = 'https://example.test/docs?page=1&ref=keep#section';
+  const sandbox = createContext(
+    {
+      advancedSettings: {
+        scrollBookmarks: { enabled: true, perDomainLimit: 3 }
+      }
+    },
+    {
+      bookmarks: {
+        [`exact:${normalizedUrl}::3000`]: {
+          normalizedUrl,
+          domain: 'example.test',
+          scrollPct: 0.75,
+          savedAt: 3000
+        },
+        [`exact:${normalizedUrl}::2000`]: {
+          normalizedUrl,
+          domain: 'example.test',
+          scrollPct: 0.5,
+          savedAt: 2000
+        },
+        [`exact:${normalizedUrl}::1000`]: {
+          normalizedUrl,
+          domain: 'example.test',
+          scrollPct: 0.25,
+          savedAt: 1000
+        }
+      }
+    }
+  );
+
+  const root = sandbox.getScrollRoot();
+  sandbox.handleBookmarkToolClick({ stopPropagation() {} });
+  const menu = root.getElementById('page-scroll-master-bookmark-menu');
+  const fixedSection = menu.querySelector('.psm-reading-menu-fixed');
+  assert(fixedSection.children.length === 4, 'bookmark menu lists save plus all three saved positions');
+  assert(fixedSection.children[1].textContent === '1. 加载已保存位置（75%）', 'bookmark menu lists the newest position first');
+  assert(fixedSection.children[2].textContent === '2. 加载已保存位置（50%）', 'bookmark menu labels the second saved position');
+  assert(fixedSection.children[3].textContent === '3. 加载已保存位置（25%）', 'bookmark menu labels the oldest saved position');
+
+  menu.listeners.click[0]({ stopPropagation() {}, target: fixedSection.children[2] });
+  assert(sandbox.window.pageYOffset === 600, 'selecting a saved position restores that position instead of always using the newest');
+  menu.listeners.click[0]({ stopPropagation() {}, target: fixedSection.children[3] });
+  assert(sandbox.window.pageYOffset === 300, 'each saved position remains independently selectable');
 }
 
 function testScrollBookmarkRestoreModes() {
@@ -947,6 +1119,30 @@ function testOptionsPageOpenRestoresSavedBookmark() {
 
   assert(sandbox.window.pageYOffset === 480, 'options-page open request restores the saved percentage');
   assert(!sandbox.__localData.pendingScrollBookmarkRestore, 'successful options-page restore consumes the one-time request');
+
+  const selectedKey = `${key}::selected`;
+  sandbox.__localData.bookmarks = {
+    [key]: {
+      normalizedUrl: 'https://example.test/docs?page=1&ref=keep#section',
+      domain: 'example.test',
+      scrollPct: 0.25,
+      savedAt: 1000
+    },
+    [selectedKey]: {
+      normalizedUrl: 'https://example.test/docs?page=1&ref=keep#section',
+      domain: 'example.test',
+      scrollPct: 0.65,
+      savedAt: 2000
+    }
+  };
+  sandbox.__localData.pendingScrollBookmarkRestore = {
+    key: selectedKey,
+    requestedAt: Date.now()
+  };
+  sandbox.document.documentElement.scrollTop = 0;
+  sandbox.window.pageYOffset = 0;
+  sandbox.checkPendingScrollBookmarkRestore(() => {});
+  assert(sandbox.window.pageYOffset === 780, 'options-page open request restores the selected position when multiple bookmarks share a page');
 }
 
 function testDynamicReadingToolMenuStructure() {
@@ -1943,6 +2139,7 @@ function testRemainingReadingTimeLabels() {
 }
 
 testDefaultCreatesOnlyTwoButtons();
+testAdvancedControlsRemainAvailableWithoutMainButtons();
 testMainOpacityAppliesToAllButtons();
 testHoverHideIncludesAdvancedFeatureContainers();
 testIconSizingSurvivesIconRebuild();
@@ -1951,7 +2148,9 @@ testProgressClickRatios();
 testEnabledProgressDomModes();
 testReadingToolsDomAndBookmarks();
 testReadingToolMenuSaveAndRestorePrompt();
+testSavingMultipleBookmarkPositionsRespectsLimit();
 testReadingToastActionLabelsUseTextContent();
+testMultipleBookmarkMenuEntriesRestoreSelectedPosition();
 testScrollBookmarkRestoreModes();
 testOptionsPageOpenRestoresSavedBookmark();
 testDynamicReadingToolMenuStructure();

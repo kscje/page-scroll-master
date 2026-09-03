@@ -2172,6 +2172,10 @@ function getButtonElements() {
   };
 }
 
+function areMainButtonsVisible() {
+  return currentDomainFeatureState.mainButtonsVisible !== false;
+}
+
 function getScrollTargetBottom() {
   const container = resolveScrollContainer();
   return getElementScrollRange(container);
@@ -3145,9 +3149,49 @@ function getScrollBookmarkMenuContribution(options = {}) {
   if (!advancedSettings.scrollBookmarks.enabled) {
     return null;
   }
+  const savedBookmarks = Array.isArray(options.savedBookmarks)
+    ? options.savedBookmarks.filter((entry) => {
+      const bookmark = entry && entry.bookmark ? entry.bookmark : entry;
+      const bookmarkKey = entry && (entry.key || entry.bookmarkKey);
+      return Boolean(bookmarkKey && bookmark && typeof bookmark.scrollPct === 'number');
+    })
+    : [];
+  const restoreActions = savedBookmarks.length
+    ? savedBookmarks.map((entry, index) => {
+      const bookmark = entry.bookmark || entry;
+      const bookmarkKey = entry.key || entry.bookmarkKey;
+      const baseLabel = getBookmarkMenuActionLabel(
+        'scrollBookmarkRestoreSaved',
+        'Load saved position',
+        bookmark.scrollPct
+      );
+      return {
+        kind: 'bookmark-item',
+        action: savedBookmarks.length === 1 ? 'restore-bookmark' : `restore-bookmark-${index}`,
+        label: savedBookmarks.length === 1 ? baseLabel : `${index + 1}. ${baseLabel}`,
+        handler: () => {
+          hideReadingToolMenu();
+          restoreCurrentScrollBookmark({ bookmarkKey });
+        }
+      };
+    })
+    : [{
+      kind: 'bookmark-item',
+      action: 'restore-bookmark',
+      label: getBookmarkMenuActionLabel(
+        'scrollBookmarkRestoreSaved',
+        'Load saved position',
+        options.savedScrollPct
+      ),
+      handler: () => {
+        hideReadingToolMenu();
+        restoreCurrentScrollBookmark();
+      }
+    }];
   return {
     fixedActions: [
       {
+        kind: 'bookmark-item',
         action: 'save-bookmark',
         label: getBookmarkMenuActionLabel(
           'scrollBookmarkSaveCurrent',
@@ -3159,18 +3203,7 @@ function getScrollBookmarkMenuContribution(options = {}) {
           saveScrollBookmark();
         }
       },
-      {
-        action: 'restore-bookmark',
-        label: getBookmarkMenuActionLabel(
-          'scrollBookmarkRestoreSaved',
-          'Load saved position',
-          options.savedScrollPct
-        ),
-        handler: () => {
-          hideReadingToolMenu();
-          restoreCurrentScrollBookmark();
-        }
-      }
+      ...restoreActions
     ]
   };
 }
@@ -3371,6 +3404,8 @@ function createReadingToolMenuItem(item) {
     button.className = item.current
       ? 'psm-reading-menu-item psm-outline-current'
       : 'psm-reading-menu-item';
+  } else if (item.kind === 'bookmark-item') {
+    button.className = 'psm-reading-menu-item psm-bookmark-item';
   } else if (item.kind === 'outline-load-more') {
     button.className = 'psm-reading-menu-item psm-outline-load-more';
   }
@@ -3710,13 +3745,11 @@ function handleBookmarkToolClick(event) {
   }
 
   const currentScrollPct = getScrollProgress(resolveScrollContainer());
-  const key = getCurrentBookmarkKey();
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
     result = getSafeStorageResult(result, 'storage.local.get bookmark menu');
-    const bookmark = key ? normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY])[key] : null;
-    const savedScrollPct = bookmark && typeof bookmark.scrollPct === 'number'
-      ? bookmark.scrollPct
-      : null;
+    const savedBookmarks = getCurrentPageBookmarkEntries(result[BOOKMARKS_STORAGE_KEY])
+      .map(([key, bookmark]) => ({ key, bookmark }));
+    const savedScrollPct = savedBookmarks[0] ? savedBookmarks[0].bookmark.scrollPct : null;
     const elements = getButtonElements();
     openFeatureToolMenu({
       button: elements.bookmarkButton,
@@ -3724,7 +3757,8 @@ function handleBookmarkToolClick(event) {
       model: getScrollBookmarkMenuModel({
         resolveOutline: false,
         currentScrollPct,
-        savedScrollPct
+        savedScrollPct,
+        savedBookmarks
       })
     });
   });
@@ -4280,6 +4314,47 @@ function getCurrentBookmarkKey() {
   }
 }
 
+function getCurrentPageBookmarkEntries(bookmarks) {
+  let normalizedUrl;
+  try {
+    normalizedUrl = normalizeBookmarkUrl(window.location.href);
+  } catch (err) {
+    return [];
+  }
+
+  const baseKey = `exact:${normalizedUrl}`;
+  return Object.entries(normalizeBookmarks(bookmarks))
+    .filter(([key, bookmark]) => {
+      if (!bookmark || typeof bookmark !== 'object') return false;
+      const bookmarkUrl = typeof bookmark.normalizedUrl === 'string'
+        ? bookmark.normalizedUrl
+        : '';
+      return bookmarkUrl === normalizedUrl || key === baseKey || key.startsWith(`${baseKey}::`);
+    })
+    .sort((a, b) => (b[1].savedAt || 0) - (a[1].savedAt || 0));
+}
+
+function createNewBookmarkKey(bookmarks, baseKey, savedAt) {
+  const normalizedBookmarks = normalizeBookmarks(bookmarks);
+  const timestamp = Number.isFinite(savedAt) ? savedAt : Date.now();
+  let key = `${baseKey}::${timestamp}`;
+  let suffix = 1;
+  while (Object.prototype.hasOwnProperty.call(normalizedBookmarks, key)) {
+    key = `${baseKey}::${timestamp}-${suffix}`;
+    suffix += 1;
+  }
+  return key;
+}
+
+function getNextBookmarkTimestamp(bookmarks) {
+  const now = Date.now();
+  const latestSavedAt = Object.values(normalizeBookmarks(bookmarks)).reduce((latest, bookmark) => {
+    const savedAt = Number(bookmark && bookmark.savedAt);
+    return Number.isFinite(savedAt) ? Math.max(latest, savedAt) : latest;
+  }, 0);
+  return Math.max(now, latestSavedAt + 1);
+}
+
 function getElementSelector(element) {
   if (!element || isRootScrollElement(element)) return '';
   if (element.id) return `#${element.id}`;
@@ -4393,12 +4468,13 @@ function saveScrollBookmark() {
     return;
   }
 
-  const key = `${advancedSettings.scrollBookmarks.matchMode}:${normalizedUrl}`;
+  const baseKey = `${advancedSettings.scrollBookmarks.matchMode}:${normalizedUrl}`;
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
     result = getSafeStorageResult(result, 'storage.local.get bookmarks before save');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
-    const previous = bookmarks[key];
     const roundedPct = Math.round(scrollPct * 100);
+    const savedAt = getNextBookmarkTimestamp(bookmarks);
+    const key = createNewBookmarkKey(bookmarks, baseKey, savedAt);
     bookmarks[key] = {
       url: window.location.href,
       normalizedUrl,
@@ -4409,7 +4485,7 @@ function saveScrollBookmark() {
       title: document.title || parsedUrl.hostname,
       scrollPct,
       scrollY: getScrollTop(container),
-      savedAt: Date.now(),
+      savedAt,
       container: getContainerSnapshot(container)
     };
 
@@ -4419,15 +4495,7 @@ function saveScrollBookmark() {
         showReadingToast(getContentMessage('scrollBookmarkCannotSavePage', 'Cannot save a position on this page'));
         return;
       }
-      if (previous) {
-        showReadingToast(getContentMessage(
-          'scrollBookmarkUpdated',
-          'Updated position to $1% (was $2%)',
-          [roundedPct, Math.round((previous.scrollPct || 0) * 100)]
-        ));
-      } else {
-        showReadingToast(getContentMessage('scrollBookmarkSaved', 'Saved current position $1%', [roundedPct]));
-      }
+      showReadingToast(getContentMessage('scrollBookmarkSaved', 'Saved current position $1%', [roundedPct]));
     });
   });
 }
@@ -4490,7 +4558,11 @@ function restoreCurrentScrollBookmark(options = {}) {
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
     result = getSafeStorageResult(result, 'storage.local.get bookmark restore');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
-    const bookmark = bookmarks[key];
+    const currentPageEntries = getCurrentPageBookmarkEntries(bookmarks);
+    const bookmarkEntry = options.bookmarkKey
+      ? currentPageEntries.find(([entryKey]) => entryKey === options.bookmarkKey)
+      : currentPageEntries[0];
+    const bookmark = bookmarkEntry ? bookmarkEntry[1] : null;
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
       if (options.showMissingMessage !== false) {
         showReadingToast(getContentMessage('scrollBookmarkNoSavedPosition', 'No saved position is available on this page'));
@@ -4527,19 +4599,18 @@ function checkPendingScrollBookmarkRestore(callback) {
     callback(false);
     return;
   }
-  if (pendingBookmarkRestoreKeyInProgress === key) {
-    callback(true);
-    return;
-  }
-
   chrome.storage.local.get(
     [PENDING_BOOKMARK_RESTORE_STORAGE_KEY, BOOKMARKS_STORAGE_KEY],
     (result) => {
       result = getSafeStorageResult(result, 'storage.local.get pending bookmark restore');
       const request = result[PENDING_BOOKMARK_RESTORE_STORAGE_KEY];
       const requestedAt = request && Number(request.requestedAt);
-      if (!request || request.key !== key) {
+      if (!request || typeof request.key !== 'string' || !request.key) {
         callback(false);
+        return;
+      }
+      if (pendingBookmarkRestoreKeyInProgress === request.key) {
+        callback(true);
         return;
       }
       if (!Number.isFinite(requestedAt) || Date.now() - requestedAt > PENDING_BOOKMARK_RESTORE_MAX_AGE) {
@@ -4548,13 +4619,15 @@ function checkPendingScrollBookmarkRestore(callback) {
       }
 
       const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
-      const bookmark = bookmarks[key];
+      const bookmarkEntry = getCurrentPageBookmarkEntries(bookmarks)
+        .find(([entryKey]) => entryKey === request.key);
+      const bookmark = bookmarkEntry ? bookmarkEntry[1] : null;
       if (!bookmark || typeof bookmark.scrollPct !== 'number') {
         clearPendingScrollBookmarkRestore(() => callback(false));
         return;
       }
 
-      pendingBookmarkRestoreKeyInProgress = key;
+      pendingBookmarkRestoreKeyInProgress = request.key;
       const attemptRestore = (attempt) => {
         if (restoreScrollBookmark(bookmark)) {
           restorePromptShownForKey = key;
@@ -4585,7 +4658,8 @@ function checkRestorePrompt() {
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
     result = getSafeStorageResult(result, 'storage.local.get bookmark restore prompt');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
-    const bookmark = bookmarks[key];
+    const bookmarkEntry = getCurrentPageBookmarkEntries(bookmarks)[0];
+    const bookmark = bookmarkEntry ? bookmarkEntry[1] : null;
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
       return;
     }
@@ -4619,7 +4693,8 @@ function checkAutomaticBookmarkRestore() {
   chrome.storage.local.get([BOOKMARKS_STORAGE_KEY], (result) => {
     result = getSafeStorageResult(result, 'storage.local.get automatic bookmark restore');
     const bookmarks = normalizeBookmarks(result[BOOKMARKS_STORAGE_KEY]);
-    const bookmark = bookmarks[key];
+    const bookmarkEntry = getCurrentPageBookmarkEntries(bookmarks)[0];
+    const bookmark = bookmarkEntry ? bookmarkEntry[1] : null;
     if (!bookmark || typeof bookmark.scrollPct !== 'number' || bookmark.scrollPct < 0.02) {
       return;
     }
@@ -4662,6 +4737,7 @@ function applyAdvancedSettings() {
   ensureScreenNavigationControls();
   ensureReadingToolControls();
   updateButtonStyle();
+  updateButtonVisibility();
 }
 
 function createScreenNavigationButton(direction) {
@@ -5692,11 +5768,10 @@ function getMainButtonGroupHeight() {
   const progressHeight = hasVerticalProgress
     ? clampNumber(advancedSettings.progressBar.verticalHeight, 40, MAX_PROGRESS_VERTICAL_HEIGHT, DEFAULT_PROGRESS_VERTICAL_HEIGHT)
     : 0;
-  const baseHeight = hasVerticalProgress
-    ? (buttonSize * 2) + progressHeight + (spacing * 2)
-    : (buttonSize * 2) + spacing;
-  return baseHeight +
-    ((screenNavigationCount + middleFeatureCount) * (buttonSize + spacing));
+  const regularButtonCount = (areMainButtonsVisible() ? 2 : 0) + screenNavigationCount + middleFeatureCount;
+  const itemCount = regularButtonCount + (hasVerticalProgress ? 1 : 0);
+  if (itemCount === 0) return 0;
+  return (regularButtonCount * buttonSize) + progressHeight + ((itemCount - 1) * spacing);
 }
 
 function updateReadingToolPosition() {
@@ -5730,8 +5805,9 @@ function updateReadingToolPosition() {
     positionedTools.forEach((tool, index) => {
       const standalone = tool.container;
       if (!standalone) return;
+      const mainButtonGroupHeight = getMainButtonGroupHeight();
       const baseOffset = buttonSettings.verticalAlignment === (position === 'pageTop' ? 'top' : 'bottom')
-        ? edgeDistance + getMainButtonGroupHeight() + spacing
+        ? edgeDistance + mainButtonGroupHeight + (mainButtonGroupHeight > 0 ? spacing : 0)
         : edgeDistance;
       const stackIndex = position === 'pageBottom' ? positionedTools.length - index - 1 : index;
       const offset = baseOffset + (stackIndex * (buttonSize + spacing));
@@ -5751,7 +5827,7 @@ function updateReadingToolPosition() {
 function updateButtonVisibility() {
   const buttonContainer = getButtonContainer();
   if (!buttonContainer) return;
-  const root = getScrollRoot();
+  const { root, topButton, bottomButton } = getButtonElements();
   const featureToolContainers = root
     ? [
         root.getElementById(AUTO_SCROLL_TOOL_CONTAINER_ID),
@@ -5759,9 +5835,30 @@ function updateButtonVisibility() {
         root.getElementById(OUTLINE_TOOL_CONTAINER_ID)
       ].filter(Boolean)
     : [];
-  
+
+  const mainButtonsVisible = areMainButtonsVisible();
+  [topButton, bottomButton].forEach((button) => {
+    if (!button) return;
+    button.style.display = mainButtonsVisible ? 'flex' : 'none';
+    button.disabled = !mainButtonsVisible;
+    if (mainButtonsVisible) {
+      button.removeAttribute('aria-hidden');
+      button.removeAttribute('tabindex');
+    } else {
+      button.setAttribute('aria-hidden', 'true');
+      button.setAttribute('tabindex', '-1');
+    }
+  });
+
+  const hasVisibleGroupControl = mainButtonsVisible ||
+    advancedSettings.screenNavigation.enabled ||
+    (advancedSettings.progressBar.enabled && advancedSettings.progressBar.mode === 'verticalButton') ||
+    (advancedSettings.autoScroll.enabled && advancedSettings.autoScroll.buttonPosition === 'pageMiddle') ||
+    (isScrollBookmarkToolEnabled() && advancedSettings.scrollBookmarks.buttonPosition === 'pageMiddle') ||
+    (isOutlineToolEnabled() && advancedSettings.outlineNavigation.buttonPosition === 'pageMiddle');
+
   if (buttonSettings.showButton) {
-    buttonContainer.style.display = 'flex';
+    buttonContainer.style.display = hasVisibleGroupControl ? 'flex' : 'none';
     updateReadingToolPosition();
   } else {
     buttonContainer.style.display = 'none';

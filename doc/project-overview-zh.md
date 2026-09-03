@@ -1,6 +1,6 @@
 # Page Scroll Master 项目总览
 
-本文档汇总 Page Scroll Master 当前产品形态、技术架构、关键数据边界、验证方式和后续规划入口。除特别注明外，本文以当前源码、`manifest.json`、`README.md` 和 `doc/CHANGELOG.md` 中的 `2.5.5` 状态为准。
+本文档汇总 Page Scroll Master 当前产品形态、技术架构、关键数据边界、验证方式和后续规划入口。除特别注明外，本文以当前源码、`manifest.json`、`README.md` 和 `doc/CHANGELOG.md` 中的 `2.5.8` 状态为准。
 
 ## 1. 项目定位
 
@@ -14,7 +14,7 @@ Page Scroll Master 当前对外名称为 **Smart Scroll Navigator - Top, Bottom 
 - 通过 Options 页面提供可视化配置、实时预览、站点管理、书签管理、反馈和关于入口。
 - 在隐私边界内提供主动反馈和 Chrome Web Store 评分入口。
 
-当前版本：`2.5.5`
+当前版本：`2.5.8`
 最低 Chrome 版本：`90`
 扩展架构：Manifest V3、原生 JavaScript / HTML / CSS、内容脚本 + Popup + Options + Service Worker。
 
@@ -265,7 +265,7 @@ manifest.json
 
 本地存储保存与当前设备或站点相关的数据：
 
-- `domainFeatureStates`：按主域名保存插件总开关和高级功能开关。
+- `domainFeatureStates`：按主域名保存插件总开关、“跳转到顶部/底部”按钮状态和高级功能开关。
 - `domainFeatureDefaults`：主域名状态默认值。
 - `domainFeatureMigrationVersion`：站点状态迁移版本。
 - `enableStates`：旧版站点启停状态，迁移时保留兼容。

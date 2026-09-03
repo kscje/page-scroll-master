@@ -104,6 +104,7 @@ function createContext() {
       return vm.runInContext(`({
         hasLoadedExtensionEnabledState,
         isExtensionEnabled,
+        mainButtonsVisible: currentDomainFeatureState.mainButtonsVisible,
         currentDomainKey,
         scrollMode,
         scrollSpeed,
@@ -414,6 +415,7 @@ enabledContext.runLocalGet({
   domainFeatureStates: {
     'youtube.com': {
       extensionEnabled: true,
+      mainButtonsVisible: false,
       features: {
         autoScroll: true,
         progressBar: true,
@@ -428,6 +430,7 @@ enabledContext.runLocalGet({
 const enabledState = enabledContext.getState();
 assert(enabledState.currentDomainKey === 'youtube.com', 'content script normalizes subdomains to the main domain');
 assert(enabledContext.initializeCalls === 1, 'enabled main-domain state initializes buttons');
+assert(enabledState.mainButtonsVisible === false, 'main button visibility loads independently from advanced features');
 assert(enabledState.autoScrollEnabled === true, 'auto scroll feature state is applied at runtime');
 assert(enabledState.progressEnabled === true, 'progress feature state is applied at runtime');
 assert(enabledState.screenNavigationEnabled === true, 'screen navigation feature state is applied at runtime');
@@ -452,6 +455,7 @@ defaultContext.runLocalGet({
 });
 const defaultState = defaultContext.getState();
 assert(defaultState.isExtensionEnabled === true, 'an unrecorded domain remains enabled by default');
+assert(defaultState.mainButtonsVisible === true, 'an unrecorded domain keeps main buttons visible by default');
 assert(defaultContext.initializeCalls === 1, 'an unrecorded domain initializes the extension');
 
 const disabledDefaultContext = createContext();
@@ -472,6 +476,7 @@ disabledDefaultContext.runLocalGet({
 });
 const disabledDefaultState = disabledDefaultContext.getState();
 assert(disabledDefaultState.isExtensionEnabled === false, 'an unrecorded domain follows a saved disabled default');
+assert(disabledDefaultState.mainButtonsVisible === true, 'v2 defaults migrate with main buttons visible');
 assert(disabledDefaultContext.initializeCalls === 0, 'a disabled new-site default does not initialize the extension');
 
 const storageErrorContext = createContext();

@@ -852,37 +852,44 @@ const domainHeader = domainTablePage.elements.domainList.children[0];
 const domainRow = domainTablePage.elements.domainList.children[1];
 assert(domainHeader.className === 'domain-header', 'domain feature names render once in a table header');
 assert(
-  OPTIONS_HTML.includes('grid-template-columns: minmax(112px, 1fr) 56px 78px 88px 88px 96px 96px 132px 36px;') &&
-    OPTIONS_HTML.includes('min-width: 940px;') &&
+  OPTIONS_HTML.includes('grid-template-columns: minmax(112px, 1fr) 56px 96px 78px 88px 88px 96px 96px 132px 36px;') &&
+    OPTIONS_HTML.includes('min-width: 1044px;') &&
     OPTIONS_HTML.includes('max-width: 100%;'),
   'domain header and rows use identical explicit column tracks'
 );
 assert(
   JSON.stringify(domainHeader.children.map((child) => child.textContent)) ===
-    JSON.stringify(['Domain', 'Extension', 'Auto scroll', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Compatibility', 'Actions']),
+    JSON.stringify(['Domain', 'Extension', 'Jump to top/bottom', 'Auto scroll', 'Progress bar', 'Screen navigation', 'Scroll bookmarks', 'Section navigation', 'Compatibility', 'Actions']),
   'domain table header labels every column'
 );
-assert(domainRow.children.length === 9, 'domain rows contain one domain, six toggles, one compatibility selector, and one action');
+assert(domainRow.children.length === 10, 'domain rows contain one domain, seven toggles, one compatibility selector, and one action');
 assert(
-  domainRow.children.slice(1, 7).every((label) =>
+  domainRow.children.slice(1, 8).every((label) =>
     label.children.length === 1 &&
     Boolean(label.children[0].getAttribute('aria-label'))
   ),
   'domain rows omit repeated feature text while retaining accessible checkbox labels'
 );
 assert(
-  domainRow.children[7].tagName === 'SELECT' &&
-    domainRow.children[7].value === 'page' &&
-    domainRow.children[7].getAttribute('aria-label') === 'Compatibility',
+  domainRow.children[8].tagName === 'SELECT' &&
+    domainRow.children[8].value === 'page' &&
+    domainRow.children[8].getAttribute('aria-label') === 'Compatibility',
   'domain rows expose the saved compatibility mode as an accessible selector'
 );
-domainRow.children[7].value = 'auto';
-domainRow.children[7].dispatch('change');
+assert(domainRow.children[2].children[0].checked === true, 'older domain records keep main buttons visible');
+domainRow.children[2].children[0].checked = false;
+domainRow.children[2].children[0].dispatch('change');
+assert(
+  domainTablePage.localData.domainFeatureStates['example.com'].mainButtonsVisible === false,
+  'domain main button visibility persists independently'
+);
+domainRow.children[8].value = 'auto';
+domainRow.children[8].dispatch('change');
 assert(
   domainTablePage.localData.domainFeatureStates['example.com'].containerStrategy === 'auto',
   'domain compatibility selector persists strategy changes'
 );
-const domainDeleteButton = domainRow.children[8];
+const domainDeleteButton = domainRow.children[9];
 assert(
   domainDeleteButton.className === 'domain-delete-button' &&
     domainDeleteButton.innerHTML.includes('<svg') &&
@@ -1001,7 +1008,7 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.5.8', '2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);

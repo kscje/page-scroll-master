@@ -47,6 +47,10 @@
     "message": "在此網站啟用",
     "description": "彈窗啟用開關標籤"
   },
+  "popupMainButtons": {
+    "message": "跳轉到頂部/底部",
+    "description": "彈窗主按鈕顯示開關標籤"
+  },
   "settingsEdgeDistance": {
     "message": "邊緣距離(px)",
     "description": "設定頁邊緣距離標籤"

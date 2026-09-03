@@ -47,6 +47,10 @@
     "message": "Ativar neste site",
     "description": "Popup enable toggle label"
   },
+  "popupMainButtons": {
+    "message": "Ir para o topo/fim",
+    "description": "Popup main button visibility label"
+  },
   "settingsEdgeDistance": {
     "message": "Distância da borda(px)",
     "description": "Settings page edge distance label"

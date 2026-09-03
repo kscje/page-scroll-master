@@ -47,6 +47,10 @@
     "message": "Activar en este sitio",
     "description": "Popup enable toggle label"
   },
+  "popupMainButtons": {
+    "message": "Ir al inicio/final",
+    "description": "Popup main button visibility label"
+  },
   "settingsEdgeDistance": {
     "message": "Distancia al borde(px)",
     "description": "Settings page edge distance label"

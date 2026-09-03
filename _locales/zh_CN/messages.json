@@ -47,6 +47,10 @@
     "message": "在该网站启用",
     "description": "弹窗启用开关标签"
   },
+  "popupMainButtons": {
+    "message": "跳转到顶部/底部",
+    "description": "弹窗主按钮显示开关标签"
+  },
   "settingsEdgeDistance": {
     "message": "边缘距离(px)",
     "description": "设置页边缘距离标签"

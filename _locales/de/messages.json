@@ -47,6 +47,10 @@
     "message": "Auf dieser Website aktivieren",
     "description": "Popup enable toggle label"
   },
+  "popupMainButtons": {
+    "message": "Zum Anfang/Ende springen",
+    "description": "Popup main button visibility label"
+  },
   "settingsEdgeDistance": {
     "message": "Abstand zum Rand(px)",
     "description": "Settings page edge distance label"

@@ -47,6 +47,10 @@
     "message": "이 사이트에서 사용",
     "description": "Popup enable toggle label"
   },
+  "popupMainButtons": {
+    "message": "맨 위/맨 아래로 이동",
+    "description": "Popup main button visibility label"
+  },
   "settingsEdgeDistance": {
     "message": "가장자리 거리(px)",
     "description": "Settings page edge distance label"

@@ -35,6 +35,9 @@
   "popupEnableToggle": {
     "message": "Bu sitede etkinleştir"
   },
+  "popupMainButtons": {
+    "message": "Üste/alta git"
+  },
   "settingsEdgeDistance": {
     "message": "Kenardan Uzaklık(px)"
   },

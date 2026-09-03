@@ -7,7 +7,7 @@
     migrationVersion: 'domainFeatureMigrationVersion',
     legacyStates: 'enableStates'
   };
-  var MIGRATION_VERSION = 2;
+  var MIGRATION_VERSION = 3;
   var FEATURE_KEYS = ['autoScroll', 'progressBar', 'screenNavigation', 'scrollBookmarks', 'outlineNavigation'];
   var CONTAINER_STRATEGIES = ['auto', 'page'];
   var DEFAULT_CONTAINER_STRATEGY = 'auto';
@@ -83,6 +83,7 @@
     var source = isPlainObject(defaults) ? defaults : {};
     return {
       extensionEnabled: normalizeBoolean(source.extensionEnabled, true),
+      mainButtonsVisible: normalizeBoolean(source.mainButtonsVisible, true),
       containerStrategy: normalizeContainerStrategy(source.containerStrategy),
       features: normalizeFeatures(source.features, DEFAULT_FEATURES)
     };
@@ -93,6 +94,7 @@
     var normalizedDefaults = normalizeDefaults(defaults);
     return {
       extensionEnabled: normalizeBoolean(source.extensionEnabled, normalizedDefaults.extensionEnabled),
+      mainButtonsVisible: normalizeBoolean(source.mainButtonsVisible, normalizedDefaults.mainButtonsVisible),
       containerStrategy: normalizeContainerStrategy(source.containerStrategy || normalizedDefaults.containerStrategy),
       features: normalizeFeatures(source.features, normalizedDefaults.features)
     };
@@ -137,6 +139,7 @@
       ? previousDefaults
       : normalizeDefaults({
         extensionEnabled: previousDefaults.extensionEnabled,
+        mainButtonsVisible: previousDefaults.mainButtonsVisible,
         containerStrategy: previousDefaults.containerStrategy,
         features: DEFAULT_FEATURES
       });

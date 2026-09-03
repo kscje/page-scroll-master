@@ -3,6 +3,7 @@ var STORAGE_KEYS = domainUtils.STORAGE_KEYS;
 var ratingUtils = PageScrollMasterRating;
 
 var extensionToggleEl = document.getElementById('extensionToggle');
+var mainButtonsToggleEl = document.getElementById('mainButtonsToggle');
 var featureToggleEls = {
   autoScroll: document.getElementById('autoScrollToggle'),
   progressBar: document.getElementById('progressBarToggle'),
@@ -28,6 +29,7 @@ var popupTranslations = {
   'zh-CN': {
     'popupSettings': '打开设置',
     'popupEnableToggle': '在此主域名启用插件',
+    'popupMainButtons': '跳转到顶部/底部',
     'popupCurrentSite': '当前网站：',
     'popupAdvancedFeatures': '高级功能',
     'popupAutoScroll': '自动滚屏',
@@ -44,6 +46,7 @@ var popupTranslations = {
   'en-US': {
     'popupSettings': 'Open settings',
     'popupEnableToggle': 'Enable extension on this domain',
+    'popupMainButtons': 'Jump to top/bottom',
     'popupCurrentSite': 'Current site: ',
     'popupAdvancedFeatures': 'Advanced features',
     'popupAutoScroll': 'Auto scroll',
@@ -60,6 +63,7 @@ var popupTranslations = {
   'es-ES': {
     'popupSettings': 'Abrir configuración',
     'popupEnableToggle': 'Activar extensión en este dominio',
+    'popupMainButtons': 'Ir al inicio/final',
     'popupCurrentSite': 'Sitio actual: ',
     'popupAdvancedFeatures': 'Funciones avanzadas',
     'popupAutoScroll': 'Desplazamiento automático',
@@ -76,6 +80,7 @@ var popupTranslations = {
   'ja-JP': {
     'popupSettings': '設定を開く',
     'popupEnableToggle': 'このドメインで拡張機能を有効化',
+    'popupMainButtons': 'ページ先頭/末尾へ移動',
     'popupCurrentSite': '現在のサイト：',
     'popupAdvancedFeatures': '高度な機能',
     'popupAutoScroll': '自動スクロール',
@@ -92,6 +97,7 @@ var popupTranslations = {
   'de-DE': {
     'popupSettings': 'Einstellungen öffnen',
     'popupEnableToggle': 'Erweiterung für diese Domain aktivieren',
+    'popupMainButtons': 'Zum Anfang/Ende springen',
     'popupCurrentSite': 'Aktuelle Website: ',
     'popupAdvancedFeatures': 'Erweiterte Funktionen',
     'popupAutoScroll': 'Automatisches Scrollen',
@@ -108,6 +114,7 @@ var popupTranslations = {
   'fr-FR': {
     'popupSettings': 'Ouvrir les paramètres',
     'popupEnableToggle': 'Activer l’extension sur ce domaine',
+    'popupMainButtons': 'Aller en haut/bas',
     'popupCurrentSite': 'Site actuel : ',
     'popupAdvancedFeatures': 'Fonctions avancées',
     'popupAutoScroll': 'Défilement automatique',
@@ -124,6 +131,7 @@ var popupTranslations = {
   'pt-BR': {
     'popupSettings': 'Abrir configurações',
     'popupEnableToggle': 'Ativar extensão neste domínio',
+    'popupMainButtons': 'Ir para o topo/fim',
     'popupCurrentSite': 'Site atual: ',
     'popupAdvancedFeatures': 'Recursos avançados',
     'popupAutoScroll': 'Rolagem automática',
@@ -140,6 +148,7 @@ var popupTranslations = {
   'zh-TW': {
     'popupSettings': '開啟設定',
     'popupEnableToggle': '在此主網域啟用外掛',
+    'popupMainButtons': '跳轉到頂部/底部',
     'popupCurrentSite': '目前網站：',
     'popupAdvancedFeatures': '進階功能',
     'popupAutoScroll': '自動捲動',
@@ -156,6 +165,7 @@ var popupTranslations = {
   'ko-KR': {
     'popupSettings': '설정 열기',
     'popupEnableToggle': '이 도메인에서 확장 프로그램 사용',
+    'popupMainButtons': '맨 위/맨 아래로 이동',
     'popupCurrentSite': '현재 사이트: ',
     'popupAdvancedFeatures': '고급 기능',
     'popupAutoScroll': '자동 스크롤',
@@ -172,6 +182,7 @@ var popupTranslations = {
   'it-IT': {
     'popupSettings': 'Apri impostazioni',
     'popupEnableToggle': 'Attiva l’estensione su questo dominio',
+    'popupMainButtons': 'Vai all’inizio/fine',
     'popupCurrentSite': 'Sito corrente: ',
     'popupAdvancedFeatures': 'Funzioni avanzate',
     'popupAutoScroll': 'Scorrimento automatico',
@@ -188,6 +199,7 @@ var popupTranslations = {
   'ru-RU': {
     'popupSettings': 'Открыть настройки',
     'popupEnableToggle': 'Включить расширение для этого домена',
+    'popupMainButtons': 'Перейти вверх/вниз',
     'popupCurrentSite': 'Текущий сайт: ',
     'popupAdvancedFeatures': 'Дополнительные функции',
     'popupAutoScroll': 'Автопрокрутка',
@@ -204,6 +216,7 @@ var popupTranslations = {
   'tr-TR': {
     'popupSettings': 'Ayarları aç',
     'popupEnableToggle': 'Bu alan adında uzantıyı etkinleştir',
+    'popupMainButtons': 'Üste/alta git',
     'popupCurrentSite': 'Geçerli site: ',
     'popupAdvancedFeatures': 'Gelişmiş özellikler',
     'popupAutoScroll': 'Otomatik kaydırma',
@@ -220,6 +233,7 @@ var popupTranslations = {
   'id-ID': {
     'popupSettings': 'Buka pengaturan',
     'popupEnableToggle': 'Aktifkan ekstensi di domain ini',
+    'popupMainButtons': 'Lompat ke atas/bawah',
     'popupCurrentSite': 'Situs saat ini: ',
     'popupAdvancedFeatures': 'Fitur lanjutan',
     'popupAutoScroll': 'Gulir otomatis',
@@ -285,6 +299,7 @@ function applyI18n() {
 
 function setControlsDisabled(disabled) {
   extensionToggleEl.disabled = disabled;
+  mainButtonsToggleEl.disabled = disabled || !extensionToggleEl.checked;
   Object.keys(featureToggleEls).forEach(function (key) {
     featureToggleEls[key].disabled = disabled || !extensionToggleEl.checked;
   });
@@ -293,6 +308,7 @@ function setControlsDisabled(disabled) {
 function renderState(state, canEdit) {
   ignoreChanges = true;
   extensionToggleEl.checked = state.extensionEnabled;
+  mainButtonsToggleEl.checked = state.mainButtonsVisible;
   Object.keys(featureToggleEls).forEach(function (key) {
     featureToggleEls[key].checked = state.features[key];
   });
@@ -365,6 +381,7 @@ function persistCurrentState(nextState) {
 function readStateFromControls() {
   return domainUtils.normalizeState({
     extensionEnabled: extensionToggleEl.checked,
+    mainButtonsVisible: mainButtonsToggleEl.checked,
     features: {
       autoScroll: featureToggleEls.autoScroll.checked,
       progressBar: featureToggleEls.progressBar.checked,
@@ -431,6 +448,9 @@ function loadPopup() {
 
 extensionToggleEl.addEventListener('change', function () {
   handleControlChange('extension');
+});
+mainButtonsToggleEl.addEventListener('change', function () {
+  handleControlChange('mainButtons');
 });
 Object.keys(featureToggleEls).forEach(function (key) {
   featureToggleEls[key].addEventListener('change', function () {

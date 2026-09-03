@@ -46,6 +46,7 @@ function createOptionsContext() {
 function createPopupContext() {
   const elements = {
     extensionToggle: { addEventListener() {}, checked: false, disabled: false },
+    mainButtonsToggle: { addEventListener() {}, checked: false, disabled: false },
     progressBarToggle: { addEventListener() {}, checked: false, disabled: false },
     autoScrollToggle: { addEventListener() {}, checked: false, disabled: false },
     screenNavigationToggle: { addEventListener() {}, checked: false, disabled: false },
@@ -241,7 +242,7 @@ expectedOptionLanguages.forEach((lang) => {
   );
 });
 
-assert(optionsContext.__releaseNotes[0].version === '2.5.7', 'release notes are ordered newest first');
+assert(optionsContext.__releaseNotes[0].version === '2.5.8', 'release notes are ordered newest first');
 assert(
   optionsContext.__releaseNotes[optionsContext.__releaseNotes.length - 1].version === '1.8.0',
   'release notes start at v1.8'

@@ -96,6 +96,7 @@ function openPopup(activeUrl, initialLocalData = {}, initialSyncData = {}) {
   let openOptionsPageCount = 0;
   const elements = {
     extensionToggle: createElement('extensionToggle'),
+    mainButtonsToggle: createElement('mainButtonsToggle'),
     autoScrollToggle: createElement('autoScrollToggle'),
     progressBarToggle: createElement('progressBarToggle'),
     screenNavigationToggle: createElement('screenNavigationToggle'),
@@ -195,6 +196,11 @@ console.log('=== Page Scroll Master domain popup tests ===\n');
 console.log('Test 0: Popup has permission to inspect the active tab');
 assert(MANIFEST.permissions.includes('activeTab'), 'manifest includes activeTab');
 assert(
+  POPUP_HTML.indexOf('id="extensionToggle"') < POPUP_HTML.indexOf('id="mainButtonsToggle"') &&
+    POPUP_HTML.indexOf('id="mainButtonsToggle"') < POPUP_HTML.indexOf('id="screenNavigationToggle"'),
+  'main button visibility appears between the master switch and advanced features'
+);
+assert(
   POPUP_HTML.indexOf('id="screenNavigationToggle"') < POPUP_HTML.indexOf('id="progressBarToggle"'),
   'screen navigation is the first advanced feature in the popup'
 );
@@ -205,6 +211,7 @@ console.log('\nTest 1: New domains default to extension on and advanced features
 let popup = openPopup('https://docs.example.co.uk/page');
 assert(popup.elements.currentSite.textContent === 'example.co.uk', 'public suffix parsing resolves example.co.uk');
 assert(popup.elements.extensionToggle.checked === true, 'extension defaults to enabled');
+assert(popup.elements.mainButtonsToggle.checked === true, 'main buttons default to visible');
 assert(popup.elements.autoScrollToggle.checked === false, 'auto scroll defaults to disabled');
 assert(popup.elements.progressBarToggle.checked === false, 'progress bar defaults to disabled');
 assert(popup.elements.screenNavigationToggle.checked === false, 'screen navigation defaults to disabled');
@@ -216,6 +223,11 @@ assert(popup.openOptionsPageCount === 1, 'opening settings uses the standard opt
 assert(popup.createdTabs.length === 0, 'opening settings does not carry a source tab id');
 
 console.log('\nTest 2: Feature changes persist by registrable domain and notify the active tab');
+toggle(popup, 'mainButtonsToggle', false);
+assert(
+  popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].mainButtonsVisible === false,
+  'main button visibility is stored separately under the main domain'
+);
 toggle(popup, 'progressBarToggle', true);
 assert(popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].features.progressBar === true, 'progress state is stored under the main domain');
 assert(popup.sentMessages.some((entry) => entry.message.action === 'updateDomainFeatureState'), 'current tab receives an immediate state update');
@@ -233,10 +245,12 @@ console.log('\nTest 3: Disabling the extension retains feature choices and disab
 toggle(popup, 'extensionToggle', false);
 const disabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'];
 assert(disabledState.extensionEnabled === false, 'extension state is stored separately');
+assert(disabledState.mainButtonsVisible === false, 'saved main button visibility is retained');
 assert(disabledState.features.progressBar === true, 'saved progress choice is retained');
 assert(disabledState.features.screenNavigation === true, 'saved screen navigation choice is retained');
 assert(disabledState.features.autoScroll === true, 'saved auto scroll choice is retained');
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches become unavailable');
+assert(popup.elements.mainButtonsToggle.disabled === true, 'main button visibility becomes unavailable');
 
 console.log('\nTest 4: Another subdomain reads the same main-domain state');
 popup = openPopup(
@@ -245,6 +259,7 @@ popup = openPopup(
 );
 assert(popup.elements.currentSite.textContent === 'example.co.uk', 'subdomains share one domain key');
 assert(popup.elements.extensionToggle.checked === false, 'subdomain restores extension off state');
+assert(popup.elements.mainButtonsToggle.checked === false, 'subdomain restores main button visibility');
 assert(popup.elements.progressBarToggle.checked === true, 'subdomain restores retained feature state');
 
 console.log('\nTest 5: Legacy hostname migrates while advanced features stay off by default');
@@ -265,12 +280,14 @@ popup = openPopup(
 );
 const migrated = popup.chrome.storage.local.data[STATES_KEY]['legacy.co.uk'];
 assert(migrated.extensionEnabled === false, 'legacy disabled hostname migrates to its main domain');
+assert(migrated.mainButtonsVisible === true, 'legacy domains retain visible main buttons');
 assert(migrated.features.progressBar === false, 'legacy progress setting does not become a local migration default');
 assert(migrated.features.outlineNavigation === false, 'legacy outline setting does not become a local migration default');
 
 console.log('\nTest 6: Unsupported pages expose no editable state');
 popup = openPopup('chrome://extensions');
 assert(popup.elements.extensionToggle.disabled === true, 'extension switch is disabled');
+assert(popup.elements.mainButtonsToggle.disabled === true, 'main button switch is disabled');
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches are disabled');
 assert(popup.elements.unavailableMessage.style.display === 'block', 'unsupported-page notice is visible');
 

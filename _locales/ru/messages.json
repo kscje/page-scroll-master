@@ -35,6 +35,9 @@
   "popupEnableToggle": {
     "message": "Включить на этом сайте"
   },
+  "popupMainButtons": {
+    "message": "Перейти вверх/вниз"
+  },
   "settingsEdgeDistance": {
     "message": "Отступ от края(px)"
   },

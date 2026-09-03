@@ -35,6 +35,9 @@
   "popupEnableToggle": {
     "message": "Aktifkan di situs ini"
   },
+  "popupMainButtons": {
+    "message": "Lompat ke atas/bawah"
+  },
   "settingsEdgeDistance": {
     "message": "Jarak dari Tepi(px)"
   },

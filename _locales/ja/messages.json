@@ -47,6 +47,10 @@
     "message": "このサイトで有効",
     "description": "Popup enable toggle label"
   },
+  "popupMainButtons": {
+    "message": "ページ先頭/末尾へ移動",
+    "description": "Popup main button visibility label"
+  },
   "settingsEdgeDistance": {
     "message": "端からの距離(px)",
     "description": "Settings page edge distance label"

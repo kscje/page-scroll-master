@@ -1290,6 +1290,36 @@ Object.keys(translations).forEach((lang) => {
     'ko-KR': ['사용 여부는 도구 모음 팝업에서 도메인별로 설정하고 여기서는 세부 옵션만 구성합니다.', '확장 프로그램', '진행률', '화면 이동', '위치 북마크', '구간 이동', '모든 도메인 기록 지우기', '고급 기능의 표시, 위치 및 상호작용을 설정합니다.', '등록 가능한 도메인별로 확장 프로그램과 기능을 관리합니다.', '도메인', '작업'],
     'it-IT': ['Attiva le funzioni per dominio dal popup. Configura qui solo i dettagli.', 'Estensione', 'Progresso', 'Navigazione schermata', 'Segnalibri', 'Navigazione', 'Cancella tutti i domini', 'Configura visualizzazione, posizione e interazione delle funzioni avanzate.', 'Gestisci estensione e funzioni per dominio registrabile.', 'Dominio', 'Azioni']
   }[lang] || [];
+  const domainMainButtonsTranslations = {
+    'zh-CN': '跳转到顶部/底部',
+    'zh-TW': '跳轉到頂部/底部',
+    'en-US': 'Jump to top/bottom',
+    'es-ES': 'Ir al inicio/final',
+    'ja-JP': '先頭/末尾へ移動',
+    'de-DE': 'Zum Anfang/Ende springen',
+    'fr-FR': 'Aller en haut/bas',
+    'pt-BR': 'Ir para o topo/fim',
+    'ko-KR': '맨 위/맨 아래로 이동',
+    'it-IT': 'Vai all’inizio/fine',
+    'ru-RU': 'Перейти вверх/вниз',
+    'tr-TR': 'Üste/alta git',
+    'id-ID': 'Lompat ke atas/bawah'
+  }[lang] || 'Jump to top/bottom';
+  const domainIntroTranslations = {
+    'zh-CN': '按主域名管理插件、“跳转到顶部/底部”和高级功能的启用状态。',
+    'zh-TW': '依主網域管理外掛、「跳轉到頂部/底部」與進階功能的啟用狀態。',
+    'en-US': 'Manage the extension, jump-to-top/bottom controls, and advanced features by registrable domain.',
+    'es-ES': 'Gestiona la extensión, los controles para ir al inicio/final y las funciones por dominio principal.',
+    'ja-JP': '登録可能ドメインごとに拡張機能、先頭/末尾への移動、高度な機能を管理します。',
+    'de-DE': 'Erweiterung, Sprung zum Anfang/Ende und Funktionen nach registrierbarer Domain verwalten.',
+    'fr-FR': 'Gérer l’extension, les commandes pour aller en haut/bas et les fonctions par domaine principal.',
+    'pt-BR': 'Gerencie a extensão, os controles para ir ao topo/fim e os recursos por domínio registrável.',
+    'ko-KR': '등록 가능한 도메인별로 확장 프로그램, 맨 위/맨 아래 이동, 고급 기능을 관리합니다.',
+    'it-IT': 'Gestisci estensione, comandi per andare all’inizio/fine e funzioni per dominio registrabile.',
+    'ru-RU': 'Управляйте расширением, переходом вверх/вниз и функциями для основного домена.',
+    'tr-TR': 'Uzantıyı, üste/alta gitme denetimlerini ve gelişmiş özellikleri ana alan adına göre yönetin.',
+    'id-ID': 'Kelola ekstensi, kontrol untuk melompat ke atas/bawah, dan fitur lanjutan berdasarkan domain utama.'
+  }[lang] || 'Manage the extension, jump-to-top/bottom controls, and advanced features by registrable domain.';
   const domainPaginationTranslations = {
     'zh-CN': ['上一页', '下一页'],
     'zh-TW': ['上一頁', '下一頁'],
@@ -1428,13 +1458,14 @@ Object.keys(translations).forEach((lang) => {
     'settings.scrollBookmarkRestoreMode.manual': restoreModeTranslations[3],
     'settings.advancedEnableHint': domainFeatureTranslations[0],
     'settings.domainExtension': domainFeatureTranslations[1],
+    'settings.domainMainButtons': domainMainButtonsTranslations,
     'settings.domainProgressBar': domainFeatureTranslations[2],
     'settings.domainScreenNavigation': domainFeatureTranslations[3],
     'settings.domainScrollBookmarks': domainFeatureTranslations[4],
     'settings.domainOutlineNavigation': domainFeatureTranslations[5],
     'settings.clearAllDomainStates': domainFeatureTranslations[6],
     'settings.advancedIntro': domainFeatureTranslations[7],
-    'settings.domainIntro': domainFeatureTranslations[8],
+    'settings.domainIntro': domainIntroTranslations,
     'settings.domainName': domainFeatureTranslations[9],
     'settings.domainActions': domainFeatureTranslations[10],
     'settings.domainPreviousPage': domainPaginationTranslations[0],
@@ -2745,6 +2776,14 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.8',
+    categories: {
+      added: [
+        'domainMainButtonVisibility'
+      ]
+    }
+  },
+  {
     version: '2.5.7',
     categories: {
       improved: [
@@ -3473,6 +3512,27 @@ const v257ReleaseNotesItems = {
 Object.keys(releaseNotesTranslations).forEach((lang) => {
   releaseNotesTranslations[lang].items.fasterCanvasGridWheelFallback =
     v257ReleaseNotesItems[lang] || v257ReleaseNotesItems['en-US'];
+});
+
+const v258ReleaseNotesItems = {
+  'zh-CN': '新增按主域名启用或停用“跳转到顶部/底部”按钮，停用后高级功能和全局快捷键仍可使用。',
+  'zh-TW': '新增依主網域啟用或停用「跳轉到頂部/底部」按鈕，停用後進階功能與全域快捷鍵仍可使用。',
+  'en-US': 'Added per-domain controls to enable or disable jump-to-top/bottom buttons while keeping advanced features and global shortcuts available when disabled.',
+  'es-ES': 'Se añadieron controles por dominio para activar o desactivar los botones para ir al inicio/final, manteniendo disponibles las funciones avanzadas y los atajos globales cuando están desactivados.',
+  'ja-JP': '登録可能ドメインごとに先頭・末尾への移動ボタンを有効化または無効化でき、無効中も高度な機能とグローバルショートカットを利用できます。',
+  'de-DE': 'Sprung-zum-Anfang/Ende-Schaltflächen lassen sich jetzt pro Domain aktivieren oder deaktivieren; erweiterte Funktionen und globale Tastenkürzel bleiben bei Deaktivierung verfügbar.',
+  'fr-FR': 'Ajout de commandes par domaine pour activer ou désactiver les boutons permettant d’aller en haut/bas, tout en conservant les fonctions avancées et les raccourcis globaux lorsqu’ils sont désactivés.',
+  'pt-BR': 'Adicionados controles por domínio para ativar ou desativar os botões de ir ao topo/fim, mantendo os recursos avançados e os atalhos globais disponíveis quando desativados.',
+  'ko-KR': '도메인별로 맨 위/맨 아래 이동 버튼을 활성화하거나 비활성화할 수 있으며, 비활성화해도 고급 기능과 전역 단축키를 사용할 수 있습니다.',
+  'it-IT': 'Aggiunti controlli per dominio per attivare o disattivare i pulsanti per andare all’inizio/fine, mantenendo disponibili le funzioni avanzate e le scorciatoie globali quando disattivati.',
+  'ru-RU': 'Добавлено управление переходом вверх/вниз для каждого домена; расширенные функции и глобальные сочетания клавиш доступны даже при отключённых кнопках.',
+  'tr-TR': 'Üste/alta gitme düğmeleri alan adına göre etkinleştirilebilir veya devre dışı bırakılabilir; düğmeler devre dışı olsa bile gelişmiş özellikler ve genel kısayollar kullanılabilir.',
+  'id-ID': 'Menambahkan kontrol per domain untuk mengaktifkan atau menonaktifkan tombol melompat ke atas/bawah, sementara fitur lanjutan dan pintasan global tetap tersedia saat dinonaktifkan.'
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  releaseNotesTranslations[lang].items.domainMainButtonVisibility =
+    v258ReleaseNotesItems[lang] || v258ReleaseNotesItems['en-US'];
 });
 
 const DEFAULT_ADVANCED_SETTINGS = {
@@ -5113,6 +5173,7 @@ function renderDomainFeatureStatesList() {
     [
       'settings.domainName',
       'settings.domainExtension',
+      'settings.domainMainButtons',
       'settings.domainAutoScroll',
       'settings.domainProgressBar',
       'settings.domainScreenNavigation',
@@ -5146,6 +5207,18 @@ function renderDomainFeatureStatesList() {
         saveDomainFeatureState(domainKey, (current) => ({
           ...current,
           extensionEnabled: checked
+        }));
+      }
+    );
+    const mainButtonsToggle = createDomainToggle(
+      lang,
+      'settings.domainMainButtons',
+      state.mainButtonsVisible,
+      !state.extensionEnabled,
+      (checked) => {
+        saveDomainFeatureState(domainKey, (current) => ({
+          ...current,
+          mainButtonsVisible: checked
         }));
       }
     );
@@ -5204,6 +5277,7 @@ function renderDomainFeatureStatesList() {
 
     row.appendChild(name);
     row.appendChild(extensionToggle);
+    row.appendChild(mainButtonsToggle);
     featureToggles.forEach((toggle) => row.appendChild(toggle));
     row.appendChild(containerStrategySelect);
     row.appendChild(deleteButton);
