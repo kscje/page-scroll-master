@@ -252,6 +252,17 @@ assert(disabledState.features.autoScroll === true, 'saved auto scroll choice is 
 assert(popup.elements.progressBarToggle.disabled === true, 'feature switches become unavailable');
 assert(popup.elements.mainButtonsToggle.disabled === true, 'main button visibility becomes unavailable');
 
+toggle(popup, 'extensionToggle', true);
+const reenabledState = popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'];
+assert(popup.elements.mainButtonsToggle.checked === true, 'enabling the extension restores main buttons');
+assert(reenabledState.mainButtonsVisible === true, 'enabling the extension persists visible main buttons');
+toggle(popup, 'mainButtonsToggle', false);
+assert(
+  popup.chrome.storage.local.data[STATES_KEY]['example.co.uk'].mainButtonsVisible === false,
+  'main buttons can still be disabled independently after re-enabling the extension'
+);
+toggle(popup, 'extensionToggle', false);
+
 console.log('\nTest 4: Another subdomain reads the same main-domain state');
 popup = openPopup(
   'https://app.example.co.uk/other',

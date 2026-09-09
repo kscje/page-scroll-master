@@ -297,6 +297,7 @@ function createOptionsPage(initialSyncData = {}, initialLocalData = {}, initialC
     advancedResetDefaultsModule: createElement('advancedResetDefaultsModule'),
     saveButton: createElement('saveButton', { textContent: 'Save' }),
     releaseNotesList: createElement('releaseNotesList'),
+    releaseNotesMoreButton: createElement('releaseNotesMoreButton'),
     previewTopButton: createElement('previewTopButton', {
       children: [createElement('topSvg', { attributes: { tagName: 'svg' } })]
     }),
@@ -837,6 +838,7 @@ const domainTablePage = createOptionsPage({}, {
     },
     'disabled.example': {
       extensionEnabled: false,
+      mainButtonsVisible: false,
       containerStrategy: 'auto',
       features: {
         autoScroll: true,
@@ -935,6 +937,10 @@ assert(
     domainTablePage.elements.domainEmpty.style.display === 'block',
   'reenabling a disabled domain moves it out of the disabled tab'
 );
+assert(
+  domainTablePage.localData.domainFeatureStates['disabled.example'].mainButtonsVisible === true,
+  'reenabling a disabled domain restores its main buttons'
+);
 const manyDomainStates = {};
 for (let index = 1; index <= 51; index += 1) {
   manyDomainStates[`domain-${String(index).padStart(3, '0')}.example`] = {
@@ -998,6 +1004,10 @@ assert(
     OPTIONS_HTML.indexOf('id="manifestVersion"'),
   'store rating button sits beside the quick-start button before version metadata'
 );
+assert(
+  OPTIONS_HTML.includes('id="releaseNotesMoreButton"'),
+  'release notes include a dedicated view-more control'
+);
 page.elements.openStoreRatingButton.dispatch('click');
 assert(
   page.createdTabs[0].url === 'https://chromewebstore.google.com/detail/smart-scroll-navigator-%E2%80%93/ikdlbildhneobjlinadkkhnbeonkjbfm/reviews' &&
@@ -1008,7 +1018,8 @@ assert(
 );
 
 const renderedReleases = page.elements.releaseNotesList.children;
-const plannedReleaseVersions = ['2.5.8', '2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const releaseNotesMoreButton = page.elements.releaseNotesMoreButton;
+const plannedReleaseVersions = ['2.5.9', '2.5.8', '2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1021,17 +1032,27 @@ const compareTestVersions = (left, right) => {
 const expectedVisibleVersions = plannedReleaseVersions.filter(
   (version) => compareTestVersions(version, MANIFEST.version) <= 0
 );
-assert(renderedReleases.length === expectedVisibleVersions.length, 'release notes start at v1.8 and hide unreleased content');
+assert(renderedReleases.length === Math.min(expectedVisibleVersions.length, 5), 'release notes default to the five most recent released versions');
 assert(renderedReleases[0].getAttribute('data-release-version') === MANIFEST.version, 'current manifest version appears first');
 assert(renderedReleases[0].open === true, 'current version is expanded by default');
-assert(renderedReleases.slice(1).every((release) => release.open !== true), 'historical versions are collapsed by default');
+assert(renderedReleases.slice(1).every((release) => release.open !== true), 'visible historical versions are collapsed by default');
+assert(releaseNotesMoreButton.textContent === 'View more', 'release notes expose a localized view-more control');
+assert(releaseNotesMoreButton.style.display === '', 'view-more control is visible when older records are hidden');
+releaseNotesMoreButton.dispatch('click');
+const expandedReleases = page.elements.releaseNotesList.children;
 assert(
-  renderedReleases[renderedReleases.length - 1].getAttribute('data-release-version') === '1.8.0',
-  'v1.8 is the earliest displayed release'
+  expandedReleases.length === expectedVisibleVersions.length &&
+    releaseNotesMoreButton.textContent === 'Show less' &&
+    releaseNotesMoreButton.getAttribute('aria-expanded') === 'true',
+  'view-more expands all release records'
+);
+assert(
+  expandedReleases[expandedReleases.length - 1].getAttribute('data-release-version') === '1.8.0',
+  'expanded release notes include the earliest displayed release'
 );
 const currentReleaseSummary = renderedReleases[0].children[0];
 assert(currentReleaseSummary.children[1].textContent === 'Current version', 'current release includes a localized current-version badge');
-const v19Release = renderedReleases.find(
+const v19Release = expandedReleases.find(
   (release) => release.getAttribute('data-release-version') === '1.9.0'
 );
 const v19CategoryHeadings = v19Release.children[1].children.map(
@@ -1040,6 +1061,12 @@ const v19CategoryHeadings = v19Release.children[1].children.map(
 assert(
   JSON.stringify(v19CategoryHeadings) === JSON.stringify(['New features', 'Feature improvements']),
   'empty release-note categories are omitted'
+);
+releaseNotesMoreButton.dispatch('click');
+assert(page.elements.releaseNotesList.children.length === 5, 'release notes can be collapsed back to the recent five records');
+assert(
+  page.elements.releaseNotesList.children[page.elements.releaseNotesList.children.length - 1].getAttribute('data-release-version') === '2.5.5',
+  'collapsed release notes end with the fifth most recent release'
 );
 
 const legacyManualPage = createOptionsPage({

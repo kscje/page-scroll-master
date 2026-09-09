@@ -2776,6 +2776,15 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.5.9',
+    categories: {
+      improved: [
+        'releaseNotesListLimit',
+        'domainMainButtonRestore'
+      ]
+    }
+  },
+  {
     version: '2.5.8',
     categories: {
       added: [
@@ -3535,6 +3544,83 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
     v258ReleaseNotesItems[lang] || v258ReleaseNotesItems['en-US'];
 });
 
+const v259ReleaseNotesItems = {
+  'zh-CN': [
+    '更新记录默认展示最近 5 个版本，点击“查看更多”可展开全部记录。',
+    '重新启用主域名插件时会自动恢复“跳转到顶部/底部”按钮，之后仍可单独关闭。'
+  ],
+  'zh-TW': [
+    '更新記錄預設顯示最近 5 個版本，點擊「查看更多」可展開全部記錄。',
+    '重新啟用主網域外掛時會自動恢復「跳轉到頂部/底部」按鈕，之後仍可個別關閉。'
+  ],
+  'en-US': [
+    'Release notes now show the five most recent versions by default, with a View more control for the full history.',
+    'Re-enabling a domain extension now restores its scroll-to-top/bottom buttons, which can still be disabled independently afterward.'
+  ],
+  'es-ES': [
+    'Las novedades ahora muestran por defecto las cinco versiones más recientes, con un control para ver todo el historial.',
+    'Al volver a activar la extensión para un dominio se restauran sus botones para ir al inicio/final, que aún pueden desactivarse por separado.'
+  ],
+  'ja-JP': [
+    '更新履歴は既定で最新5バージョンを表示し、「もっと見る」から全履歴を展開できるようになりました。',
+    'ドメインの拡張機能を再有効化すると先頭・末尾への移動ボタンが復元され、その後も個別に無効化できます。'
+  ],
+  'de-DE': [
+    'Die Versionshinweise zeigen standardmäßig die fünf neuesten Versionen; über „Mehr anzeigen“ ist die vollständige Historie verfügbar.',
+    'Beim erneuten Aktivieren der Erweiterung für eine Domain werden die Sprung-Schaltflächen zum Anfang und Ende wiederhergestellt und können danach weiterhin separat deaktiviert werden.'
+  ],
+  'fr-FR': [
+    'Les notes de version affichent désormais par défaut les cinq versions les plus récentes, avec un bouton pour voir tout l’historique.',
+    'La réactivation de l’extension pour un domaine restaure ses boutons haut/bas, qui peuvent toujours être désactivés séparément ensuite.'
+  ],
+  'pt-BR': [
+    'As notas da versão agora mostram por padrão as cinco versões mais recentes, com um controle para ver todo o histórico.',
+    'Ao reativar a extensão para um domínio, os botões de ir ao topo/fim são restaurados e ainda podem ser desativados separadamente depois.'
+  ],
+  'ko-KR': [
+    '업데이트 기록은 이제 기본적으로 최신 5개 버전을 표시하며, 더 보기에서 전체 기록을 펼칠 수 있습니다.',
+    '도메인 확장 프로그램을 다시 활성화하면 맨 위/맨 아래 이동 버튼이 복원되며, 이후에도 독립적으로 비활성화할 수 있습니다.'
+  ],
+  'it-IT': [
+    'Le note di versione mostrano ora per impostazione predefinita le cinque versioni più recenti, con un controllo per vedere tutta la cronologia.',
+    'Riattivando l’estensione per un dominio vengono ripristinati i pulsanti per andare all’inizio/fine, che possono comunque essere disattivati separatamente in seguito.'
+  ],
+  'ru-RU': [
+    'История изменений теперь по умолчанию показывает 5 последних версий; кнопка «Показать больше» открывает всю историю.',
+    'При повторном включении расширения для домена восстанавливаются кнопки перехода вверх/вниз, которые после этого по-прежнему можно отключить отдельно.'
+  ],
+  'tr-TR': [
+    'Sürüm notları artık varsayılan olarak en yeni 5 sürümü gösterir; “Daha fazla göster” ile tüm geçmiş açılabilir.',
+    'Bir alan adı için uzantı yeniden etkinleştirildiğinde üste/alta gitme düğmeleri geri yüklenir ve daha sonra ayrı ayrı devre dışı bırakılabilir.'
+  ],
+  'id-ID': [
+    'Catatan rilis kini secara default menampilkan 5 versi terbaru, dengan kontrol untuk melihat seluruh riwayat.',
+    'Saat ekstensi untuk domain diaktifkan kembali, tombol gulir ke atas/bawah dipulihkan dan tetap dapat dinonaktifkan secara terpisah setelahnya.'
+  ]
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  const values = v259ReleaseNotesItems[lang] || v259ReleaseNotesItems['en-US'];
+  releaseNotesTranslations[lang].items.releaseNotesListLimit = values[0];
+  releaseNotesTranslations[lang].items.domainMainButtonRestore = values[1];
+});
+
+const releaseNotesToggleTranslations = {
+  'zh-CN': { showMore: '查看更多', showLess: '收起全部' },
+  'zh-TW': { showMore: '查看更多', showLess: '收起全部' },
+  'en-US': { showMore: 'View more', showLess: 'Show less' },
+  'es-ES': { showMore: 'Ver más', showLess: 'Mostrar menos' },
+  'ja-JP': { showMore: 'もっと見る', showLess: '折りたたむ' },
+  'de-DE': { showMore: 'Mehr anzeigen', showLess: 'Weniger anzeigen' },
+  'fr-FR': { showMore: 'Voir plus', showLess: 'Réduire' },
+  'pt-BR': { showMore: 'Ver mais', showLess: 'Mostrar menos' },
+  'ko-KR': { showMore: '더 보기', showLess: '접기' },
+  'it-IT': { showMore: 'Mostra altro', showLess: 'Mostra meno' },
+  'ru-RU': { showMore: 'Показать больше', showLess: 'Свернуть' },
+  'tr-TR': { showMore: 'Daha fazla göster', showLess: 'Daha az göster' },
+  'id-ID': { showMore: 'Lihat selengkapnya', showLess: 'Tampilkan lebih sedikit' }
+};
+
 const DEFAULT_ADVANCED_SETTINGS = {
   autoScroll: {
     enabled: false,
@@ -3689,6 +3775,7 @@ let domainStateFilter = 'enabled';
 let domainCurrentPage = 1;
 let savedBookmarks = {};
 let advancedModuleCollapseState = {};
+let releaseNotesExpanded = false;
 
 // 检测操作系统平台
 function detectPlatform() {
@@ -5206,7 +5293,8 @@ function renderDomainFeatureStatesList() {
       (checked) => {
         saveDomainFeatureState(domainKey, (current) => ({
           ...current,
-          extensionEnabled: checked
+          extensionEnabled: checked,
+          mainButtonsVisible: checked ? true : current.mainButtonsVisible
         }));
       }
     );
@@ -5614,60 +5702,77 @@ function getManifestVersion() {
 
 function renderReleaseNotes(lang) {
   const list = document.getElementById('releaseNotesList');
+  const moreButton = document.getElementById('releaseNotesMoreButton');
   if (!list) return;
 
   const localized = releaseNotesTranslations[lang] || releaseNotesTranslations['en-US'];
+  const toggleText = releaseNotesToggleTranslations[lang] || releaseNotesToggleTranslations['en-US'];
   const manifestVersion = getManifestVersion();
+  const releases = RELEASE_NOTES.filter(
+    (release) => compareVersions(release.version, manifestVersion) <= 0
+  );
+  const visibleReleases = releaseNotesExpanded ? releases : releases.slice(0, 5);
   list.innerHTML = '';
 
-  RELEASE_NOTES
-    .filter((release) => compareVersions(release.version, manifestVersion) <= 0)
-    .forEach((release) => {
-      const details = document.createElement('details');
-      details.className = 'release-version feedback-disclosure';
-      details.open = release.version === manifestVersion;
-      details.setAttribute('data-release-version', release.version);
+  visibleReleases.forEach((release) => {
+    const details = document.createElement('details');
+    details.className = 'release-version feedback-disclosure';
+    details.open = release.version === manifestVersion;
+    details.setAttribute('data-release-version', release.version);
 
-      const summary = document.createElement('summary');
-      const version = document.createElement('span');
-      version.textContent = `v${release.version}`;
-      summary.appendChild(version);
+    const summary = document.createElement('summary');
+    const version = document.createElement('span');
+    version.textContent = `v${release.version}`;
+    summary.appendChild(version);
 
-      if (release.version === manifestVersion) {
-        const currentBadge = document.createElement('span');
-        currentBadge.className = 'release-current-badge';
-        currentBadge.textContent = localized.currentVersion;
-        summary.appendChild(currentBadge);
-      }
+    if (release.version === manifestVersion) {
+      const currentBadge = document.createElement('span');
+      currentBadge.className = 'release-current-badge';
+      currentBadge.textContent = localized.currentVersion;
+      summary.appendChild(currentBadge);
+    }
 
-      const content = document.createElement('div');
-      content.className = 'release-version-content';
+    const content = document.createElement('div');
+    content.className = 'release-version-content';
 
-      ['added', 'improved', 'fixed'].forEach((categoryKey) => {
-        const itemKeys = release.categories[categoryKey] || [];
-        if (!itemKeys.length) return;
+    ['added', 'improved', 'fixed'].forEach((categoryKey) => {
+      const itemKeys = release.categories[categoryKey] || [];
+      if (!itemKeys.length) return;
 
-        const category = document.createElement('section');
-        category.className = 'release-category';
-        const heading = document.createElement('h4');
-        heading.textContent = localized.categories[categoryKey];
-        const items = document.createElement('ul');
+      const category = document.createElement('section');
+      category.className = 'release-category';
+      const heading = document.createElement('h4');
+      heading.textContent = localized.categories[categoryKey];
+      const items = document.createElement('ul');
 
-        itemKeys.forEach((itemKey) => {
-          const item = document.createElement('li');
-          item.textContent = localized.items[itemKey];
-          items.appendChild(item);
-        });
-
-        category.appendChild(heading);
-        category.appendChild(items);
-        content.appendChild(category);
+      itemKeys.forEach((itemKey) => {
+        const item = document.createElement('li');
+        item.textContent = localized.items[itemKey];
+        items.appendChild(item);
       });
 
-      details.appendChild(summary);
-      details.appendChild(content);
-      list.appendChild(details);
+      category.appendChild(heading);
+      category.appendChild(items);
+      content.appendChild(category);
     });
+
+    details.appendChild(summary);
+    details.appendChild(content);
+    list.appendChild(details);
+  });
+
+  if (moreButton) {
+    const hasMoreReleases = releases.length > 5;
+    moreButton.style.display = hasMoreReleases ? '' : 'none';
+    moreButton.textContent = releaseNotesExpanded ? toggleText.showLess : toggleText.showMore;
+    moreButton.setAttribute('aria-expanded', String(releaseNotesExpanded));
+    moreButton.setAttribute('aria-controls', 'releaseNotesList');
+  }
+}
+
+function toggleReleaseNotes() {
+  releaseNotesExpanded = !releaseNotesExpanded;
+  renderReleaseNotes(getInterfaceLanguage());
 }
 
 function getInterfaceLanguage() {
@@ -6547,6 +6652,7 @@ function init() {
   document.getElementById('reopenOnboardingButton').addEventListener('click', reopenOnboarding);
   document.getElementById('manageGlobalShortcuts').addEventListener('click', openGlobalShortcutManager);
   document.getElementById('openStoreRatingButton').addEventListener('click', openStoreRatingPage);
+  document.getElementById('releaseNotesMoreButton').addEventListener('click', toggleReleaseNotes);
 
   // 设置预览按钮交互
   setupPreviewButtonInteractions();

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.9] - 2026-09-09
+
+### Changed
+- ✅ 更新记录默认展示最近 5 个版本，点击“查看更多”可展开全部记录
+- ✅ 重新启用主域名插件时自动恢复“跳转到顶部/底部”按钮；之后仍可按主域名单独关闭
+
 ## [2.5.8] - 2026-09-02
 
 ### Added
@@ -292,6 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚧 多语言支持框架
 
 [2.5.8]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.8
+[2.5.9]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.9
 [2.5.5]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.5
 [2.5.4]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.4
 [2.5.3]: https://github.com/kscje/page-scroll-master/releases/tag/v2.5.3

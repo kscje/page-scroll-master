@@ -394,6 +394,9 @@ function readStateFromControls() {
 
 function handleControlChange(feature) {
   if (ignoreChanges || !currentDomainKey) return;
+  if (feature === 'extension' && extensionToggleEl.checked) {
+    mainButtonsToggleEl.checked = true;
+  }
   setControlsDisabled(false);
   var state = readStateFromControls();
   persistCurrentState(state);

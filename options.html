@@ -1138,6 +1138,11 @@
       gap: 10px;
     }
 
+    .release-notes-more-button {
+      width: auto;
+      margin: 16px auto 0;
+    }
+
     .feedback-disclosure {
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -2160,7 +2165,7 @@
             <button type="button" id="reopenOnboardingButton" class="onboarding-reopen-button" data-i18n="settings.onboardingReopen">查看快速开始</button>
             <button type="button" id="openStoreRatingButton" class="onboarding-reopen-button" data-i18n="settings.openStoreRating">前往 Chrome Web Store 评分</button>
           </div>
-          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.5.8</span></p>
+          <p><span data-i18n="settings.versionLabel">当前版本：</span><span id="manifestVersion">2.5.9</span></p>
           <p><span data-i18n="settings.authorLabel">插件作者：</span>kscje</p>
           <p data-i18n="settings.feedback">如有任何建议或反馈，请联系插件制作者：</p>
           <a href="mailto:kscj.ty@gmail.com">kscj.ty@gmail.com</a>
@@ -2169,6 +2174,7 @@
         <div class="setting-group feedback-card release-notes-card">
           <h3 data-i18n="settings.releaseNotes">更新记录</h3>
           <div id="releaseNotesList" class="release-notes-list"></div>
+          <button type="button" id="releaseNotesMoreButton" class="release-notes-more-button">查看更多</button>
         </div>
       </section>
     </div>
