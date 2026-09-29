@@ -1019,7 +1019,7 @@ assert(
 
 const renderedReleases = page.elements.releaseNotesList.children;
 const releaseNotesMoreButton = page.elements.releaseNotesMoreButton;
-const plannedReleaseVersions = ['2.5.9', '2.5.8', '2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
+const plannedReleaseVersions = ['2.6.0', '2.5.9', '2.5.8', '2.5.7', '2.5.6', '2.5.5', '2.5.4', '2.5.3', '2.5.1', '2.5.0', '2.4.0', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.9.0', '1.8.0'];
 const compareTestVersions = (left, right) => {
   const leftParts = left.split('.').map(Number);
   const rightParts = right.split('.').map(Number);
@@ -1065,7 +1065,7 @@ assert(
 releaseNotesMoreButton.dispatch('click');
 assert(page.elements.releaseNotesList.children.length === 5, 'release notes can be collapsed back to the recent five records');
 assert(
-  page.elements.releaseNotesList.children[page.elements.releaseNotesList.children.length - 1].getAttribute('data-release-version') === '2.5.5',
+  page.elements.releaseNotesList.children[page.elements.releaseNotesList.children.length - 1].getAttribute('data-release-version') === '2.5.6',
   'collapsed release notes end with the fifth most recent release'
 );
 

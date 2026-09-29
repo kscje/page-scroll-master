@@ -206,7 +206,7 @@ function createContext() {
 
   assert(vm.runInContext('activeScrollAnimationState === null', sandbox), 'instant mode does not start a JavaScript scroll animation');
   assert(context.nativeScrollCalls.length === 1, 'instant mode performs one native scroll call');
-  assert(context.nativeScrollCalls[0].behavior === 'auto', 'instant mode requests immediate native behavior');
+  assert(context.nativeScrollCalls[0].behavior === 'instant', 'instant mode requests immediate native behavior');
   assert(documentElement.scrollTop === 0, 'instant mode reaches the target immediately');
 }
 

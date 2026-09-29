@@ -14,7 +14,9 @@
     .container {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 6px;
+      max-height: 576px;
+      overflow-y: auto;
     }
     .site-label {
       padding: 0 2px;
@@ -35,7 +37,7 @@
       align-items: center;
       justify-content: space-between;
       background: white;
-      padding: 10px 12px;
+      padding: 6px 10px;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
@@ -104,7 +106,7 @@
       line-height: 1.45;
     }
     .settings-button {
-      padding: 10px;
+      padding: 6px 10px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
@@ -120,45 +122,73 @@
     }
     .rating-prompt {
       display: none;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 4px;
+      padding: 6px 10px;
       border-radius: 8px;
       background: white;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      border: 1px solid rgba(74, 158, 221, 0.18);
+      border: 1px solid rgba(76, 175, 80, 0.22);
     }
     .rating-prompt.is-visible {
       display: grid;
+      justify-items: stretch;
+    }
+    .rating-prompt-icon {
+      display: block;
+      width: 48px;
+      height: 48px;
+      justify-self: center;
+      object-fit: contain;
+    }
+    .rating-prompt-heading {
+      margin: 0;
+      color: #222;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: center;
     }
     .rating-prompt-text {
       margin: 0;
-      color: #444;
+      color: #555;
       font-size: 12px;
-      line-height: 1.45;
+      line-height: 1.35;
+      text-align: center;
     }
     .rating-prompt-actions {
       display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
     }
     .rating-prompt button {
-      padding: 6px 8px;
-      border: 1px solid #d8d8d8;
-      border-radius: 6px;
-      background: #f8f8f8;
-      color: #444;
-      font-size: 12px;
-      font-weight: 600;
+      min-width: 0;
+      padding: 2px 4px;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #666;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.3;
+      white-space: nowrap;
       cursor: pointer;
     }
     .rating-prompt button:hover {
-      background: #eeeeee;
+      background: #f1f7f2;
       color: #222;
     }
     .rating-primary {
-      border-color: #4CAF50 !important;
+      width: 100%;
+      padding: 6px 8px !important;
+      border: 1px solid #4CAF50 !important;
+      border-radius: 6px !important;
       background: #4CAF50 !important;
       color: #ffffff !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      line-height: 1.2 !important;
     }
   </style>
 </head>
@@ -220,9 +250,11 @@
     </div>
     <button class="settings-button" id="openSettings" data-i18n="popupSettings">Settings</button>
     <div id="ratingPrompt" class="rating-prompt" aria-live="polite">
+      <img class="rating-prompt-icon" src="icons/rating-prompt-bookmark.png" alt="" width="48" height="48">
+      <p class="rating-prompt-heading" data-i18n="popupRatingPromptHeading">觉得好用吗？</p>
       <p class="rating-prompt-text" data-i18n="popupRatingPromptText">If this extension has helped you, you are welcome to rate it on the Chrome Web Store.</p>
+      <button type="button" id="ratingPromptRate" class="rating-primary" data-i18n="popupRatingPromptRate">Rate</button>
       <div class="rating-prompt-actions">
-        <button type="button" id="ratingPromptRate" class="rating-primary" data-i18n="popupRatingPromptRate">Rate</button>
         <button type="button" id="ratingPromptLater" data-i18n="popupRatingPromptLater">Later</button>
         <button type="button" id="ratingPromptNever" data-i18n="popupRatingPromptNever">Do not show again</button>
       </div>

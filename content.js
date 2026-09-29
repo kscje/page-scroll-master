@@ -613,6 +613,21 @@ function isRootScrollElement(element) {
     element === ownerDocument.body;
 }
 
+function isReverseScrollContainer(element) {
+  if (!element || isRootScrollElement(element)) return false;
+  const ownerDocument = element.ownerDocument || document;
+  const ownerWindow = ownerDocument.defaultView || window;
+  if (typeof ownerWindow.getComputedStyle !== 'function') return false;
+  const style = ownerWindow.getComputedStyle(element);
+  return ['flex', 'inline-flex'].includes(style.display) && style.flexDirection === 'column-reverse';
+}
+
+function toNativeScrollTop(container, top) {
+  return isReverseScrollContainer(container)
+    ? top - getElementScrollRange(container)
+    : top;
+}
+
 function getElementScrollRange(element) {
   if (!element) return 0;
 
@@ -1549,14 +1564,19 @@ function getScrollTop(container) {
       0;
   }
 
-  return container.scrollTop || 0;
+  const scrollTop = container.scrollTop || 0;
+  if (!isReverseScrollContainer(container)) return scrollTop;
+  const range = getElementScrollRange(container);
+  return clampNumber(scrollTop + range, 0, range, 0);
 }
 
 function setScrollTop(container, top) {
   if (isRootScrollElement(container)) {
     const ownerDocument = container.ownerDocument || document;
     const ownerWindow = ownerDocument.defaultView || window;
-    ownerWindow.scrollTo(0, top);
+    if (typeof ownerWindow.scrollTo === 'function') {
+      ownerWindow.scrollTo(0, top);
+    }
     ownerDocument.documentElement.scrollTop = top;
     if (ownerDocument.body) {
       ownerDocument.body.scrollTop = top;
@@ -1564,7 +1584,47 @@ function setScrollTop(container, top) {
     return;
   }
 
-  container.scrollTop = top;
+  container.scrollTop = toNativeScrollTop(container, top);
+}
+
+function setScrollTopImmediately(container, top) {
+  const ownerDocument = container.ownerDocument || document;
+  const scrollElements = isRootScrollElement(container)
+    ? [ownerDocument.scrollingElement, ownerDocument.documentElement, ownerDocument.body]
+    : [container];
+  const styleSnapshots = [];
+
+  try {
+    Array.from(new Set(scrollElements.filter(Boolean))).forEach((element) => {
+      const style = element.style;
+      if (
+        !style ||
+        typeof style.setProperty !== 'function' ||
+        typeof style.getPropertyValue !== 'function' ||
+        typeof style.getPropertyPriority !== 'function' ||
+        typeof style.removeProperty !== 'function'
+      ) {
+        return;
+      }
+
+      styleSnapshots.push({
+        style,
+        value: style.getPropertyValue('scroll-behavior'),
+        priority: style.getPropertyPriority('scroll-behavior')
+      });
+      style.setProperty('scroll-behavior', 'auto', 'important');
+    });
+
+    setScrollTop(container, top);
+  } finally {
+    styleSnapshots.forEach(({ style, value, priority }) => {
+      if (value) {
+        style.setProperty('scroll-behavior', value, priority);
+      } else {
+        style.removeProperty('scroll-behavior');
+      }
+    });
+  }
 }
 
 function isAutoScrollContainerConnected(container) {
@@ -2299,7 +2359,7 @@ function performNativeScroll(container, top, behavior) {
   const target = getNativeScrollTarget(container);
   if (!target || typeof target.scrollTo !== 'function') return false;
   target.scrollTo({
-    top,
+    top: toNativeScrollTop(container, top),
     behavior
   });
   return true;
@@ -2500,12 +2560,12 @@ function startImmediateScroll(container, targetTop, options = {}) {
   const range = getElementScrollRange(container);
   const end = clampNumber(targetTop, 0, range, 0);
   try {
-    if (!performNativeScroll(container, end, 'auto')) {
-      setScrollTop(container, end);
+    if (!performNativeScroll(container, end, 'instant')) {
+      setScrollTopImmediately(container, end);
     }
   } catch (err) {
     try {
-      setScrollTop(container, end);
+      setScrollTopImmediately(container, end);
     } catch (fallbackError) {
       return false;
     }

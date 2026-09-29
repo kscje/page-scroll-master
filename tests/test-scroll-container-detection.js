@@ -21,6 +21,7 @@ class FakeElement {
     this.overflowY = options.overflowY || 'visible';
     this.visibility = options.visibility || 'visible';
     this.display = options.display || 'block';
+    this.flexDirection = options.flexDirection || 'row';
     this.pointerEvents = options.pointerEvents;
     this.rect = options.rect || { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
     this.rectReadCount = 0;
@@ -144,6 +145,7 @@ function createContext(elements, options = {}) {
           overflowY: element.overflowY,
           visibility: element.visibility,
           display: element.display,
+          flexDirection: element.flexDirection,
           pointerEvents: element.pointerEvents
         };
       },
@@ -258,6 +260,7 @@ function createEmbeddedFrame(scrollContainer, options = {}) {
         overflowY: element.overflowY,
         visibility: element.visibility,
         display: element.display,
+        flexDirection: element.flexDirection,
         pointerEvents: element.pointerEvents
       };
     },
@@ -608,6 +611,37 @@ function testPageStrategyForcesRootScrollContainer() {
   const sandbox = createContext([main]);
 
   assert(sandbox.findScrollContainer('page') === sandbox.document.documentElement, 'page strategy forces the root scroll element');
+}
+
+function testReverseFlexScrollContainerUsesLogicalTopAndBottom() {
+  const reverseContainer = new FakeElement('div', {
+    scrollHeight: 3000,
+    clientHeight: 800,
+    scrollTop: -1000,
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column-reverse',
+    rect: { left: 0, top: 20, right: 1200, bottom: 900, width: 1200, height: 880 }
+  });
+  const sandbox = createContext([reverseContainer]);
+  sandbox.reverseContainer = reverseContainer;
+  vm.runInContext(
+    "currentScrollContainer = reverseContainer; currentScrollContainerStrategy = getEffectiveContainerStrategy(); scrollMode = 'instant';",
+    sandbox
+  );
+
+  const range = sandbox.getElementScrollRange(reverseContainer);
+  assert(range === 2200, 'reverse flex container should keep its physical scroll range');
+  assert(sandbox.getScrollTop(reverseContainer) === 1200, 'negative native offset should map to the logical top position');
+  assert(
+    Math.abs(sandbox.getScrollProgress(reverseContainer) - (1200 / range)) < 0.001,
+    'reverse flex container progress should use normalized top-to-bottom coordinates'
+  );
+
+  sandbox.scrollToTop();
+  assert(reverseContainer.scrollTop === -range, 'top action should use the reverse container native top offset');
+  sandbox.scrollToBottom();
+  assert(reverseContainer.scrollTop === 0, 'bottom action should use the reverse container native bottom offset');
 }
 
 function testEventDrivenDetectionUpdatesLateContent() {
@@ -1167,6 +1201,7 @@ testCustomElementScrollContainerIsDetected();
 testCustomElementCollectionSurvivesLargeCandidateList();
 testDecorativePointerEventsNoneLayerDoesNotBecomePrimaryContainer();
 testPageStrategyForcesRootScrollContainer();
+testReverseFlexScrollContainerUsesLogicalTopAndBottom();
 testEventDrivenDetectionUpdatesLateContent();
 testRootWithoutScrollRangeDoesNotBlockLateScrollableContent();
 testAddedPrimaryScrollCandidateTriggersReevaluation();

@@ -38,6 +38,7 @@ var popupTranslations = {
     'popupScrollBookmarks': '滚动位置书签',
     'popupOutlineNavigation': '智能段落跳转',
     'popupUnavailable': '当前页面不支持扩展功能控制',
+    'popupRatingPromptHeading': '觉得好用吗？',
     'popupRatingPromptText': '如果这个插件帮到了你，欢迎在 Chrome Web Store 给我们评分。',
     'popupRatingPromptRate': '去评分',
     'popupRatingPromptLater': '稍后再说',
@@ -55,6 +56,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Scroll position bookmarks',
     'popupOutlineNavigation': 'Smart section navigation',
     'popupUnavailable': 'Extension controls are unavailable on this page',
+    'popupRatingPromptHeading': 'Finding this helpful?',
     'popupRatingPromptText': 'If this extension has helped you, you are welcome to rate it on the Chrome Web Store.',
     'popupRatingPromptRate': 'Rate',
     'popupRatingPromptLater': 'Later',
@@ -72,6 +74,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Marcadores de posición',
     'popupOutlineNavigation': 'Navegación por secciones',
     'popupUnavailable': 'Los controles no están disponibles en esta página',
+    'popupRatingPromptHeading': '¿Te resulta útil?',
     'popupRatingPromptText': 'Si esta extensión te ha ayudado, puedes valorarla en Chrome Web Store.',
     'popupRatingPromptRate': 'Valorar',
     'popupRatingPromptLater': 'Más tarde',
@@ -89,6 +92,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'スクロール位置ブックマーク',
     'popupOutlineNavigation': 'スマートセクション移動',
     'popupUnavailable': 'このページでは拡張機能を制御できません',
+    'popupRatingPromptHeading': '便利に使えていますか？',
     'popupRatingPromptText': 'この拡張機能がお役に立った場合は、Chrome ウェブストアで評価できます。',
     'popupRatingPromptRate': '評価する',
     'popupRatingPromptLater': '後で',
@@ -106,6 +110,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Scrollpositions-Lesezeichen',
     'popupOutlineNavigation': 'Abschnittsnavigation',
     'popupUnavailable': 'Steuerung auf dieser Seite nicht verfügbar',
+    'popupRatingPromptHeading': 'Hilft Ihnen die Erweiterung?',
     'popupRatingPromptText': 'Wenn diese Erweiterung Ihnen geholfen hat, können Sie sie im Chrome Web Store bewerten.',
     'popupRatingPromptRate': 'Bewerten',
     'popupRatingPromptLater': 'Später',
@@ -123,6 +128,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Marque-pages de position',
     'popupOutlineNavigation': 'Navigation par sections',
     'popupUnavailable': 'Commandes indisponibles sur cette page',
+    'popupRatingPromptHeading': 'Cette extension vous est utile ?',
     'popupRatingPromptText': 'Si cette extension vous a aidé, vous pouvez la noter sur le Chrome Web Store.',
     'popupRatingPromptRate': 'Noter',
     'popupRatingPromptLater': 'Plus tard',
@@ -140,6 +146,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Favoritos de posição',
     'popupOutlineNavigation': 'Navegação por seções',
     'popupUnavailable': 'Controles indisponíveis nesta página',
+    'popupRatingPromptHeading': 'Esta extensão está ajudando?',
     'popupRatingPromptText': 'Se esta extensão ajudou você, sinta-se à vontade para avaliá-la na Chrome Web Store.',
     'popupRatingPromptRate': 'Avaliar',
     'popupRatingPromptLater': 'Depois',
@@ -157,6 +164,7 @@ var popupTranslations = {
     'popupScrollBookmarks': '捲動位置書籤',
     'popupOutlineNavigation': '智慧段落跳轉',
     'popupUnavailable': '目前頁面不支援外掛功能控制',
+    'popupRatingPromptHeading': '覺得好用嗎？',
     'popupRatingPromptText': '如果這個外掛幫到了你，歡迎在 Chrome Web Store 給我們評分。',
     'popupRatingPromptRate': '去評分',
     'popupRatingPromptLater': '稍後再說',
@@ -174,6 +182,7 @@ var popupTranslations = {
     'popupScrollBookmarks': '스크롤 위치 북마크',
     'popupOutlineNavigation': '스마트 구간 이동',
     'popupUnavailable': '이 페이지에서는 확장 기능을 제어할 수 없습니다',
+    'popupRatingPromptHeading': '유용하게 사용하고 계신가요?',
     'popupRatingPromptText': '이 확장 프로그램이 도움이 되었다면 Chrome 웹 스토어에서 평가해 주세요.',
     'popupRatingPromptRate': '평가하기',
     'popupRatingPromptLater': '나중에',
@@ -191,6 +200,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Segnalibri posizione',
     'popupOutlineNavigation': 'Navigazione sezioni',
     'popupUnavailable': 'Controlli non disponibili in questa pagina',
+    'popupRatingPromptHeading': 'La trovi utile?',
     'popupRatingPromptText': 'Se questa estensione ti è stata utile, puoi valutarla sul Chrome Web Store.',
     'popupRatingPromptRate': 'Valuta',
     'popupRatingPromptLater': 'Più tardi',
@@ -208,6 +218,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Закладки позиции',
     'popupOutlineNavigation': 'Навигация по разделам',
     'popupUnavailable': 'Управление расширением недоступно на этой странице',
+    'popupRatingPromptHeading': 'Вам помогает расширение?',
     'popupRatingPromptText': 'Если расширение вам помогло, вы можете оценить его в Chrome Web Store.',
     'popupRatingPromptRate': 'Оценить',
     'popupRatingPromptLater': 'Позже',
@@ -225,6 +236,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Kaydırma konumu yer imleri',
     'popupOutlineNavigation': 'Akıllı bölüm gezintisi',
     'popupUnavailable': 'Bu sayfada uzantı kontrolleri kullanılamaz',
+    'popupRatingPromptHeading': 'Uzantı işinize yarıyor mu?',
     'popupRatingPromptText': 'Bu uzantı size yardımcı olduysa Chrome Web Store’da puan verebilirsiniz.',
     'popupRatingPromptRate': 'Puan ver',
     'popupRatingPromptLater': 'Daha sonra',
@@ -242,6 +254,7 @@ var popupTranslations = {
     'popupScrollBookmarks': 'Bookmark posisi gulir',
     'popupOutlineNavigation': 'Navigasi bagian pintar',
     'popupUnavailable': 'Kontrol ekstensi tidak tersedia di halaman ini',
+    'popupRatingPromptHeading': 'Ekstensi ini bermanfaat?',
     'popupRatingPromptText': 'Jika ekstensi ini membantu Anda, silakan beri rating di Chrome Web Store.',
     'popupRatingPromptRate': 'Beri rating',
     'popupRatingPromptLater': 'Nanti',
@@ -329,10 +342,9 @@ function hideRatingPrompt() {
   ratingPromptEl.classList.remove('is-visible');
 }
 
-function showRatingPrompt(state, version) {
+function showRatingPrompt() {
   if (!ratingPromptEl) return;
   ratingPromptEl.classList.add('is-visible');
-  ratingUtils.recordShown(state, version, function () {});
 }
 
 function recordRatingPopupOpen(domainEnabled) {
@@ -342,7 +354,7 @@ function recordRatingPopupOpen(domainEnabled) {
       hideRatingPrompt();
       return;
     }
-    showRatingPrompt(result.state, result.version);
+    showRatingPrompt();
   });
 }
 

@@ -2776,6 +2776,13 @@ Object.keys(translations).forEach((lang) => {
 
 const RELEASE_NOTES = [
   {
+    version: '2.6.0',
+    categories: {
+      improved: ['ratingPrompt'],
+      fixed: ['reverseFlexScrollContainer', 'immediateScrollMode']
+    }
+  },
+  {
     version: '2.5.9',
     categories: {
       improved: [
@@ -3603,6 +3610,81 @@ Object.keys(releaseNotesTranslations).forEach((lang) => {
   const values = v259ReleaseNotesItems[lang] || v259ReleaseNotesItems['en-US'];
   releaseNotesTranslations[lang].items.releaseNotesListLimit = values[0];
   releaseNotesTranslations[lang].items.domainMainButtonRestore = values[1];
+});
+
+const v260ReleaseNotesItems = {
+  'zh-CN': [
+    '修复 column-reverse 自定义滚动容器的顶部/底部定位和页面进度计算。',
+    '修复页面全局平滑滚动设置可能让“立即”模式仍播放动画的问题。',
+    '优化评分提示布局；符合条件且尚未选择稍后、不再提示或评分时，之后仍可能再次看到提示。'
+  ],
+  'zh-TW': [
+    '修正 column-reverse 自訂捲動容器的頂部/底部定位與頁面進度計算。',
+    '修正頁面全域平滑捲動設定可能讓「立即」模式仍播放動畫的問題。',
+    '最佳化評分提示版面；符合條件且尚未選擇稍後、不再提示或評分時，之後仍可能再次看到提示。'
+  ],
+  'en-US': [
+    'Fixed top/bottom positioning and progress calculations in column-reverse custom scroll containers.',
+    'Fixed immediate mode animating on pages with global smooth-scrolling styles.',
+    'Refreshed the rating prompt layout. Eligible users may see it again until they choose Later, Do not show again, or Rate.'
+  ],
+  'es-ES': [
+    'Se corrigieron la posición superior/inferior y el cálculo del progreso en contenedores personalizados column-reverse.',
+    'Se corrigió la animación del modo inmediato en páginas con desplazamiento suave global.',
+    'Se renovó el diseño de la solicitud de valoración. Puede volver a aparecer a usuarios elegibles hasta que elijan Más tarde, No volver a mostrar o Valorar.'
+  ],
+  'ja-JP': [
+    'column-reverse のカスタムスクロール領域で、上下への移動位置と進捗計算を修正しました。',
+    'ページ全体にスムーズスクロールが設定されていても、「即時」モードでアニメーションしないよう修正しました。',
+    '評価プロンプトのレイアウトを更新しました。「後で」「今後表示しない」「評価する」を選ぶまで、条件を満たすユーザーに再表示される場合があります。'
+  ],
+  'de-DE': [
+    'Die Positionierung oben/unten und die Fortschrittsberechnung in benutzerdefinierten column-reverse-Scrollbereichen wurden korrigiert.',
+    'Der Sofortmodus animiert auf Seiten mit globalem Smooth-Scrolling nicht mehr unerwartet.',
+    'Die Bewertungsaufforderung wurde neu gestaltet. Sie kann berechtigten Nutzern erneut angezeigt werden, bis sie Später, Nicht mehr anzeigen oder Bewerten wählen.'
+  ],
+  'fr-FR': [
+    'Correction du positionnement haut/bas et du calcul de progression dans les conteneurs de défilement personnalisés column-reverse.',
+    'Correction de l’animation inattendue du mode immédiat sur les pages utilisant le défilement doux global.',
+    'La présentation de la demande d’évaluation a été revue. Elle peut réapparaître aux utilisateurs éligibles jusqu’à ce qu’ils choisissent Plus tard, Ne plus afficher ou Noter.'
+  ],
+  'pt-BR': [
+    'Corrigidos o posicionamento superior/inferior e o cálculo do progresso em contêineres de rolagem personalizados column-reverse.',
+    'Corrigida a animação inesperada do modo imediato em páginas com rolagem suave global.',
+    'O layout do convite para avaliação foi atualizado. Ele pode reaparecer para usuários elegíveis até que escolham Mais tarde, Não mostrar novamente ou Avaliar.'
+  ],
+  'ko-KR': [
+    'column-reverse 사용자 지정 스크롤 컨테이너의 위/아래 위치와 진행률 계산을 수정했습니다.',
+    '페이지 전체에 부드러운 스크롤이 설정되어 있어도 즉시 모드에서 애니메이션이 실행되지 않도록 수정했습니다.',
+    '평가 안내 레이아웃을 새롭게 구성했습니다. 나중에, 다시 표시 안 함 또는 평가를 선택할 때까지 대상 사용자에게 다시 표시될 수 있습니다.'
+  ],
+  'it-IT': [
+    'Corretti il posizionamento in alto/in basso e il calcolo del progresso nei contenitori di scorrimento personalizzati column-reverse.',
+    'Corretto il modo immediato, che poteva animarsi nelle pagine con scorrimento fluido globale.',
+    'Rinnovato il layout dell’invito alla valutazione. Può essere mostrato di nuovo agli utenti idonei finché non scelgono Più tardi, Non mostrare più o Valuta.'
+  ],
+  'ru-RU': [
+    'Исправлены переходы вверх/вниз и расчёт прогресса в пользовательских контейнерах прокрутки column-reverse.',
+    'Исправлена анимация в режиме мгновенной прокрутки на страницах с глобальной плавной прокруткой.',
+    'Обновлён вид приглашения оценить расширение. Оно может появляться снова, пока пользователь не выберет «Позже», «Больше не показывать» или «Оценить».'
+  ],
+  'tr-TR': [
+    'column-reverse özel kaydırma kapsayıcılarında üst/alt konumlandırma ve ilerleme hesaplaması düzeltildi.',
+    'Genel yumuşak kaydırma kullanan sayfalarda anında modun animasyon yapması düzeltildi.',
+    'Puan verme isteminin düzeni yenilendi. Uygun kullanıcılara Daha sonra, Bir daha gösterme veya Puan ver seçilene kadar yeniden gösterilebilir.'
+  ],
+  'id-ID': [
+    'Memperbaiki posisi atas/bawah dan perhitungan progres pada kontainer gulir khusus column-reverse.',
+    'Memperbaiki mode langsung yang masih beranimasi pada halaman dengan gulir halus global.',
+    'Tata letak ajakan memberi rating diperbarui. Pengguna yang memenuhi syarat dapat melihatnya lagi sampai memilih Nanti, Jangan tampilkan lagi, atau Beri rating.'
+  ]
+};
+
+Object.keys(releaseNotesTranslations).forEach((lang) => {
+  const values = v260ReleaseNotesItems[lang] || v260ReleaseNotesItems['en-US'];
+  releaseNotesTranslations[lang].items.reverseFlexScrollContainer = values[0];
+  releaseNotesTranslations[lang].items.immediateScrollMode = values[1];
+  releaseNotesTranslations[lang].items.ratingPrompt = values[2];
 });
 
 const releaseNotesToggleTranslations = {

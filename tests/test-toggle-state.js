@@ -318,14 +318,28 @@ popup = openPopup('https://rating.example/page', eligibleState);
 assert(popup.elements.ratingPrompt.classList.contains('is-visible'), 'eligible users see the rating prompt');
 assert(
   popup.chrome.storage.local.data.ratingPromptState.popupOpenCount === 11 &&
-    popup.chrome.storage.local.data.ratingPromptState.totalShownCount === 1 &&
-    popup.chrome.storage.local.data.ratingPromptState.shownVersions[MANIFEST.version] === true,
-  'rendering the prompt records the popup open and current version display'
+    popup.chrome.storage.local.data.ratingPromptState.totalShownCount === 0 &&
+    Object.keys(popup.chrome.storage.local.data.ratingPromptState.shownVersions).length === 0,
+  'rendering the prompt records the popup open without consuming a display count'
 );
 popup = openPopup('https://rating.example/page', popup.chrome.storage.local.data);
 assert(
-  !popup.elements.ratingPrompt.classList.contains('is-visible'),
-  'the same version is not prompted twice'
+  popup.elements.ratingPrompt.classList.contains('is-visible') &&
+    popup.chrome.storage.local.data.ratingPromptState.popupOpenCount === 12,
+  'ignoring the prompt leaves it visible on the next popup open'
+);
+const alreadyDisplayedState = {
+  ...eligibleState,
+  ratingPromptState: {
+    ...eligibleState.ratingPromptState,
+    totalShownCount: 20,
+    shownVersions: { [MANIFEST.version]: true }
+  }
+};
+popup = openPopup('https://rating.example/page', alreadyDisplayedState);
+assert(
+  popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'legacy display counts and shown versions do not suppress the prompt'
 );
 popup = openPopup('https://disabled.example/page', {
   ...eligibleState,
@@ -348,12 +362,22 @@ assert(
     popup.chrome.storage.local.data.ratingPromptState.dismissedUntil > Date.now(),
   'later hides the prompt and stores a cooldown'
 );
+popup = openPopup('https://rating.example/page', popup.chrome.storage.local.data);
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'later keeps the prompt hidden on the next popup open'
+);
 popup = openPopup('https://rating.example/page', eligibleState);
 popup.elements.ratingPromptNever.dispatch('click');
 assert(
   popup.chrome.storage.local.data.ratingPromptState.neverAsk === true &&
     !popup.elements.ratingPrompt.classList.contains('is-visible'),
   'never ask hides the prompt permanently'
+);
+popup = openPopup('https://rating.example/page', popup.chrome.storage.local.data);
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'never ask keeps the prompt hidden on the next popup open'
 );
 popup = openPopup('https://rating.example/page', eligibleState);
 popup.elements.ratingPromptRate.dispatch('click');
@@ -362,6 +386,11 @@ assert(
     popup.createdTabs[0].url === RATING_REVIEW_URL &&
     !popup.elements.ratingPrompt.classList.contains('is-visible'),
   'rating click stores ratedClicked and opens the Chrome Web Store review page'
+);
+popup = openPopup('https://rating.example/page', popup.chrome.storage.local.data);
+assert(
+  !popup.elements.ratingPrompt.classList.contains('is-visible'),
+  'rating click keeps the prompt hidden on the next popup open'
 );
 
 console.log('\n=== Test summary ===');

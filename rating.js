@@ -7,7 +7,6 @@ var PageScrollMasterRating = (function () {
   var MIN_INSTALL_AGE_MS = 7 * 24 * 60 * 60 * 1000;
   var REMIND_LATER_MS = 30 * 24 * 60 * 60 * 1000;
   var MIN_POPUP_OPEN_COUNT = 10;
-  var MAX_TOTAL_SHOWN_COUNT = 2;
 
   function isPlainObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
@@ -105,8 +104,6 @@ var PageScrollMasterRating = (function () {
     if (state.dismissedUntil && state.dismissedUntil > now) return false;
     if (now - state.installedAt < MIN_INSTALL_AGE_MS) return false;
     if (state.popupOpenCount <= MIN_POPUP_OPEN_COUNT) return false;
-    if (state.totalShownCount >= MAX_TOTAL_SHOWN_COUNT) return false;
-    if (state.shownVersions[version] === true) return false;
     return true;
   }
 
@@ -128,13 +125,6 @@ var PageScrollMasterRating = (function () {
         });
       });
     });
-  }
-
-  function recordShown(state, version, callback) {
-    var nextState = normalizeState(state, Date.now()).state;
-    nextState.totalShownCount += 1;
-    nextState.shownVersions[version || getManifestVersion()] = true;
-    setState(nextState, callback);
   }
 
   function remindLater(callback) {
@@ -169,7 +159,6 @@ var PageScrollMasterRating = (function () {
     normalizeState: normalizeState,
     shouldShowPrompt: shouldShowPrompt,
     recordPopupOpen: recordPopupOpen,
-    recordShown: recordShown,
     remindLater: remindLater,
     neverAsk: neverAsk,
     recordRatedClicked: recordRatedClicked

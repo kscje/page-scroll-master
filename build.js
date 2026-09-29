@@ -25,6 +25,7 @@ const INCLUDED_FILES = [
   'icons/icon32.png',
   'icons/icon48.png',
   'icons/icon128.png',
+  'icons/rating-prompt-bookmark.png',
   '_locales/en/messages.json',
   '_locales/zh_CN/messages.json',
   '_locales/zh_TW/messages.json',
